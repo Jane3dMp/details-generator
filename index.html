@@ -918,6 +918,30 @@ async function bootstrap() {
   } catch(e) {
     toast('Не удалось связаться с сервером', 'err');
   }
+
+  // Загружаем единый рабочий черновик
+  try {
+    const dr = await apiGet('loadDraft', { id: 'working_main' });
+    if (dr.ok && dr.draft) {
+      state.draftId = dr.draft.id;
+      state.draftName = dr.draft.name;
+      state.events = (dr.draft.state && dr.draft.state.events) || [];
+      // Открываем месяц с ближайшим событием
+      if (state.events.length > 0) {
+        const today = ymd(new Date());
+        const future = state.events.filter(e => e.date >= today);
+        const target = future.length ? future[0] : state.events[state.events.length - 1];
+        if (target && target.date) {
+          const [y, m] = target.date.split('-').map(Number);
+          state.curMonth = new Date(y, m - 1, 1);
+        }
+      }
+      toast('Загружено событий: ' + state.events.length, 'ok');
+    }
+  } catch(e) {
+    // если нет рабочего черновика — это нормально, просто стартуем с пустого
+  }
+
   renderCalendar();
   renderSidebar();
   startHeartbeat();
@@ -1295,19 +1319,21 @@ function deleteCurrentEvent() {
   autosaveDraft();
 }
 
-// Тихое автосохранение черновика — чтобы изменения не терялись
+// Тихое автосохранение черновика — чтобы изменения не терялись.
+// Всегда сохраняем в единый рабочий черновик 'working_main'.
 let autosaveTimer = null;
 function autosaveDraft() {
   if (autosaveTimer) clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(async () => {
-    if (state.events.length === 0) return;
-    const monthLabel = MONTH_NAMES[state.curMonth.getMonth()] + ' ' + state.curMonth.getFullYear();
-    const name = state.draftName || ('Автосохранение · ' + monthLabel);
     try {
-      const r = await apiPost('saveDraft', { id: state.draftId, name, state: currentState() });
+      const r = await apiPost('saveDraft', {
+        id: 'working_main',
+        name: 'Рабочий черновик · все события',
+        state: currentState()
+      });
       if (r.ok && r.draft) {
         state.draftId = r.draft.id;
-        state.draftName = name;
+        state.draftName = r.draft.name;
       }
     } catch(e) {}
   }, 1500);
@@ -1437,14 +1463,16 @@ function currentState() {
 }
 
 async function saveDraft() {
+  // Кнопка «💾 Сохранить» создаёт именованный снапшот текущего состояния
+  // (для случаев когда хочется сохранить «контрольную точку» перед большими правками).
+  // Авто-сохранение в working_main всё равно идёт само.
   const monthLabel = MONTH_NAMES[state.curMonth.getMonth()] + ' ' + state.curMonth.getFullYear();
-  const name = state.draftName || prompt('Название черновика:', monthLabel);
+  const name = prompt('Название контрольной точки:', 'Снапшот · ' + monthLabel + ' · ' + new Date().toLocaleDateString('ru-RU'));
   if (!name) return;
-  state.draftName = name;
-  const r = await apiPost('saveDraft', { id: state.draftId, name, state: currentState() });
+  // Снапшот — отдельный draft с новым ID
+  const r = await apiPost('saveDraft', { id: '', name, state: currentState() });
   if (r.ok && r.draft) {
-    state.draftId = r.draft.id;
-    toast('Черновик сохранён', 'ok');
+    toast('Контрольная точка сохранена', 'ok');
   } else {
     toast('Не удалось сохранить', 'err');
   }
@@ -1468,10 +1496,13 @@ async function openDraftsList() {
 }
 
 async function loadDraftById(id) {
+  if (id === 'working_main') {
+    if (!confirm('Это и есть текущий рабочий черновик — он уже загружен. Перезагрузить?')) return;
+  } else {
+    if (!confirm('Загрузка снапшота заменит текущее состояние всех событий.\n\nПродолжить?')) return;
+  }
   const r = await apiGet('loadDraft', { id });
   if (r.ok && r.draft) {
-    state.draftId = r.draft.id;
-    state.draftName = r.draft.name;
     state.events = (r.draft.state && r.draft.state.events) || [];
     if (r.draft.state && r.draft.state.monthKey) {
       const [y, m] = r.draft.state.monthKey.split('-').map(Number);
@@ -1479,7 +1510,11 @@ async function loadDraftById(id) {
     }
     closeModal('draftsModal');
     renderCalendar();
-    toast('Черновик загружен', 'ok');
+    toast('Загружено: ' + state.events.length + ' событий', 'ok');
+    // Если загрузили снапшот — сохраним его как новое состояние working_main
+    if (id !== 'working_main') {
+      autosaveDraft();
+    }
   } else {
     toast('Не удалось загрузить', 'err');
   }
