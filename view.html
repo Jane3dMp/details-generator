@@ -317,7 +317,6 @@ function openEvent(id) {
   document.getElementById('mWhen').textContent = `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]}, ${wd}, в ${ev.timeStart || '—'}`;
   const details = [];
   if (ev.duration) details.push(`<div class="detail-row"><div class="lbl">Длительность</div><div class="val">${ev.duration} ч</div></div>`);
-  if (ev.teacher) details.push(`<div class="detail-row"><div class="lbl">Ведущий</div><div class="val">${escapeHtml(ev.teacher)}</div></div>`);
   if (ev.price) details.push(`<div class="detail-row"><div class="lbl">Цена</div><div class="val price">${ev.price} руб</div></div>`);
   if (ev.limit) details.push(`<div class="detail-row"><div class="lbl">Мест</div><div class="val">до ${ev.limit}</div></div>`);
   document.getElementById('mDetails').innerHTML = details.join('');
