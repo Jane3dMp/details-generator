@@ -5,170 +5,339 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Расписание · Детали</title>
 <style>
-  :root {
-    --bg: #faf8f5;
-    --card: #ffffff;
-    --ink: #2a2a2a;
-    --muted: #8a8580;
-    --line: #ece6dd;
-    --accent: #c2845b;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    font-size: 15px;
-    line-height: 1.55;
-  }
-  header {
-    background: white;
-    border-bottom: 1px solid var(--line);
-    padding: 18px 24px;
-    text-align: center;
-  }
-  header h1 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 600;
-  }
-  header em { color: var(--accent); font-style: normal; }
-  .meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
-  main { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
-  .picker { margin-bottom: 24px; text-align: center; }
-  .picker select {
-    font-size: 15px; padding: 8px 14px; border: 1px solid var(--line);
-    border-radius: 6px; background: white;
-  }
-  .day-block {
-    background: white;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    margin-bottom: 12px;
-    padding: 14px 18px;
-  }
-  .day-head {
-    display: flex; align-items: baseline; gap: 12px;
-    margin-bottom: 8px;
-  }
-  .day-head .date { font-size: 18px; font-weight: 600; }
-  .day-head .weekday { color: var(--muted); font-size: 13px; text-transform: lowercase; }
-  .ev {
-    display: grid;
-    grid-template-columns: 65px 1fr;
-    gap: 14px;
-    padding: 10px 0;
-    border-top: 1px solid var(--line);
-  }
-  .ev:first-child { border-top: none; }
-  .ev .time { font-weight: 600; color: var(--accent); }
-  .ev .body .name { font-weight: 600; margin-bottom: 2px; }
-  .ev .body .meta { color: var(--muted); font-size: 13px; }
-  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+:root {
+  --bg: #faf8f5;
+  --card: #ffffff;
+  --ink: #2a2a2a;
+  --muted: #8a8580;
+  --line: #ece6dd;
+  --accent: #c2845b;
+  --accent-dark: #9c6543;
+  --green: #5b8a4e;
+  --shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.04);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+header {
+  background: white;
+  border-bottom: 1px solid var(--line);
+  padding: 18px 20px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+header h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.3px; }
+header h1 em { color: var(--accent); font-style: normal; }
+header .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.month-nav { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; }
+.month-nav button {
+  border: 1px solid var(--line); background: white; padding: 6px 12px;
+  border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 13px; color: var(--ink);
+}
+.month-nav button:hover { background: var(--bg); border-color: var(--accent); }
+.month-nav h2 {
+  margin: 0 12px; font-size: 17px; font-weight: 600; text-transform: capitalize;
+  min-width: 160px; text-align: center;
+}
+main { max-width: 1100px; margin: 0 auto; padding: 20px; }
+.calendar {
+  background: white; border: 1px solid var(--line);
+  border-radius: 10px; overflow: hidden; box-shadow: var(--shadow);
+}
+.weekdays {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.weekdays > div {
+  padding: 8px 12px; font-size: 11px; font-weight: 600;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .5px;
+}
+.weekdays > div.weekend { color: var(--accent); }
+.days { display: grid; grid-template-columns: repeat(7, 1fr); }
+.day {
+  min-height: 110px; padding: 6px;
+  border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.day:nth-child(7n) { border-right: none; }
+.day.other-month { background: #fafafa; opacity: .35; }
+.day.weekend .day-num { color: var(--accent); }
+.day.today { background: #fdf6e8; }
+.day.today .day-num { background: var(--accent); color: white; }
+.day-num {
+  display: inline-block; min-width: 22px; height: 22px; line-height: 22px;
+  text-align: center; font-size: 12px; font-weight: 600; border-radius: 50%; margin-bottom: 4px;
+}
+.event-pill {
+  display: block; border-left: 3px solid var(--accent); background: #fdf3e9;
+  padding: 4px 7px; border-radius: 4px; font-size: 11px; margin-bottom: 3px;
+  cursor: pointer; transition: all .15s;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.35;
+}
+.event-pill:hover {
+  background: white; box-shadow: 0 0 0 1px var(--accent), 0 4px 8px rgba(0,0,0,.06);
+  transform: translateY(-1px);
+}
+.event-pill .time { color: var(--muted); margin-right: 4px; font-weight: 500; }
+.event-pill .name { font-weight: 500; }
+.event-pill.cat-mk      { border-left-color: #c2845b; background: #fdf3e9; }
+.event-pill.cat-kino    { border-left-color: #5b7a9a; background: #eef2f7; }
+.event-pill.cat-book    { border-left-color: #5b8a4e; background: #eef5ec; }
+.event-pill.cat-party   { border-left-color: #b15a8a; background: #f9eaf2; }
+.event-pill.cat-expert  { border-left-color: #7a5b9a; background: #f1edf7; }
+
+.empty {
+  padding: 80px 20px; text-align: center; color: var(--muted); font-size: 14px;
+  grid-column: 1 / -1;
+}
+.empty .big { font-size: 40px; margin-bottom: 8px; opacity: 0.4; }
+
+/* МОДАЛКА */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(40,30,20,.55);
+  display: none; align-items: flex-start; justify-content: center;
+  padding: 30px 16px; z-index: 100; overflow-y: auto;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  background: white; border-radius: 14px; width: 100%; max-width: 560px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25); overflow: hidden;
+  animation: slideIn .2s ease;
+}
+@keyframes slideIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.modal-banner {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: white; padding: 20px 22px; position: relative;
+}
+.modal-banner .format-pill {
+  display: inline-block; background: rgba(255,255,255,.22);
+  padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 500;
+  margin-bottom: 8px; text-transform: uppercase; letter-spacing: .3px;
+}
+.modal-banner h2 { margin: 0 0 6px 0; font-size: 22px; font-weight: 600; line-height: 1.25; }
+.modal-banner .when { font-size: 14px; opacity: .9; }
+.modal-close {
+  position: absolute; top: 16px; right: 16px;
+  background: rgba(0,0,0,.15); border: none; color: white;
+  width: 30px; height: 30px; border-radius: 50%;
+  font-size: 16px; cursor: pointer; line-height: 1;
+}
+.modal-close:hover { background: rgba(0,0,0,.3); }
+.modal-body { padding: 18px 22px; max-height: 50vh; overflow-y: auto; }
+.detail-row { display: flex; gap: 10px; padding: 6px 0; font-size: 13px; }
+.detail-row .lbl { width: 90px; color: var(--muted); font-size: 12px; flex-shrink: 0; }
+.detail-row .val { flex: 1; }
+.detail-row .val.price { font-weight: 600; color: var(--accent); font-size: 15px; }
+.descr {
+  margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line);
+  font-size: 13px; white-space: pre-line; line-height: 1.6; color: #444;
+}
+.modal-foot {
+  padding: 14px 22px; border-top: 1px solid var(--line);
+  background: var(--bg); display: flex; gap: 8px;
+}
+.btn-book {
+  flex: 1; background: var(--accent); color: white; border: none;
+  padding: 12px 16px; font-size: 14px; font-weight: 600;
+  border-radius: 8px; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; text-decoration: none;
+}
+.btn-book:hover { background: var(--accent-dark); }
+.btn-cancel {
+  background: white; color: var(--ink); border: 1px solid var(--line);
+  padding: 12px 16px; font-size: 14px; border-radius: 8px;
+  cursor: pointer; font-family: inherit;
+}
+@media (max-width: 700px) {
+  .day { min-height: 70px; padding: 3px; }
+  .event-pill { font-size: 9px; padding: 2px 4px; }
+  .event-pill .time { margin-right: 2px; }
+  header h1 { font-size: 18px; }
+  .modal-banner h2 { font-size: 18px; }
+}
 </style>
 </head>
 <body>
+
 <header>
   <h1>Расписание <em>Детали</em></h1>
-  <div class="meta" id="metaLine">—</div>
-</header>
-<main>
-  <div class="picker">
-    <select id="versionPicker" onchange="loadVersion(this.value)">
-      <option>Загрузка…</option>
-    </select>
+  <div class="sub">Клуб событий и впечатлений · Могилёв</div>
+  <div class="month-nav">
+    <button onclick="prevMonth()">‹</button>
+    <h2 id="monthTitle">—</h2>
+    <button onclick="nextMonth()">›</button>
   </div>
-  <div id="content"><div class="empty">Выберите месяц</div></div>
+</header>
+
+<main>
+  <div class="calendar">
+    <div class="weekdays" id="weekdays"></div>
+    <div class="days" id="daysGrid"><div class="empty"><div class="big">📅</div>Загрузка…</div></div>
+  </div>
 </main>
+
+<div class="modal-bg" id="evModal">
+  <div class="modal">
+    <div class="modal-banner">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="format-pill" id="mFormat">—</div>
+      <h2 id="mName">—</h2>
+      <div class="when" id="mWhen">—</div>
+    </div>
+    <div class="modal-body">
+      <div id="mDetails"></div>
+      <div class="descr" id="mDescr"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal()">Закрыть</button>
+      <a class="btn-book" id="mBookBtn" target="_blank" rel="noopener">📝 Записаться</a>
+    </div>
+  </div>
+</div>
 
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHrfjsxMyN2TGfAw-JH8MN0KW8QdUUy-bIQSlgjtEIciAw_FnbrL8ay5CrEcqrcQrF/exec';
 const PROJECT = 'details';
-const MONTH_NAMES = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
-const WEEKDAY = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
 
-(async function init() {
+const MONTH_NAMES = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const WEEKDAY_SHORT = ['пн','вт','ср','чт','пт','сб','вс'];
+const WEEKDAY_LONG = ['понедельник','вторник','среда','четверг','пятница','суббота','воскресенье'];
+
+const state = { curMonth: new Date(), events: [], loaded: false };
+
+function ymd(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+function categoryClass(fmt) {
+  if (!fmt) return '';
+  if (fmt.toLowerCase().startsWith('мк')) return 'cat-mk';
+  if (fmt === 'Киновечер') return 'cat-kino';
+  if (fmt === 'Книжный клуб') return 'cat-book';
+  if (fmt === 'Вечеринка' || fmt === 'Дегустация') return 'cat-party';
+  if (fmt === 'Встреча с экспертом') return 'cat-expert';
+  return '';
+}
+
+async function loadEvents() {
   if (APPS_SCRIPT_URL.includes('PUT_YOUR')) {
-    document.getElementById('content').innerHTML = '<div class="empty">⚠ APPS_SCRIPT_URL не настроен в view.html</div>';
+    document.getElementById('daysGrid').innerHTML = '<div class="empty"><div class="big">⚠</div>APPS_SCRIPT_URL не настроен в view.html</div>';
     return;
   }
   try {
     const url = new URL(APPS_SCRIPT_URL);
-    url.searchParams.set('action', 'listPublished');
+    url.searchParams.set('action', 'publicEvents');
     url.searchParams.set('project', PROJECT);
     const r = await fetch(url.toString()).then(x => x.json());
-    if (!r.ok || !r.versions || r.versions.length === 0) {
-      document.getElementById('versionPicker').innerHTML = '<option>Опубликованных нет</option>';
-      document.getElementById('content').innerHTML = '<div class="empty">Опубликованных расписаний пока нет</div>';
+    if (!r.ok) {
+      document.getElementById('daysGrid').innerHTML = '<div class="empty"><div class="big">😕</div>' + escapeHtml(r.error || 'Не удалось загрузить расписание') + '</div>';
       return;
     }
-    const sel = document.getElementById('versionPicker');
-    sel.innerHTML = r.versions.map(v => `<option value="${v.id}">${escapeHtml(v.name || v.monthKey)}</option>`).join('');
-    loadVersion(sel.value);
+    state.events = r.events || [];
+    state.loaded = true;
+    if (state.events.length > 0) {
+      const today = ymd(new Date());
+      const future = state.events.filter(e => e.date >= today);
+      const first = future.length ? future[0] : state.events[0];
+      const [y, m] = first.date.split('-').map(Number);
+      state.curMonth = new Date(y, m - 1, 1);
+    }
+    renderCalendar();
   } catch(e) {
-    document.getElementById('content').innerHTML = '<div class="empty">Не удалось связаться с сервером</div>';
+    document.getElementById('daysGrid').innerHTML = '<div class="empty"><div class="big">😕</div>Не удалось связаться с сервером</div>';
   }
-})();
-
-async function loadVersion(id) {
-  if (!id) return;
-  const url = new URL(APPS_SCRIPT_URL);
-  url.searchParams.set('action', 'getPublished');
-  url.searchParams.set('project', PROJECT);
-  url.searchParams.set('id', id);
-  const r = await fetch(url.toString()).then(x => x.json());
-  if (!r.ok || !r.version) {
-    document.getElementById('content').innerHTML = '<div class="empty">Не удалось загрузить</div>';
-    return;
-  }
-  let st = {};
-  try { st = JSON.parse(r.version.stateJson || '{}'); } catch(e) {}
-  document.getElementById('metaLine').textContent =
-    'Обновлено: ' + (r.version.updated ? new Date(r.version.updated).toLocaleString('ru-RU') : '—');
-  renderEvents(st.events || []);
 }
 
-function renderEvents(events) {
-  if (!events.length) {
-    document.getElementById('content').innerHTML = '<div class="empty">Нет событий</div>';
-    return;
-  }
-  // группируем по датам
-  const byDate = {};
-  events.forEach(ev => {
-    if (!byDate[ev.date]) byDate[ev.date] = [];
-    byDate[ev.date].push(ev);
-  });
-  const dates = Object.keys(byDate).sort();
-  const html = dates.map(d => {
-    const dt = new Date(d);
-    const dayEvents = byDate[d].slice().sort((a, b) => (a.timeStart || '').localeCompare(b.timeStart || ''));
-    const inner = dayEvents.map(ev => `
-      <div class="ev">
-        <div class="time">${escapeHtml(ev.timeStart || '')}</div>
-        <div class="body">
-          <div class="name">${escapeHtml(ev.name || ev.format || '')}</div>
-          <div class="meta">${escapeHtml(ev.format || '')}${ev.teacher ? ' · ' + escapeHtml(ev.teacher) : ''}${ev.price ? ' · ' + ev.price + ' руб' : ''}</div>
-        </div>
+function renderCalendar() {
+  const m = state.curMonth.getMonth();
+  const y = state.curMonth.getFullYear();
+  document.getElementById('monthTitle').textContent = MONTH_NAMES[m] + ' ' + y;
+
+  const wd = document.getElementById('weekdays');
+  wd.innerHTML = WEEKDAY_SHORT.map((d, i) => `<div class="${i >= 5 ? 'weekend' : ''}">${d}</div>`).join('');
+
+  const first = new Date(y, m, 1);
+  const startWd = (first.getDay() + 6) % 7;
+  const start = new Date(y, m, 1 - startWd);
+  const grid = document.getElementById('daysGrid');
+  let html = '';
+  const today = new Date(); today.setHours(0,0,0,0);
+  let monthHasEvents = false;
+
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const dStr = ymd(d);
+    const inMonth = d.getMonth() === m;
+    const isToday = d.getTime() === today.getTime();
+    const wkd = d.getDay();
+    const isWe = wkd === 0 || wkd === 6;
+    const dayEvents = state.events.filter(e => e.date === dStr);
+    if (dayEvents.length && inMonth) monthHasEvents = true;
+    dayEvents.sort((a, b) => (a.timeStart || '99').localeCompare(b.timeStart || '99'));
+    const eventsHtml = dayEvents.map(ev => `
+      <div class="event-pill ${categoryClass(ev.format)}" onclick="openEvent('${ev.id}')">
+        <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">${escapeHtml(ev.name || ev.format || '')}</span>
       </div>
     `).join('');
-    return `
-      <div class="day-block">
-        <div class="day-head">
-          <div class="date">${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]}</div>
-          <div class="weekday">${WEEKDAY[dt.getDay()]}</div>
-        </div>
-        ${inner}
+    html += `
+      <div class="day ${inMonth ? '' : 'other-month'} ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''}">
+        <span class="day-num">${d.getDate()}</span>
+        ${eventsHtml}
       </div>
     `;
-  }).join('');
-  document.getElementById('content').innerHTML = html;
+  }
+  grid.innerHTML = html;
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+function prevMonth() { state.curMonth = new Date(state.curMonth.getFullYear(), state.curMonth.getMonth() - 1, 1); renderCalendar(); }
+function nextMonth() { state.curMonth = new Date(state.curMonth.getFullYear(), state.curMonth.getMonth() + 1, 1); renderCalendar(); }
+
+function openEvent(id) {
+  const ev = state.events.find(e => e.id === id);
+  if (!ev) return;
+  const dt = new Date(ev.date);
+  const wd = WEEKDAY_LONG[(dt.getDay() + 6) % 7];
+  document.getElementById('mFormat').textContent = ev.format || '';
+  document.getElementById('mName').textContent = ev.name || ev.format || '';
+  document.getElementById('mWhen').textContent = `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]}, ${wd}, в ${ev.timeStart || '—'}`;
+  const details = [];
+  if (ev.duration) details.push(`<div class="detail-row"><div class="lbl">Длительность</div><div class="val">${ev.duration} ч</div></div>`);
+  if (ev.teacher) details.push(`<div class="detail-row"><div class="lbl">Ведущий</div><div class="val">${escapeHtml(ev.teacher)}</div></div>`);
+  if (ev.price) details.push(`<div class="detail-row"><div class="lbl">Цена</div><div class="val price">${ev.price} руб</div></div>`);
+  if (ev.limit) details.push(`<div class="detail-row"><div class="lbl">Мест</div><div class="val">до ${ev.limit}</div></div>`);
+  document.getElementById('mDetails').innerHTML = details.join('');
+  document.getElementById('mDescr').textContent = ev.description || '';
+  document.getElementById('mBookBtn').href = ev.formUrl || '#';
+  document.getElementById('evModal').classList.add('show');
 }
+
+function closeModal() {
+  document.getElementById('evModal').classList.remove('show');
+}
+
+document.getElementById('evModal').addEventListener('click', e => {
+  if (e.target.id === 'evModal') closeModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+loadEvents();
 </script>
 </body>
 </html>

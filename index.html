@@ -272,6 +272,29 @@ main {
 .event-pill.cat-private { border-left-color: #d4a85c; background: #fdf6e8; }
 .event-pill.cat-expert  { border-left-color: #7a5b9a; background: #f1edf7; }
 
+.event-pill.st-draft     { opacity: 0.78; border-left-style: dashed; }
+.event-pill.st-published { /* по умолчанию */ }
+.event-pill.st-modified  { box-shadow: inset 0 0 0 2px var(--yellow); background: #fdf6e8; }
+.badge {
+  display: inline-block;
+  background: var(--yellow);
+  color: white;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+  font-weight: 600;
+  min-width: 18px;
+  text-align: center;
+}
+.event-pill .status-mark {
+  font-size: 9px;
+  margin-right: 4px;
+  opacity: 0.7;
+}
+.event-pill.st-published .status-mark { color: var(--green); opacity: 1; }
+.event-pill.st-modified .status-mark { color: var(--yellow); opacity: 1; }
+
 .event-pill.published-alfa::after {
   content: '✓';
   margin-left: 4px;
@@ -495,7 +518,8 @@ main {
     </div>
     <div class="sep"></div>
     <div class="group">
-      <button class="primary" onclick="publishToAlfa()">🚀 Опубликовать в Альфу</button>
+      <button class="primary" onclick="publishEventsToAlfa('create')" title="Создать в Альфе все события со статусом «Черновик»">🚀 Опубликовать черновики</button>
+      <button onclick="publishEventsToAlfa('sync')" title="Применить в Альфе все изменения" id="syncBtn" style="display:none">🔄 Применить изменения <span id="syncCount" class="badge"></span></button>
       <button class="ghost" onclick="testAlfaConnection()" title="Проверить связь с Альфа CRM">🔍</button>
     </div>
     <div class="sep"></div>
@@ -623,14 +647,20 @@ main {
       </div>
       <div class="row">
         <div>
-          <label>
-            <input type="checkbox" id="evPublishToAlfa" style="width:auto; margin-right:6px;">
-            Готово к публикации в Альфу
-          </label>
+          <label>Статус события в Альфе</label>
+          <div id="evStatusBlock" style="padding:7px 10px; border:1px solid var(--line); border-radius:6px; background:#fafafa; min-height:34px; font-size:12px;">—</div>
         </div>
         <div>
           <label>Комментарий</label>
           <input type="text" id="evComment">
+        </div>
+      </div>
+      <div class="row full" id="evCreateRow">
+        <div>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="evPublishToAlfa" style="width:auto;">
+            <span>Готово к публикации в Альфу <span style="color:var(--muted)">(будет создано при нажатии «🚀 Опубликовать черновики»)</span></span>
+          </label>
         </div>
       </div>
       <details style="margin-top: 12px;">
@@ -926,13 +956,18 @@ function renderCalendar() {
     const isToday = d.getTime() === today.getTime();
     const wkd = d.getDay();
     const isWe = wkd === 0 || wkd === 6;
-    const dayEvents = state.events.filter(e => e.date === dStr);
+    const dayEvents = state.events.filter(e => e.date === dStr && e.status !== 'archived');
     dayEvents.sort((a, b) => (a.timeStart || '99').localeCompare(b.timeStart || '99'));
-    const eventsHtml = dayEvents.map(ev => `
-      <div class="event-pill ${categoryClass(ev.format)} ${ev.publishedToAlfa ? 'published-alfa' : ''}" onclick="event.stopPropagation(); openEventEditor('${ev.id}')">
-        <span class="time">${ev.timeStart || '—'}</span><span class="name">${escapeHtml(ev.name || ev.format || '?')}</span>
-      </div>
-    `).join('');
+    const eventsHtml = dayEvents.map(ev => {
+      const st = ev.status || 'draft';
+      const stIcon = st === 'published' ? '✓' : st === 'modified' ? '⏳' : '◌';
+      const stTitle = st === 'published' ? 'Опубликовано в Альфе' : st === 'modified' ? 'Есть несохранённые изменения' : 'Черновик';
+      return `
+        <div class="event-pill ${categoryClass(ev.format)} st-${st}" onclick="event.stopPropagation(); openEventEditor('${ev.id}')" title="${stTitle}">
+          <span class="time">${ev.timeStart || '—'}</span><span class="status-mark">${stIcon}</span><span class="name">${escapeHtml(ev.name || ev.format || '?')}</span>
+        </div>
+      `;
+    }).join('');
     html += `
       <div class="day ${inMonth ? '' : 'other-month'} ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''}" onclick="openEventEditor(null, '${dStr}')">
         <span class="day-num">${d.getDate()}</span>
@@ -943,6 +978,7 @@ function renderCalendar() {
   grid.innerHTML = html;
   renderMonthStats();
   renderFinanceTab();
+  updateSyncButton();
 }
 
 function categoryClass(fmt) {
@@ -976,16 +1012,20 @@ function escapeHtml(s) {
 function renderMonthStats() {
   const m = state.curMonth.getMonth(), y = state.curMonth.getFullYear();
   const ev = state.events.filter(e => {
+    if (e.status === 'archived') return false;
     const d = new Date(e.date);
     return d.getMonth() === m && d.getFullYear() === y;
   });
-  const planned = ev.length;
-  const inAlfa = ev.filter(e => e.publishToAlfa).length;
+  const drafts = ev.filter(e => (e.status || 'draft') === 'draft').length;
+  const published = ev.filter(e => e.status === 'published').length;
+  const modified = ev.filter(e => e.status === 'modified').length;
   const revenue = ev.reduce((s, e) => s + (e.price || 0) * (e.limit || 0), 0);
   document.getElementById('monthStats').innerHTML = `
-    <div>📅 <b>${planned}</b> событий</div>
-    <div>🚀 <b>${inAlfa}</b> к публикации</div>
-    <div>💰 <b>${fmt(revenue)}</b> план выручки</div>
+    <div title="Всего событий в месяце">📅 <b>${ev.length}</b> событий</div>
+    <div title="Черновики (не в Альфе)">◌ <b>${drafts}</b></div>
+    <div title="Опубликованы в Альфе">✓ <b style="color:var(--green)">${published}</b></div>
+    ${modified > 0 ? `<div title="Изменения не отправлены в Альфу" style="color:var(--yellow)">⏳ <b>${modified}</b> к синку</div>` : ''}
+    <div>💰 <b>${fmt(revenue)}</b> план</div>
   `;
 }
 
@@ -1106,6 +1146,25 @@ function openEventEditor(eventId, defaultDate) {
   document.getElementById('evPublishToAlfa').checked = ev ? !!ev.publishToAlfa : false;
   document.getElementById('evComment').value = ev ? (ev.comment || '') : '';
 
+  // Блок статуса
+  const stBlock = document.getElementById('evStatusBlock');
+  const createRow = document.getElementById('evCreateRow');
+  if (!ev || ev.status === 'draft' || !ev.status) {
+    stBlock.innerHTML = '<span style="color:var(--muted)">◌ Черновик · в Альфе ещё не создано</span>';
+    createRow.style.display = 'block';
+  } else if (ev.status === 'published') {
+    stBlock.innerHTML = `<span style="color:var(--green)">✓ Опубликовано в Альфе · группа id=${ev.alfaGroupId}</span>` +
+      (ev.formUrl ? `<br><a href="${ev.formUrl}" target="_blank" style="font-size:11px;">🔗 Ссылка для записи клиентов</a>` : '');
+    createRow.style.display = 'none';
+  } else if (ev.status === 'modified') {
+    stBlock.innerHTML = `<span style="color:var(--yellow)">⏳ Есть изменения, не отправленные в Альфу (id=${ev.alfaGroupId})</span><br>` +
+      `<span style="font-size:11px; color:var(--muted)">Нажмите «🔄 Применить изменения» в шапке, чтобы синхронизировать</span>`;
+    createRow.style.display = 'none';
+  } else if (ev.status === 'archived') {
+    stBlock.innerHTML = '<span style="color:var(--red)">🗑 Помечено к архивации</span>';
+    createRow.style.display = 'none';
+  }
+
   updateEventFinStats();
   ['evPrice','evLimit','evCostPerson','evTeacher'].forEach(id =>
     document.getElementById(id).addEventListener('input', updateEventFinStats, { once: true })
@@ -1146,7 +1205,7 @@ function updateEventFinStats() {
 }
 
 function saveEvent() {
-  const ev = {
+  const newData = {
     id: state.editingEventId || ('e_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)),
     date: document.getElementById('evDate').value,
     timeStart: document.getElementById('evTime').value,
@@ -1161,26 +1220,97 @@ function saveEvent() {
     publishToAlfa: document.getElementById('evPublishToAlfa').checked,
     comment: document.getElementById('evComment').value.trim()
   };
-  if (!ev.date) { toast('Укажите дату', 'err'); return; }
-  if (!ev.format) { toast('Выберите формат', 'err'); return; }
-  if (!ev.name) { toast('Укажите название', 'err'); return; }
+  if (!newData.date)   { toast('Укажите дату', 'err'); return; }
+  if (!newData.format) { toast('Выберите формат', 'err'); return; }
+  if (!newData.name)   { toast('Укажите название', 'err'); return; }
 
-  const idx = state.events.findIndex(e => e.id === ev.id);
-  if (idx >= 0) state.events[idx] = ev;
-  else state.events.push(ev);
+  const idx = state.events.findIndex(e => e.id === newData.id);
+  if (idx < 0) {
+    // Новое событие — статус 'draft'
+    state.events.push({
+      ...newData,
+      status: 'draft',
+      alfaGroupId: null,
+      alfaLessonId: null,
+      formUrl: ''
+    });
+    toast('Событие добавлено как черновик', 'ok');
+  } else {
+    // Редактирование — определяем, изменилось ли что-то существенное
+    const prev = state.events[idx];
+    const fieldsForAlfa = ['date','timeStart','duration','format','name','price','limit','description'];
+    let hasAlfaChange = false;
+    for (const f of fieldsForAlfa) {
+      if ((prev[f] || '') !== (newData[f] || '')) { hasAlfaChange = true; break; }
+    }
+    let newStatus = prev.status || 'draft';
+    if (prev.status === 'published' && hasAlfaChange) {
+      newStatus = 'modified';
+    }
+    state.events[idx] = {
+      ...prev,
+      ...newData,
+      status: newStatus,
+      // ID и formUrl сохраняем
+      alfaGroupId: prev.alfaGroupId || null,
+      alfaLessonId: prev.alfaLessonId || null,
+      formUrl: prev.formUrl || ''
+    };
+    if (newStatus === 'modified') {
+      toast('Событие обновлено · нужно «Применить в Альфу»', 'ok');
+    } else {
+      toast('Событие обновлено', 'ok');
+    }
+  }
 
   closeModal('eventModal');
   renderCalendar();
-  toast(idx >= 0 ? 'Событие обновлено' : 'Событие добавлено', 'ok');
+  autosaveDraft();
 }
 
 function deleteCurrentEvent() {
   if (!state.editingEventId) return;
-  if (!confirm('Удалить это событие из конструктора?\n(в Альфе оно не удалится)')) return;
+  const ev = state.events.find(e => e.id === state.editingEventId);
+  if (!ev) return;
+  if (ev.status === 'published' && ev.alfaGroupId) {
+    if (!confirm(
+      'Это событие УЖЕ опубликовано в Альфе (id=' + ev.alfaGroupId + ').\n\n' +
+      'Удалить из конструктора и архивировать в Альфе?\n' +
+      '(если на группу записаны клиенты — их данные не пропадут, но группа станет неактивной)'
+    )) return;
+    // Помечаем archived — реальная архивация произойдёт при «Применить в Альфу»
+    ev.status = 'archived';
+    closeModal('eventModal');
+    renderCalendar();
+    toast('Событие помечено к архивации · нажмите «Применить в Альфу»', 'ok');
+    autosaveDraft();
+    return;
+  }
+  // Чистый черновик — просто удаляем
+  if (!confirm('Удалить это событие?')) return;
   state.events = state.events.filter(e => e.id !== state.editingEventId);
   closeModal('eventModal');
   renderCalendar();
   toast('Удалено', 'ok');
+  autosaveDraft();
+}
+
+// Тихое автосохранение черновика — чтобы изменения не терялись
+let autosaveTimer = null;
+function autosaveDraft() {
+  if (autosaveTimer) clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(async () => {
+    if (state.events.length === 0) return;
+    const monthLabel = MONTH_NAMES[state.curMonth.getMonth()] + ' ' + state.curMonth.getFullYear();
+    const name = state.draftName || ('Автосохранение · ' + monthLabel);
+    try {
+      const r = await apiPost('saveDraft', { id: state.draftId, name, state: currentState() });
+      if (r.ok && r.draft) {
+        state.draftId = r.draft.id;
+        state.draftName = name;
+      }
+    } catch(e) {}
+  }, 1500);
 }
 
 async function saveAsTemplate() {
@@ -1381,33 +1511,67 @@ async function testAlfaConnection() {
   }
 }
 
-async function publishToAlfa() {
+/**
+ * Унифицированная публикация в Альфу.
+ * mode = 'create' — отправляем в Альфу события со статусом 'draft' (создание)
+ *                  + все 'modified' (синхронизация) + 'archived' (архивация)
+ * mode = 'sync'   — то же самое, но если черновиков нет — просто синк изменений
+ *
+ * На бэке всё обрабатывается одним actionом syncEventsToAlfa.
+ */
+async function publishEventsToAlfa(mode) {
   if (state.events.length === 0) {
     toast('В календаре нет событий', 'err');
     return;
   }
-  const toPublish = state.events.filter(e => e.publishToAlfa);
-  const totalEv = state.events.length;
 
-  let confirmMsg;
-  if (toPublish.length === 0) {
-    confirmMsg = `В календаре ${totalEv} событий, но ни у одного нет галочки «Готово к публикации в Альфу».\n\n` +
-                 `Сохранить расписание (без отправки в Альфу)?`;
+  // Считаем что и в каком статусе
+  const drafts   = state.events.filter(e => (e.status || 'draft') === 'draft');
+  const modified = state.events.filter(e => e.status === 'modified');
+  const archived = state.events.filter(e => e.status === 'archived');
+
+  // Для 'create' будем отправлять только черновики, помеченные galочкой publishToAlfa.
+  // Если галочки нет — делаем подтверждение «Опубликовать всех?»
+  let toCreateCount;
+  if (mode === 'create') {
+    toCreateCount = drafts.filter(e => e.publishToAlfa).length;
+    if (toCreateCount === 0 && drafts.length > 0) {
+      if (confirm(
+        `${drafts.length} черновиков, но ни у одного нет галочки «Готово к публикации».\n\n` +
+        `Опубликовать ВСЕ черновики?`
+      )) {
+        // временно ставим всем черновикам publishToAlfa
+        drafts.forEach(d => d.publishToAlfa = true);
+        toCreateCount = drafts.length;
+      } else {
+        return;
+      }
+    }
   } else {
-    confirmMsg = `Сейчас будет:\n` +
-                 `• сохранён снимок месяца (${totalEv} событий)\n` +
-                 `• создано ${toPublish.length} групп в Альфа CRM\n\n` +
-                 `Продолжить?`;
+    // mode='sync' — черновики не трогаем (их публикуют отдельной кнопкой)
+    toCreateCount = 0;
   }
-  if (!confirm(confirmMsg)) return;
+
+  if (toCreateCount === 0 && modified.length === 0 && archived.length === 0) {
+    toast('Нет изменений для отправки в Альфу', 'err');
+    return;
+  }
+
+  const summary = [];
+  if (toCreateCount > 0) summary.push(`создать: ${toCreateCount}`);
+  if (modified.length > 0) summary.push(`обновить: ${modified.length}`);
+  if (archived.length > 0) summary.push(`архивировать: ${archived.length}`);
+  if (!confirm('В Альфу будет отправлено:\n• ' + summary.join('\n• ') + '\n\nПродолжить?')) return;
 
   const id = state.publishId || ('p_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4));
   const monthLabel = MONTH_NAMES[state.curMonth.getMonth()] + ' ' + state.curMonth.getFullYear();
 
-  // Показываем индикатор «отправляется»
-  toast('Публикую и отправляю в Альфу…', 'ok');
+  toast('Отправляю в Альфу…', 'ok');
 
-  const r = await apiPost('publishAndSendToAlfa', {
+  // ВНИМАНИЕ: бэку передаём те статусы, которые конкретно надо обработать.
+  // Для create-режима черновики уже помечены publishToAlfa=true.
+  // Бэк сам разделит по статусам (draft+publishToAlfa → create, modified → update, archived → archive).
+  const r = await apiPost('syncEventsToAlfa', {
     id,
     name: monthLabel + ' — ' + state.editorName,
     stateJson: JSON.stringify(currentState())
@@ -1420,37 +1584,64 @@ async function publishToAlfa() {
 
   state.publishId = id;
   const alfa = r.alfa || {};
-  const sync = r.sync || {};
 
-  // Обновляем локальное состояние: помечаем отправленные события
+  // Обновляем локальные статусы по результатам
   if (alfa.results) {
     alfa.results.forEach(res => {
       const ev = state.events.find(e => e.id === res.id);
-      if (ev && (res.groupId || res.skipped)) {
-        ev.publishedToAlfa = true;
+      if (!ev) return;
+      if (res.error) return; // оставляем как было
+      if (res.op === 'create' && res.groupId) {
+        ev.status = 'published';
         ev.alfaGroupId = res.groupId;
+        ev.alfaLessonId = res.lessonId;
+        ev.formUrl = res.formUrl;
+        ev.publishedToAlfa = true;
+      } else if (res.op === 'update') {
+        ev.status = 'published';   // снова синк
+      } else if (res.op === 'archive') {
+        // событие останется со статусом archived — фильтруется при отрисовке
       }
     });
-    renderCalendar();
   }
 
-  // Большое окно с результатом
-  let html = `<b>✅ Снимок сохранён.</b><br>В лист «События» записано ${sync.written || 0} событий (новых: ${sync.created || 0}, обновлено: ${sync.updated || 0}).`;
-  if (toPublish.length > 0) {
-    html += `<br><br><b>Альфа CRM:</b><br>`;
-    html += `Отправлено: <b style="color:var(--green)">${alfa.sent}</b> · `;
-    html += `Пропущено: ${alfa.skipped} · `;
-    html += `Ошибок: <b style="color:${alfa.errors > 0 ? 'var(--red)' : 'var(--muted)'}">${alfa.errors}</b>`;
-    if (alfa.errors > 0) {
-      const errs = (alfa.results || []).filter(x => x.error).slice(0, 5);
-      html += '<br><br><b>Ошибки:</b><br>' + errs.map(e =>
-        '<div style="font-size:11px; color:var(--red); margin-top:4px;">• ' +
-          escapeHtml(e.name || e.id) + ' — ' + escapeHtml(e.error) +
-        '</div>'
-      ).join('');
-    }
+  // Удаляем архивированные из локального состояния
+  state.events = state.events.filter(e => e.status !== 'archived');
+
+  renderCalendar();
+  await autosaveDraft();
+
+  // Показываем результат
+  let html = '';
+  if (alfa.created > 0) html += `<div>✅ Создано в Альфе: <b style="color:var(--green)">${alfa.created}</b></div>`;
+  if (alfa.updated > 0) html += `<div>🔄 Обновлено: <b>${alfa.updated}</b></div>`;
+  if (alfa.archived > 0) html += `<div>🗑 Архивировано: <b>${alfa.archived}</b></div>`;
+  if (alfa.errors > 0) {
+    html += `<div style="color:var(--red); margin-top: 8px;">⚠ Ошибок: <b>${alfa.errors}</b></div>`;
+    const errs = (alfa.results || []).filter(x => x.error).slice(0, 5);
+    html += errs.map(e =>
+      '<div style="font-size:11px; color:var(--red); margin-top:4px;">• ' +
+        escapeHtml(e.name || e.id) + ' (' + e.op + ') — ' + escapeHtml(e.error) +
+      '</div>'
+    ).join('');
   }
-  showResultModal('Результат публикации', html);
+  if (!html) html = 'Нет операций в Альфе.';
+  showResultModal('Результат', html);
+}
+
+// Обновление видимости кнопки «Применить изменения»
+function updateSyncButton() {
+  const modified = state.events.filter(e => e.status === 'modified').length;
+  const archived = state.events.filter(e => e.status === 'archived').length;
+  const total = modified + archived;
+  const btn = document.getElementById('syncBtn');
+  const cnt = document.getElementById('syncCount');
+  if (total > 0) {
+    btn.style.display = 'inline-flex';
+    cnt.textContent = total;
+  } else {
+    btn.style.display = 'none';
+  }
 }
 
 function showResultModal(title, html) {

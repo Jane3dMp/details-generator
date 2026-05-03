@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Расписание · Команда Деталей</title>
+<style>
+:root {
+  --bg: #faf8f5; --card: #ffffff; --ink: #2a2a2a; --muted: #8a8580;
+  --line: #ece6dd; --accent: #c2845b; --accent-dark: #9c6543;
+  --green: #5b8a4e; --yellow: #d4a85c;
+  --shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.04);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+  background: var(--bg); color: var(--ink); font-size: 14px; line-height: 1.5;
+}
+
+/* ВХОД */
+.login-screen {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.login-card {
+  background: var(--card); padding: 36px 40px; border-radius: 12px;
+  box-shadow: var(--shadow); width: 360px; text-align: center;
+}
+.login-card h1 { margin: 0 0 8px 0; font-size: 22px; font-weight: 600; }
+.login-card .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+.login-card input {
+  font-family: inherit; font-size: 14px; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 6px; width: 100%; margin-bottom: 12px;
+}
+.login-card input:focus { outline: none; border-color: var(--accent); }
+.login-card button {
+  width: 100%; padding: 10px; background: var(--accent); color: white;
+  border: none; border-radius: 6px; font-size: 14px; cursor: pointer;
+  font-family: inherit; font-weight: 500;
+}
+.login-card .err { color: #c45a5a; font-size: 12px; margin-top: 8px; min-height: 16px; }
+
+/* ОСНОВА */
+.app { display: none; }
+.app.show { display: block; }
+header {
+  background: white; border-bottom: 1px solid var(--line);
+  padding: 14px 20px; position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+header h1 em { color: var(--accent); font-style: normal; }
+header .badge { background: var(--bg); color: var(--muted); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+header .spacer { flex: 1; }
+.month-nav {
+  display: flex; align-items: center; gap: 6px;
+}
+.month-nav button {
+  border: 1px solid var(--line); background: white; padding: 5px 10px;
+  border-radius: 5px; cursor: pointer; font-family: inherit; font-size: 13px;
+}
+.month-nav button:hover { background: var(--bg); border-color: var(--accent); }
+.month-nav h2 {
+  margin: 0 8px; font-size: 15px; font-weight: 600; text-transform: capitalize;
+  min-width: 130px; text-align: center;
+}
+
+main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
+
+.legend {
+  display: flex; gap: 14px; margin-bottom: 12px; padding: 10px 14px;
+  background: white; border: 1px solid var(--line); border-radius: 8px;
+  font-size: 12px; flex-wrap: wrap;
+}
+.legend > div { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.legend .sw {
+  display: inline-block; width: 16px; height: 12px; border-radius: 3px; border-left: 3px solid;
+}
+.legend .sw.published { background: white; border-color: var(--accent); }
+.legend .sw.draft { background: #fafafa; border-color: var(--accent); border-left-style: dashed; opacity: .7; }
+.legend .sw.modified { background: #fdf6e8; border-color: var(--yellow); }
+
+.calendar {
+  background: white; border: 1px solid var(--line);
+  border-radius: 10px; overflow: hidden; box-shadow: var(--shadow);
+}
+.weekdays {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.weekdays > div {
+  padding: 8px 12px; font-size: 11px; font-weight: 600;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .5px;
+}
+.weekdays > div.weekend { color: var(--accent); }
+.days { display: grid; grid-template-columns: repeat(7, 1fr); }
+.day {
+  min-height: 110px; padding: 6px;
+  border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.day:nth-child(7n) { border-right: none; }
+.day.other-month { background: #fafafa; opacity: .35; }
+.day.weekend .day-num { color: var(--accent); }
+.day.today { background: #fdf6e8; }
+.day.today .day-num { background: var(--accent); color: white; }
+.day-num {
+  display: inline-block; min-width: 22px; height: 22px; line-height: 22px;
+  text-align: center; font-size: 12px; font-weight: 600; border-radius: 50%; margin-bottom: 4px;
+}
+.event-pill {
+  display: block; border-left: 3px solid var(--accent); background: #fdf3e9;
+  padding: 4px 7px; border-radius: 4px; font-size: 11px; margin-bottom: 3px;
+  cursor: pointer; transition: all .15s;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.35;
+}
+.event-pill:hover { background: white; box-shadow: 0 0 0 1px var(--accent); }
+.event-pill.draft     { opacity: 0.78; border-left-style: dashed; }
+.event-pill.modified  { background: #fdf6e8; box-shadow: inset 0 0 0 2px var(--yellow); }
+.event-pill .time { color: var(--muted); margin-right: 4px; font-weight: 500; }
+.event-pill .name { font-weight: 500; }
+.event-pill.cat-mk      { border-left-color: #c2845b; }
+.event-pill.cat-kino    { border-left-color: #5b7a9a; background: #eef2f7; }
+.event-pill.cat-book    { border-left-color: #5b8a4e; background: #eef5ec; }
+.event-pill.cat-party   { border-left-color: #b15a8a; background: #f9eaf2; }
+.event-pill.cat-private { border-left-color: #d4a85c; background: #fdf6e8; }
+.event-pill.cat-expert  { border-left-color: #7a5b9a; background: #f1edf7; }
+
+.empty {
+  padding: 80px 20px; text-align: center; color: var(--muted); font-size: 14px;
+  grid-column: 1 / -1;
+}
+.empty .big { font-size: 40px; margin-bottom: 8px; opacity: 0.4; }
+
+/* МОДАЛКА */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(40,30,20,.55);
+  display: none; align-items: flex-start; justify-content: center;
+  padding: 30px 16px; z-index: 100; overflow-y: auto;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  background: white; border-radius: 14px; width: 100%; max-width: 600px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25); overflow: hidden;
+}
+.modal-banner {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: white; padding: 18px 22px; position: relative;
+}
+.modal-banner.draft { background: linear-gradient(135deg, #888, #555); }
+.modal-banner.modified { background: linear-gradient(135deg, var(--yellow), #b08840); }
+.modal-banner .top {
+  display: flex; gap: 8px; margin-bottom: 8px;
+}
+.modal-banner .pill {
+  background: rgba(255,255,255,.22); padding: 3px 9px; border-radius: 12px;
+  font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .3px;
+}
+.modal-banner h2 { margin: 0 0 6px 0; font-size: 22px; font-weight: 600; line-height: 1.25; }
+.modal-banner .when { font-size: 14px; opacity: .9; }
+.modal-close {
+  position: absolute; top: 16px; right: 16px;
+  background: rgba(0,0,0,.15); border: none; color: white;
+  width: 30px; height: 30px; border-radius: 50%;
+  font-size: 16px; cursor: pointer; line-height: 1;
+}
+.modal-close:hover { background: rgba(0,0,0,.3); }
+.modal-body { padding: 18px 22px; max-height: 55vh; overflow-y: auto; }
+.detail-row { display: flex; gap: 10px; padding: 6px 0; font-size: 13px; }
+.detail-row .lbl { width: 110px; color: var(--muted); font-size: 12px; flex-shrink: 0; }
+.detail-row .val { flex: 1; }
+.descr {
+  margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line);
+  font-size: 13px; white-space: pre-line; line-height: 1.6; color: #444;
+}
+.descr.empty-descr { color: var(--muted); font-style: italic; }
+.modal-foot {
+  padding: 12px 22px; border-top: 1px solid var(--line);
+  background: var(--bg); display: flex; justify-content: flex-end; gap: 8px;
+}
+.btn {
+  background: white; color: var(--ink); border: 1px solid var(--line);
+  padding: 9px 14px; font-size: 13px; border-radius: 6px;
+  cursor: pointer; font-family: inherit;
+}
+.btn:hover { background: var(--bg); }
+.btn.copy { background: var(--accent); color: white; border-color: var(--accent); }
+.btn.copy:hover { background: var(--accent-dark); }
+
+@media (max-width: 700px) {
+  .day { min-height: 80px; padding: 3px; }
+  .event-pill { font-size: 9px; padding: 2px 4px; }
+  .event-pill .time { margin-right: 2px; }
+  header h1 { font-size: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Логин -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h1>Команда Деталей</h1>
+    <div class="sub">Расписание для маркетологов и SMM</div>
+    <input type="password" id="loginPwd" placeholder="Пароль" autofocus>
+    <button onclick="tryLogin()">Войти</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <header>
+    <h1>Команда · <em>Детали</em></h1>
+    <span class="badge">только просмотр</span>
+    <div class="spacer"></div>
+    <div class="month-nav">
+      <button onclick="prevMonth()">‹</button>
+      <h2 id="monthTitle">—</h2>
+      <button onclick="nextMonth()">›</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="legend">
+      <div><span class="sw published"></span> Опубликовано</div>
+      <div><span class="sw draft"></span> Черновик</div>
+      <div><span class="sw modified"></span> Есть изменения, не отправленные в Альфу</div>
+      <div style="margin-left:auto; font-size: 11px;">Клик по событию — детали и описание</div>
+    </div>
+    <div class="calendar">
+      <div class="weekdays" id="weekdays"></div>
+      <div class="days" id="daysGrid"><div class="empty"><div class="big">📅</div>Загрузка…</div></div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-bg" id="evModal">
+  <div class="modal">
+    <div class="modal-banner" id="mBanner">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="top">
+        <div class="pill" id="mFormat">—</div>
+        <div class="pill" id="mStatus">—</div>
+      </div>
+      <h2 id="mName">—</h2>
+      <div class="when" id="mWhen">—</div>
+    </div>
+    <div class="modal-body">
+      <div id="mDetails"></div>
+      <div class="descr" id="mDescr"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal()">Закрыть</button>
+      <button class="btn copy" onclick="copyDescription()">📋 Скопировать описание</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHrfjsxMyN2TGfAw-JH8MN0KW8QdUUy-bIQSlgjtEIciAw_FnbrL8ay5CrEcqrcQrF/exec';
+const PROJECT = 'details';
+const PASSWORD = '19082026team';
+
+const MONTH_NAMES = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const WEEKDAY_SHORT = ['пн','вт','ср','чт','пт','сб','вс'];
+const WEEKDAY_LONG = ['понедельник','вторник','среда','четверг','пятница','суббота','воскресенье'];
+
+const state = { curMonth: new Date(), events: [], currentEvent: null };
+
+// === Login ===
+function tryLogin() {
+  const pwd = document.getElementById('loginPwd').value;
+  if (pwd !== PASSWORD) {
+    document.getElementById('loginErr').textContent = 'Неверный пароль';
+    return;
+  }
+  localStorage.setItem('detali_team_pwd', pwd);
+  showApp();
+}
+(function autoLogin() {
+  const pwd = localStorage.getItem('detali_team_pwd');
+  if (pwd === PASSWORD) showApp();
+  document.getElementById('loginPwd').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+})();
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').classList.add('show');
+  loadEvents();
+}
+
+// === Утилиты ===
+function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+function categoryClass(fmt) {
+  if (!fmt) return '';
+  if (fmt.toLowerCase().startsWith('мк')) return 'cat-mk';
+  if (fmt === 'Киновечер') return 'cat-kino';
+  if (fmt === 'Книжный клуб') return 'cat-book';
+  if (fmt === 'Вечеринка' || fmt === 'Дегустация') return 'cat-party';
+  if (fmt === 'День рождения' || fmt === 'Свидание') return 'cat-private';
+  if (fmt === 'Встреча с экспертом') return 'cat-expert';
+  return '';
+}
+
+async function loadEvents() {
+  try {
+    const url = new URL(APPS_SCRIPT_URL);
+    url.searchParams.set('action', 'teamEvents');
+    url.searchParams.set('project', PROJECT);
+    const r = await fetch(url.toString()).then(x => x.json());
+    if (!r.ok) {
+      document.getElementById('daysGrid').innerHTML = '<div class="empty"><div class="big">😕</div>' + escapeHtml(r.error || 'Ошибка загрузки') + '</div>';
+      return;
+    }
+    state.events = r.events || [];
+    if (state.events.length > 0) {
+      const today = ymd(new Date());
+      const future = state.events.filter(e => e.date >= today);
+      const first = future.length ? future[0] : state.events[0];
+      const [y, m] = first.date.split('-').map(Number);
+      state.curMonth = new Date(y, m - 1, 1);
+    }
+    renderCalendar();
+  } catch(e) {
+    document.getElementById('daysGrid').innerHTML = '<div class="empty"><div class="big">😕</div>Не удалось связаться с сервером</div>';
+  }
+}
+
+function renderCalendar() {
+  const m = state.curMonth.getMonth();
+  const y = state.curMonth.getFullYear();
+  document.getElementById('monthTitle').textContent = MONTH_NAMES[m] + ' ' + y;
+
+  const wd = document.getElementById('weekdays');
+  wd.innerHTML = WEEKDAY_SHORT.map((d, i) => `<div class="${i >= 5 ? 'weekend' : ''}">${d}</div>`).join('');
+
+  const first = new Date(y, m, 1);
+  const startWd = (first.getDay() + 6) % 7;
+  const start = new Date(y, m, 1 - startWd);
+  const grid = document.getElementById('daysGrid');
+  let html = '';
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const dStr = ymd(d);
+    const inMonth = d.getMonth() === m;
+    const isToday = d.getTime() === today.getTime();
+    const wkd = d.getDay();
+    const isWe = wkd === 0 || wkd === 6;
+    const dayEvents = state.events.filter(e => e.date === dStr && e.status !== 'archived');
+    dayEvents.sort((a, b) => (a.timeStart || '99').localeCompare(b.timeStart || '99'));
+    const eventsHtml = dayEvents.map(ev => {
+      const st = ev.status || 'draft';
+      return `
+        <div class="event-pill ${categoryClass(ev.format)} ${st}" onclick="openEvent('${ev.id}')">
+          <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">${escapeHtml(ev.name || ev.format || '')}</span>
+        </div>
+      `;
+    }).join('');
+    html += `
+      <div class="day ${inMonth ? '' : 'other-month'} ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''}">
+        <span class="day-num">${d.getDate()}</span>
+        ${eventsHtml}
+      </div>
+    `;
+  }
+  grid.innerHTML = html;
+}
+
+function prevMonth() { state.curMonth = new Date(state.curMonth.getFullYear(), state.curMonth.getMonth() - 1, 1); renderCalendar(); }
+function nextMonth() { state.curMonth = new Date(state.curMonth.getFullYear(), state.curMonth.getMonth() + 1, 1); renderCalendar(); }
+
+function openEvent(id) {
+  const ev = state.events.find(e => e.id === id);
+  if (!ev) return;
+  state.currentEvent = ev;
+  const dt = new Date(ev.date);
+  const wd = WEEKDAY_LONG[(dt.getDay() + 6) % 7];
+  const banner = document.getElementById('mBanner');
+  banner.classList.remove('draft', 'modified');
+  const st = ev.status || 'draft';
+  if (st !== 'published') banner.classList.add(st);
+
+  const stLabel = st === 'published' ? '✓ Опубликовано'
+    : st === 'modified' ? '⏳ Есть изменения'
+    : '◌ Черновик';
+
+  document.getElementById('mFormat').textContent = ev.format || '';
+  document.getElementById('mStatus').textContent = stLabel;
+  document.getElementById('mName').textContent = ev.name || ev.format || '';
+  document.getElementById('mWhen').textContent = `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]}, ${wd}, в ${ev.timeStart || '—'}`;
+
+  const details = [];
+  if (ev.duration) details.push(`<div class="detail-row"><div class="lbl">Длительность</div><div class="val">${ev.duration} ч</div></div>`);
+  if (ev.teacher) details.push(`<div class="detail-row"><div class="lbl">Ведущий</div><div class="val">${escapeHtml(ev.teacher)}</div></div>`);
+  if (ev.price) details.push(`<div class="detail-row"><div class="lbl">Цена</div><div class="val">${ev.price} руб</div></div>`);
+  if (ev.limit) details.push(`<div class="detail-row"><div class="lbl">Лимит</div><div class="val">до ${ev.limit} чел</div></div>`);
+  if (ev.alfaGroupId) details.push(`<div class="detail-row"><div class="lbl">ID в Альфе</div><div class="val">${ev.alfaGroupId}</div></div>`);
+  document.getElementById('mDetails').innerHTML = details.join('');
+
+  const descrEl = document.getElementById('mDescr');
+  if (ev.description) {
+    descrEl.classList.remove('empty-descr');
+    descrEl.textContent = ev.description;
+  } else {
+    descrEl.classList.add('empty-descr');
+    descrEl.textContent = '— описание ещё не подготовлено —';
+  }
+
+  document.getElementById('evModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('evModal').classList.remove('show');
+}
+
+function copyDescription() {
+  const ev = state.currentEvent;
+  if (!ev) return;
+  const dt = new Date(ev.date);
+  const wd = WEEKDAY_LONG[(dt.getDay() + 6) % 7];
+  const text = [
+    ev.name || ev.format,
+    `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]}, ${wd}, ${ev.timeStart || ''}`,
+    ev.price ? ev.price + ' руб' : '',
+    '',
+    ev.description || ''
+  ].filter(Boolean).join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target.closest('button');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Скопировано';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
+}
+
+document.getElementById('evModal').addEventListener('click', e => {
+  if (e.target.id === 'evModal') closeModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>
