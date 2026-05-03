@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конструктор «Детали»</title>
+<style>
+/* ============== БАЗА ============== */
+:root {
+  --bg: #faf8f5;
+  --card: #ffffff;
+  --ink: #2a2a2a;
+  --muted: #8a8580;
+  --line: #ece6dd;
+  --accent: #c2845b;          /* терракот «Деталей» */
+  --accent-dark: #9c6543;
+  --hover: #f5efe5;
+  --green: #5b8a4e;
+  --red: #c45a5a;
+  --yellow: #d4a85c;
+  --blue: #5b7a9a;
+  --shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.04);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+button {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .12s ease;
+  white-space: nowrap;
+}
+button:hover { background: var(--hover); border-color: var(--accent); }
+button:active { transform: translateY(1px); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button.primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+button.primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+button.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+button.ghost:hover { background: var(--hover); color: var(--ink); }
+button.danger { color: var(--red); }
+button.danger:hover { background: #fdf0f0; border-color: var(--red); }
+input, select, textarea {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--ink);
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(194,132,91,.12);
+}
+textarea { resize: vertical; min-height: 80px; }
+label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+
+/* ============== ЛОГИН ============== */
+.login-screen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.login-card {
+  background: var(--card);
+  padding: 36px 40px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  width: 360px;
+  text-align: center;
+}
+.login-card h1 {
+  margin: 0 0 8px 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+.login-card .sub {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+.login-card input { margin-bottom: 12px; }
+.login-card .err { color: var(--red); font-size: 12px; margin-top: 8px; height: 16px; }
+
+/* ============== ЛЭЙАУТ ============== */
+.app { display: none; min-height: 100vh; flex-direction: column; }
+.app.show { display: flex; }
+header {
+  background: white;
+  border-bottom: 1px solid var(--line);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+header h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+header h1 em {
+  color: var(--accent);
+  font-style: normal;
+  font-weight: 600;
+}
+header .spacer { flex: 1; }
+header .pill {
+  background: var(--hover);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+header .pill.warn { background: #fdf6e8; color: var(--yellow); }
+header .pill.alive { background: #eef5ec; color: var(--green); }
+header .pill.warn::before, header .pill.alive::before {
+  content: '';
+  display: inline-block;
+  width: 7px; height: 7px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% {opacity:1} 50% {opacity:.4} }
+
+.toolbar {
+  background: white;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.toolbar .group { display: flex; gap: 4px; }
+.toolbar .sep { width: 1px; height: 24px; background: var(--line); margin: 0 4px; }
+
+main {
+  flex: 1;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+}
+.calendar-wrap { min-width: 0; }
+.sidebar { min-width: 0; }
+
+/* ============== КАЛЕНДАРЬ ============== */
+.month-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.month-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.month-header .month-stats {
+  margin-left: auto;
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.month-header .month-stats b { color: var(--ink); font-size: 14px; }
+
+.calendar {
+  background: white;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--hover);
+  border-bottom: 1px solid var(--line);
+}
+.weekdays > div {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.weekdays > div.weekend { color: var(--accent); }
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.day {
+  min-height: 110px;
+  padding: 6px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  cursor: pointer;
+  transition: background .12s;
+}
+.day:hover { background: var(--hover); }
+.day:nth-child(7n) { border-right: none; }
+.day.other-month { background: #faf8f5; opacity: .4; }
+.day.weekend .day-num { color: var(--accent); }
+.day.today { background: #fdf6e8; }
+.day.today .day-num { background: var(--accent); color: white; }
+
+.day-num {
+  display: inline-block;
+  min-width: 22px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 50%;
+  margin-bottom: 4px;
+}
+
+.event-pill {
+  display: block;
+  background: var(--hover);
+  border-left: 3px solid var(--accent);
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  line-height: 1.3;
+}
+.event-pill:hover { background: white; box-shadow: 0 0 0 1px var(--accent); }
+.event-pill .time { color: var(--muted); margin-right: 4px; font-weight: 500; }
+.event-pill .name { font-weight: 500; }
+.event-pill.cat-mk      { border-left-color: #c2845b; background: #fdf3e9; }
+.event-pill.cat-kino    { border-left-color: #5b7a9a; background: #eef2f7; }
+.event-pill.cat-book    { border-left-color: #5b8a4e; background: #eef5ec; }
+.event-pill.cat-party   { border-left-color: #b15a8a; background: #f9eaf2; }
+.event-pill.cat-private { border-left-color: #d4a85c; background: #fdf6e8; }
+.event-pill.cat-expert  { border-left-color: #7a5b9a; background: #f1edf7; }
+
+.event-pill.published-alfa::after {
+  content: '✓';
+  margin-left: 4px;
+  color: var(--green);
+  font-weight: bold;
+}
+
+/* ============== САЙДБАР ============== */
+.sidebar-tabs {
+  display: flex;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.sidebar-tabs button {
+  flex: 1;
+  border: none;
+  border-radius: 0;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--muted);
+}
+.sidebar-tabs button.active {
+  background: var(--accent);
+  color: white;
+}
+.sidebar-tabs button:hover:not(.active) { background: var(--hover); color: var(--ink); }
+
+.panel {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  padding: 12px;
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+}
+.panel h3 {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.panel h3 .count {
+  background: var(--hover);
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.list-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid transparent;
+}
+.list-item:hover { background: var(--hover); border-color: var(--line); }
+.list-item .meta { color: var(--muted); font-size: 11px; }
+.list-item .ttl { font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ============== МОДАЛКИ ============== */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(40,30,20,.45);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px;
+  z-index: 100;
+  overflow-y: auto;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  overflow: hidden;
+  animation: slideIn .2s ease;
+}
+.modal.wide { max-width: 800px; }
+@keyframes slideIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.modal-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.modal-head h2 { margin: 0; font-size: 16px; font-weight: 600; flex: 1; }
+.modal-body { padding: 16px 20px; max-height: 70vh; overflow-y: auto; }
+.modal-foot {
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--bg);
+}
+.modal-foot .right { display: flex; gap: 8px; }
+
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.row.three { grid-template-columns: 1fr 1fr 1fr; }
+.row.full { grid-template-columns: 1fr; }
+.row > div { min-width: 0; }
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  z-index: 1000;
+  animation: toastIn .2s ease;
+}
+.toast.err { background: var(--red); }
+.toast.ok { background: var(--green); }
+@keyframes toastIn { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+
+.fin-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  font-size: 12px;
+}
+.fin-stats > div {
+  background: var(--hover);
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.fin-stats > div .ttl { color: var(--muted); font-size: 11px; margin-bottom: 2px; }
+.fin-stats > div .val { font-size: 16px; font-weight: 600; }
+.fin-stats > div.green .val { color: var(--green); }
+
+/* AI loader */
+.ai-loader {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 1100px) {
+  main { grid-template-columns: 1fr; }
+  .sidebar { order: -1; }
+}
+@media (max-width: 700px) {
+  .day { min-height: 80px; padding: 4px; font-size: 10px; }
+  .event-pill { font-size: 10px; }
+  header h1 { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ====== ЭКРАН ВХОДА ====== -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h1>Детали · конструктор</h1>
+    <div class="sub">Сетка мероприятий студии</div>
+    <input type="password" id="loginPwd" placeholder="Пароль" autofocus>
+    <input type="text" id="loginName" placeholder="Ваше имя (для уведомлений)">
+    <button class="primary" style="width:100%; padding:10px;" onclick="tryLogin()">Войти</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ====== ОСНОВНОЕ ПРИЛОЖЕНИЕ ====== -->
+<div class="app" id="app">
+
+  <header>
+    <h1>Конструктор · <em>Детали</em></h1>
+    <span class="pill alive" id="connPill">Соединено</span>
+    <span class="pill warn" id="othersPill" style="display:none"></span>
+    <div class="spacer"></div>
+    <button class="ghost" onclick="logout()">🚪 Выйти</button>
+  </header>
+
+  <div class="toolbar">
+    <div class="group">
+      <button onclick="prevMonth()">‹</button>
+      <button onclick="nextMonth()">›</button>
+      <button onclick="goToToday()">Сегодня</button>
+    </div>
+    <div class="sep"></div>
+    <div class="group">
+      <button onclick="openEventEditor()">＋ Событие</button>
+      <button onclick="openTemplatesPicker()">📚 Из шаблонов</button>
+    </div>
+    <div class="sep"></div>
+    <div class="group">
+      <button onclick="saveDraft()">💾 Сохранить</button>
+      <button onclick="openDraftsList()">📁 Черновики</button>
+    </div>
+    <div class="sep"></div>
+    <div class="group">
+      <button class="primary" onclick="publishToAlfa()">🚀 Опубликовать в Альфу</button>
+      <button class="ghost" onclick="testAlfaConnection()" title="Проверить связь с Альфа CRM">🔍</button>
+    </div>
+    <div class="sep"></div>
+    <div class="group">
+      <button onclick="exportJson()">↓ JSON</button>
+      <button onclick="importJson()">↑ JSON</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="calendar-wrap">
+      <div class="month-header">
+        <h2 id="monthTitle">—</h2>
+        <div class="month-stats" id="monthStats"></div>
+      </div>
+      <div class="calendar">
+        <div class="weekdays" id="weekdays"></div>
+        <div class="days" id="daysGrid"></div>
+      </div>
+    </div>
+
+    <aside class="sidebar">
+      <div class="sidebar-tabs">
+        <button class="active" data-tab="finance" onclick="switchTab('finance')">💰 Финансы</button>
+        <button data-tab="library" onclick="switchTab('library')">📚 Библиотека</button>
+        <button data-tab="staff" onclick="switchTab('staff')">👥 Педагоги</button>
+      </div>
+
+      <div id="tabFinance">
+        <div class="panel">
+          <h3>Месяц в цифрах</h3>
+          <div class="fin-stats" id="finStats"></div>
+        </div>
+        <div class="panel">
+          <h3>По форматам <span class="count" id="formatBreakdownCount">0</span></h3>
+          <div id="formatBreakdown"></div>
+        </div>
+      </div>
+
+      <div id="tabLibrary" style="display:none">
+        <div class="panel">
+          <h3>Шаблоны событий <span class="count" id="tplCount">0</span></h3>
+          <div id="templatesList" style="max-height:500px; overflow-y:auto;"></div>
+        </div>
+        <div class="panel">
+          <h3>Форматы <span class="count" id="fmtCount">0</span></h3>
+          <div id="formatsList"></div>
+          <button class="ghost" style="margin-top:8px; width:100%;" onclick="openAddFormat()">＋ Новый формат</button>
+        </div>
+      </div>
+
+      <div id="tabStaff" style="display:none">
+        <div class="panel">
+          <h3>Педагоги <span class="count" id="staffCount">0</span></h3>
+          <div id="staffList" style="max-height:500px; overflow-y:auto;"></div>
+          <button class="ghost" style="margin-top:8px; width:100%;" onclick="openAddTeacher()">＋ Новый педагог</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<!-- ====== МОДАЛКА: РЕДАКТИРОВАНИЕ СОБЫТИЯ ====== -->
+<div class="modal-bg" id="eventModal">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2 id="eventModalTitle">Новое событие</h2>
+      <button class="ghost" onclick="closeModal('eventModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="row three">
+        <div>
+          <label>Дата</label>
+          <input type="date" id="evDate">
+        </div>
+        <div>
+          <label>Время начала</label>
+          <input type="time" id="evTime">
+        </div>
+        <div>
+          <label>Длительность (ч)</label>
+          <input type="number" id="evDuration" step="0.5" min="0.5" value="2.5">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Формат</label>
+          <select id="evFormat" onchange="onFormatChange()"></select>
+        </div>
+        <div>
+          <label>Педагог</label>
+          <select id="evTeacher"></select>
+        </div>
+      </div>
+      <div class="row full">
+        <div>
+          <label>Название события</label>
+          <input type="text" id="evName" placeholder="Например: Кружка с предсказанием">
+        </div>
+      </div>
+      <div class="row three">
+        <div>
+          <label>Цена клиенту, руб</label>
+          <input type="number" id="evPrice" min="0">
+        </div>
+        <div>
+          <label>Лимит участников</label>
+          <input type="number" id="evLimit" min="1" value="12">
+        </div>
+        <div>
+          <label>Расход на чел., руб</label>
+          <input type="number" id="evCostPerson" min="0">
+        </div>
+      </div>
+      <div class="row full">
+        <div>
+          <label>Описание (для маркетинга и Альфы)
+            <button class="ghost" style="float:right; padding: 2px 8px; font-size: 11px;" onclick="aiGenerateDescription()" id="aiBtn">
+              <span id="aiSpinner" style="display:none"><span class="ai-loader"></span></span>
+              ✨ Сгенерировать ИИ
+            </button>
+          </label>
+          <textarea id="evDescr" rows="6" placeholder="Краткий маркетинговый текст для публикации"></textarea>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>
+            <input type="checkbox" id="evPublishToAlfa" style="width:auto; margin-right:6px;">
+            Готово к публикации в Альфу
+          </label>
+        </div>
+        <div>
+          <label>Комментарий</label>
+          <input type="text" id="evComment">
+        </div>
+      </div>
+      <details style="margin-top: 12px;">
+        <summary style="cursor: pointer; color: var(--muted); font-size: 12px;">💡 Финансовый прогноз</summary>
+        <div class="fin-stats" style="margin-top: 8px;" id="evFinStats"></div>
+      </details>
+    </div>
+    <div class="modal-foot">
+      <button class="danger" onclick="deleteCurrentEvent()" id="evDeleteBtn" style="display:none">🗑 Удалить</button>
+      <div class="right">
+        <button onclick="closeModal('eventModal')">Отмена</button>
+        <button class="ghost" onclick="saveAsTemplate()">💾 В шаблоны</button>
+        <button class="primary" onclick="saveEvent()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== МОДАЛКА: ШАБЛОНЫ ====== -->
+<div class="modal-bg" id="tplModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Выбрать шаблон события</h2>
+      <button class="ghost" onclick="closeModal('tplModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="tplSearch" placeholder="Поиск по названию, формату, тегам…" style="margin-bottom: 12px;" oninput="renderTemplatesPicker()">
+      <div id="tplPickerList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== МОДАЛКА: ЧЕРНОВИКИ ====== -->
+<div class="modal-bg" id="draftsModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Черновики</h2>
+      <button class="ghost" onclick="closeModal('draftsModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="draftsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== МОДАЛКА: ДОБАВЛЕНИЕ ФОРМАТА ====== -->
+<div class="modal-bg" id="formatModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Новый формат события</h2>
+      <button class="ghost" onclick="closeModal('formatModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="row full"><div>
+        <label>Название формата</label>
+        <input type="text" id="fmtName" placeholder="Например: МК Свечи">
+      </div></div>
+      <div class="row">
+        <div>
+          <label>Категория</label>
+          <select id="fmtCategory">
+            <option>Творчество</option><option>Развлечения</option>
+            <option>Образование</option><option>Уход</option>
+            <option>Частное</option><option>Другое</option>
+          </select>
+        </div>
+        <div>
+          <label>Длительность (ч)</label>
+          <input type="number" id="fmtDuration" step="0.5" value="2.5">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Цена по умолчанию, руб</label>
+          <input type="number" id="fmtPrice">
+        </div>
+        <div>
+          <label>Лимит по умолчанию</label>
+          <input type="number" id="fmtLimit" value="12">
+        </div>
+      </div>
+      <div class="row full"><div>
+        <label>Шаблон описания</label>
+        <textarea id="fmtTemplate" rows="3" placeholder="Шаблон, по которому ИИ будет генерировать описания"></textarea>
+      </div></div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div class="right">
+        <button onclick="closeModal('formatModal')">Отмена</button>
+        <button class="primary" onclick="addFormat()">Добавить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== МОДАЛКА: ДОБАВЛЕНИЕ ПЕДАГОГА ====== -->
+<div class="modal-bg" id="teacherModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Новый педагог</h2>
+      <button class="ghost" onclick="closeModal('teacherModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="row full"><div>
+        <label>ФИО (как в Альфа CRM)</label>
+        <input type="text" id="thName" placeholder="Например: Иванова Анна">
+      </div></div>
+      <div class="row">
+        <div>
+          <label>Ставка, руб</label>
+          <input type="number" id="thRate">
+        </div>
+        <div>
+          <label>ID в Альфе</label>
+          <input type="number" id="thAlfaId">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Контакт</label>
+          <input type="text" id="thContact">
+        </div>
+        <div>
+          <label>Специализация</label>
+          <input type="text" id="thSpec">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div class="right">
+        <button onclick="closeModal('teacherModal')">Отмена</button>
+        <button class="primary" onclick="addTeacher()">Добавить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// КОНФИГ — ПОДСТАВЬТЕ СВОЙ APPS_SCRIPT_URL ПОСЛЕ ДЕПЛОЯ
+// ============================================================
+const CONFIG = {
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyHrfjsxMyN2TGfAw-JH8MN0KW8QdUUy-bIQSlgjtEIciAw_FnbrL8ay5CrEcqrcQrF/exec',
+  PROJECT: 'details',
+  PASSWORD_HASH: '19082026' // меняется в коде; см. README
+};
+
+// ============================================================
+// СОСТОЯНИЕ ПРИЛОЖЕНИЯ
+// ============================================================
+const state = {
+  // навигация
+  curMonth: new Date(),
+  // данные с сервера
+  formats: [],
+  teachers: [],
+  templates: [],
+  // календарь — события { id, date 'YYYY-MM-DD', timeStart 'HH:MM', duration, format, name, teacher, price, limit, costPerPerson, description, publishToAlfa, comment }
+  events: [],
+  // черновики
+  draftId: null,
+  draftName: '',
+  // публикация
+  publishId: null,
+  // сессия
+  sessionId: 's_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4),
+  editorName: '',
+  // редактирование события
+  editingEventId: null
+};
+
+// ============================================================
+// ВХОД
+// ============================================================
+function tryLogin() {
+  const pwd = document.getElementById('loginPwd').value;
+  const name = document.getElementById('loginName').value.trim();
+  if (pwd !== CONFIG.PASSWORD_HASH) {
+    document.getElementById('loginErr').textContent = 'Неверный пароль';
+    return;
+  }
+  if (!name) {
+    document.getElementById('loginErr').textContent = 'Введите имя';
+    return;
+  }
+  state.editorName = name;
+  localStorage.setItem('detali_pwd', pwd);
+  localStorage.setItem('detali_name', name);
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').classList.add('show');
+  bootstrap();
+}
+
+function logout() {
+  if (!confirm('Точно выйти?')) return;
+  localStorage.removeItem('detali_pwd');
+  localStorage.removeItem('detali_name');
+  endSession();
+  location.reload();
+}
+
+(function autoLogin() {
+  const pwd = localStorage.getItem('detali_pwd');
+  const name = localStorage.getItem('detali_name');
+  if (pwd === CONFIG.PASSWORD_HASH && name) {
+    state.editorName = name;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    bootstrap();
+  }
+  document.getElementById('loginPwd').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginName').focus(); });
+  document.getElementById('loginName').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+})();
+
+// ============================================================
+// API
+// ============================================================
+async function apiGet(action, extra = {}) {
+  const url = new URL(CONFIG.APPS_SCRIPT_URL);
+  url.searchParams.set('action', action);
+  url.searchParams.set('project', CONFIG.PROJECT);
+  Object.entries(extra).forEach(([k, v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString(), { method: 'GET' });
+  return res.json();
+}
+async function apiPost(action, body = {}) {
+  const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action, project: CONFIG.PROJECT, ...body })
+  });
+  return res.json();
+}
+
+// ============================================================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+async function bootstrap() {
+  if (CONFIG.APPS_SCRIPT_URL.includes('PUT_YOUR')) {
+    toast('⚠ APPS_SCRIPT_URL не настроен в index.html', 'err');
+    renderCalendar();
+    return;
+  }
+  try {
+    const r = await apiGet('all');
+    if (r.ok) {
+      state.formats = r.formats || [];
+      state.teachers = r.teachers || [];
+      state.templates = r.templates || [];
+    } else {
+      toast('Ошибка загрузки: ' + (r.error || ''), 'err');
+    }
+  } catch(e) {
+    toast('Не удалось связаться с сервером', 'err');
+  }
+  renderCalendar();
+  renderSidebar();
+  startHeartbeat();
+}
+
+// ============================================================
+// КАЛЕНДАРЬ
+// ============================================================
+const MONTH_NAMES = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const WEEKDAY_SHORT = ['пн','вт','ср','чт','пт','сб','вс'];
+
+function renderCalendar() {
+  const m = state.curMonth.getMonth();
+  const y = state.curMonth.getFullYear();
+  document.getElementById('monthTitle').textContent = MONTH_NAMES[m] + ' ' + y;
+
+  // дни недели
+  const wd = document.getElementById('weekdays');
+  wd.innerHTML = WEEKDAY_SHORT.map((d, i) => `<div class="${i >= 5 ? 'weekend' : ''}">${d}</div>`).join('');
+
+  // первый день месяца
+  const first = new Date(y, m, 1);
+  const last = new Date(y, m + 1, 0);
+  // понедельник первой недели
+  const startWd = (first.getDay() + 6) % 7;  // 0=пн
+  const start = new Date(y, m, 1 - startWd);
+  // ровно 6 недель = 42 дня
+  const grid = document.getElementById('daysGrid');
+  let html = '';
+  const today = new Date(); today.setHours(0,0,0,0);
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const dStr = ymd(d);
+    const inMonth = d.getMonth() === m;
+    const isToday = d.getTime() === today.getTime();
+    const wkd = d.getDay();
+    const isWe = wkd === 0 || wkd === 6;
+    const dayEvents = state.events.filter(e => e.date === dStr);
+    dayEvents.sort((a, b) => (a.timeStart || '99').localeCompare(b.timeStart || '99'));
+    const eventsHtml = dayEvents.map(ev => `
+      <div class="event-pill ${categoryClass(ev.format)} ${ev.publishedToAlfa ? 'published-alfa' : ''}" onclick="event.stopPropagation(); openEventEditor('${ev.id}')">
+        <span class="time">${ev.timeStart || '—'}</span><span class="name">${escapeHtml(ev.name || ev.format || '?')}</span>
+      </div>
+    `).join('');
+    html += `
+      <div class="day ${inMonth ? '' : 'other-month'} ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''}" onclick="openEventEditor(null, '${dStr}')">
+        <span class="day-num">${d.getDate()}</span>
+        ${eventsHtml}
+      </div>
+    `;
+  }
+  grid.innerHTML = html;
+  renderMonthStats();
+  renderFinanceTab();
+}
+
+function categoryClass(fmt) {
+  if (!fmt) return '';
+  const f = state.formats.find(x => x.name === fmt);
+  const cat = (f && f.category) ? f.category.toLowerCase() : '';
+  if (fmt.toLowerCase().startsWith('мк')) return 'cat-mk';
+  if (fmt === 'Киновечер') return 'cat-kino';
+  if (fmt === 'Книжный клуб') return 'cat-book';
+  if (fmt === 'Вечеринка') return 'cat-party';
+  if (fmt === 'День рождения' || fmt === 'Свидание') return 'cat-private';
+  if (fmt === 'Встреча с экспертом') return 'cat-expert';
+  return '';
+}
+
+function prevMonth() { state.curMonth = new Date(state.curMonth.getFullYear(), state.curMonth.getMonth() - 1, 1); renderCalendar(); }
+function nextMonth() { state.curMonth = new Date(state.curMonth.getFullYear(), state.curMonth.getMonth() + 1, 1); renderCalendar(); }
+function goToToday() { state.curMonth = new Date(); renderCalendar(); }
+
+function ymd(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+function renderMonthStats() {
+  const m = state.curMonth.getMonth(), y = state.curMonth.getFullYear();
+  const ev = state.events.filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() === m && d.getFullYear() === y;
+  });
+  const planned = ev.length;
+  const inAlfa = ev.filter(e => e.publishToAlfa).length;
+  const revenue = ev.reduce((s, e) => s + (e.price || 0) * (e.limit || 0), 0);
+  document.getElementById('monthStats').innerHTML = `
+    <div>📅 <b>${planned}</b> событий</div>
+    <div>🚀 <b>${inAlfa}</b> к публикации</div>
+    <div>💰 <b>${fmt(revenue)}</b> план выручки</div>
+  `;
+}
+
+// ============================================================
+// САЙДБАР
+// ============================================================
+function switchTab(t) {
+  document.querySelectorAll('.sidebar-tabs button').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.sidebar-tabs button[data-tab="${t}"]`).classList.add('active');
+  ['finance','library','staff'].forEach(x => document.getElementById('tab' + cap(x)).style.display = (x === t ? 'block' : 'none'));
+  if (t === 'library') renderLibraryTab();
+  if (t === 'staff') renderStaffTab();
+}
+function cap(s) { return s[0].toUpperCase() + s.slice(1); }
+
+function renderSidebar() {
+  renderFinanceTab();
+}
+
+function renderFinanceTab() {
+  const m = state.curMonth.getMonth(), y = state.curMonth.getFullYear();
+  const ev = state.events.filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() === m && d.getFullYear() === y;
+  });
+  let revenue = 0, cost = 0;
+  ev.forEach(e => {
+    const r = (e.price || 0) * (e.limit || 0);
+    const teacher = state.teachers.find(t => t.name === e.teacher);
+    const teacherCost = teacher && teacher.rate ? teacher.rate : 0;
+    const c = teacherCost + (e.costPerPerson || 0) * (e.limit || 0);
+    revenue += r;
+    cost += c;
+  });
+  const margin = revenue - cost;
+  document.getElementById('finStats').innerHTML = `
+    <div><div class="ttl">Выручка</div><div class="val">${fmt(revenue)}</div></div>
+    <div><div class="ttl">Расход</div><div class="val">${fmt(cost)}</div></div>
+    <div class="green"><div class="ttl">Маржа</div><div class="val">${fmt(margin)}</div></div>
+  `;
+  // По форматам
+  const byFmt = {};
+  ev.forEach(e => {
+    if (!byFmt[e.format]) byFmt[e.format] = { count: 0, revenue: 0 };
+    byFmt[e.format].count++;
+    byFmt[e.format].revenue += (e.price || 0) * (e.limit || 0);
+  });
+  const arr = Object.entries(byFmt).sort((a,b) => b[1].count - a[1].count);
+  document.getElementById('formatBreakdownCount').textContent = arr.length;
+  document.getElementById('formatBreakdown').innerHTML = arr.length ? arr.map(([f, s]) => `
+    <div class="list-item">
+      <span class="ttl">${escapeHtml(f || '—')}</span>
+      <span class="meta">${s.count} · ${fmt(s.revenue)}</span>
+    </div>
+  `).join('') : '<div style="color:var(--muted); padding: 8px; font-size: 12px;">Нет событий</div>';
+}
+
+function renderLibraryTab() {
+  document.getElementById('tplCount').textContent = state.templates.length;
+  document.getElementById('templatesList').innerHTML = state.templates.length ? state.templates.map(t => `
+    <div class="list-item" onclick="useTemplate(${t.rowIdx})">
+      <div style="flex:1; min-width:0;">
+        <div class="ttl">${escapeHtml(t.name)}</div>
+        <div class="meta">${escapeHtml(t.format || '')} ${t.price ? '· ' + t.price + ' руб' : ''}</div>
+      </div>
+      <div class="meta">×${t.usedCount || 0}</div>
+    </div>
+  `).join('') : '<div style="color:var(--muted); padding: 8px; font-size: 12px;">Шаблонов пока нет. Создайте событие и нажмите «В шаблоны».</div>';
+
+  document.getElementById('fmtCount').textContent = state.formats.length;
+  document.getElementById('formatsList').innerHTML = state.formats.map(f => `
+    <div class="list-item">
+      <span class="ttl">${escapeHtml(f.name)}</span>
+      <span class="meta">${escapeHtml(f.category || '')}</span>
+    </div>
+  `).join('');
+}
+
+function renderStaffTab() {
+  document.getElementById('staffCount').textContent = state.teachers.length;
+  document.getElementById('staffList').innerHTML = state.teachers.map(t => `
+    <div class="list-item">
+      <div style="flex:1; min-width:0;">
+        <div class="ttl">${escapeHtml(t.name)}</div>
+        <div class="meta">${escapeHtml(t.spec || '')}${t.rate ? ' · ' + t.rate + ' руб' : ''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// СОБЫТИЕ — РЕДАКТОР
+// ============================================================
+function openEventEditor(eventId, defaultDate) {
+  state.editingEventId = eventId;
+  const isEdit = !!eventId;
+  document.getElementById('eventModalTitle').textContent = isEdit ? 'Редактировать событие' : 'Новое событие';
+  document.getElementById('evDeleteBtn').style.display = isEdit ? 'inline-block' : 'none';
+
+  // селекты
+  const fmtSel = document.getElementById('evFormat');
+  fmtSel.innerHTML = '<option value="">— выберите —</option>' + state.formats.map(f => `<option>${escapeHtml(f.name)}</option>`).join('');
+  const tSel = document.getElementById('evTeacher');
+  tSel.innerHTML = '<option value="">— не выбран —</option>' + state.teachers.map(t => `<option>${escapeHtml(t.name)}</option>`).join('');
+
+  // дефолты или текущие
+  const ev = isEdit ? state.events.find(e => e.id === eventId) : null;
+  document.getElementById('evDate').value = ev ? ev.date : (defaultDate || ymd(new Date()));
+  document.getElementById('evTime').value = ev ? (ev.timeStart || '18:00') : '18:00';
+  document.getElementById('evDuration').value = ev ? (ev.duration || 2.5) : 2.5;
+  fmtSel.value = ev ? (ev.format || '') : '';
+  document.getElementById('evName').value = ev ? (ev.name || '') : '';
+  tSel.value = ev ? (ev.teacher || '') : '';
+  document.getElementById('evPrice').value = ev ? (ev.price ?? '') : '';
+  document.getElementById('evLimit').value = ev ? (ev.limit ?? 12) : 12;
+  document.getElementById('evCostPerson').value = ev ? (ev.costPerPerson ?? '') : '';
+  document.getElementById('evDescr').value = ev ? (ev.description || '') : '';
+  document.getElementById('evPublishToAlfa').checked = ev ? !!ev.publishToAlfa : false;
+  document.getElementById('evComment').value = ev ? (ev.comment || '') : '';
+
+  updateEventFinStats();
+  ['evPrice','evLimit','evCostPerson','evTeacher'].forEach(id =>
+    document.getElementById(id).addEventListener('input', updateEventFinStats, { once: true })
+  );
+
+  document.getElementById('eventModal').classList.add('show');
+}
+
+function onFormatChange() {
+  const fmtName = document.getElementById('evFormat').value;
+  const f = state.formats.find(x => x.name === fmtName);
+  if (!f) return;
+  // Если поля пустые — заполняем дефолтами формата
+  const priceEl = document.getElementById('evPrice');
+  const limitEl = document.getElementById('evLimit');
+  const durEl = document.getElementById('evDuration');
+  if (!priceEl.value && f.defaultPrice) priceEl.value = f.defaultPrice;
+  if (!limitEl.value && f.defaultLimit) limitEl.value = f.defaultLimit;
+  if (!durEl.value && f.defaultDuration) durEl.value = f.defaultDuration;
+  updateEventFinStats();
+}
+
+function updateEventFinStats() {
+  const price = parseFloat(document.getElementById('evPrice').value) || 0;
+  const limit = parseInt(document.getElementById('evLimit').value) || 0;
+  const cpp = parseFloat(document.getElementById('evCostPerson').value) || 0;
+  const teacherName = document.getElementById('evTeacher').value;
+  const teacher = state.teachers.find(t => t.name === teacherName);
+  const teacherRate = teacher && teacher.rate ? teacher.rate : 0;
+  const revenue = price * limit;
+  const cost = teacherRate + cpp * limit;
+  const margin = revenue - cost;
+  document.getElementById('evFinStats').innerHTML = `
+    <div><div class="ttl">Выручка max</div><div class="val">${fmt(revenue)}</div></div>
+    <div><div class="ttl">Расход</div><div class="val">${fmt(cost)}</div></div>
+    <div class="${margin >= 0 ? 'green' : ''}"><div class="ttl">Маржа</div><div class="val">${fmt(margin)}</div></div>
+  `;
+}
+
+function saveEvent() {
+  const ev = {
+    id: state.editingEventId || ('e_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)),
+    date: document.getElementById('evDate').value,
+    timeStart: document.getElementById('evTime').value,
+    duration: parseFloat(document.getElementById('evDuration').value) || 2.5,
+    format: document.getElementById('evFormat').value,
+    name: document.getElementById('evName').value.trim(),
+    teacher: document.getElementById('evTeacher').value,
+    price: parseFloat(document.getElementById('evPrice').value) || null,
+    limit: parseInt(document.getElementById('evLimit').value) || null,
+    costPerPerson: parseFloat(document.getElementById('evCostPerson').value) || null,
+    description: document.getElementById('evDescr').value.trim(),
+    publishToAlfa: document.getElementById('evPublishToAlfa').checked,
+    comment: document.getElementById('evComment').value.trim()
+  };
+  if (!ev.date) { toast('Укажите дату', 'err'); return; }
+  if (!ev.format) { toast('Выберите формат', 'err'); return; }
+  if (!ev.name) { toast('Укажите название', 'err'); return; }
+
+  const idx = state.events.findIndex(e => e.id === ev.id);
+  if (idx >= 0) state.events[idx] = ev;
+  else state.events.push(ev);
+
+  closeModal('eventModal');
+  renderCalendar();
+  toast(idx >= 0 ? 'Событие обновлено' : 'Событие добавлено', 'ok');
+}
+
+function deleteCurrentEvent() {
+  if (!state.editingEventId) return;
+  if (!confirm('Удалить это событие из конструктора?\n(в Альфе оно не удалится)')) return;
+  state.events = state.events.filter(e => e.id !== state.editingEventId);
+  closeModal('eventModal');
+  renderCalendar();
+  toast('Удалено', 'ok');
+}
+
+async function saveAsTemplate() {
+  const name = document.getElementById('evName').value.trim();
+  if (!name) { toast('Сначала укажите название', 'err'); return; }
+  const tpl = {
+    name,
+    format: document.getElementById('evFormat').value,
+    teacher: document.getElementById('evTeacher').value,
+    description: document.getElementById('evDescr').value,
+    price: parseFloat(document.getElementById('evPrice').value) || null,
+    limit: parseInt(document.getElementById('evLimit').value) || null,
+    duration: parseFloat(document.getElementById('evDuration').value) || null,
+    tags: ''
+  };
+  const r = await apiPost('saveTemplate', { template: tpl });
+  if (r.ok) {
+    toast('Сохранено в шаблоны', 'ok');
+    // обновим библиотеку
+    const lib = await apiGet('library');
+    if (lib.ok) state.templates = lib.templates || [];
+  } else {
+    toast('Ошибка: ' + (r.error || ''), 'err');
+  }
+}
+
+// ============================================================
+// ШАБЛОНЫ — ВЫБОР
+// ============================================================
+function openTemplatesPicker() {
+  document.getElementById('tplSearch').value = '';
+  renderTemplatesPicker();
+  document.getElementById('tplModal').classList.add('show');
+}
+
+function renderTemplatesPicker() {
+  const q = document.getElementById('tplSearch').value.toLowerCase().trim();
+  const filtered = state.templates.filter(t =>
+    !q || (t.name + ' ' + t.format + ' ' + t.tags + ' ' + t.teacher).toLowerCase().includes(q)
+  );
+  document.getElementById('tplPickerList').innerHTML = filtered.length ? filtered.map(t => `
+    <div class="list-item" onclick="useTemplate(${t.rowIdx}); closeModal('tplModal');">
+      <div style="flex:1; min-width:0;">
+        <div class="ttl">${escapeHtml(t.name)}</div>
+        <div class="meta">${escapeHtml(t.format || '')} · ${escapeHtml(t.teacher || '—')} ${t.price ? '· ' + t.price + ' руб' : ''}</div>
+      </div>
+    </div>
+  `).join('') : '<div style="color:var(--muted); padding: 8px;">Шаблонов нет</div>';
+}
+
+function useTemplate(rowIdx) {
+  const t = state.templates.find(x => x.rowIdx === rowIdx);
+  if (!t) return;
+  // открываем редактор события с предзаполнением, дата = сегодня
+  state.editingEventId = null;
+  openEventEditor(null, ymd(new Date()));
+  document.getElementById('evFormat').value = t.format || '';
+  document.getElementById('evName').value = t.name || '';
+  document.getElementById('evTeacher').value = t.teacher || '';
+  document.getElementById('evDescr').value = t.description || '';
+  document.getElementById('evPrice').value = t.price || '';
+  document.getElementById('evLimit').value = t.limit || 12;
+  document.getElementById('evDuration').value = t.duration || 2.5;
+  updateEventFinStats();
+}
+
+// ============================================================
+// ИИ-ГЕНЕРАЦИЯ ОПИСАНИЯ
+// ============================================================
+async function aiGenerateDescription() {
+  const fmt = document.getElementById('evFormat').value;
+  const name = document.getElementById('evName').value.trim();
+  if (!fmt || !name) {
+    toast('Сначала укажите формат и название', 'err');
+    return;
+  }
+  const fObj = state.formats.find(x => x.name === fmt);
+  const fmtTemplate = fObj && fObj.template ? fObj.template : '';
+  const teacherName = document.getElementById('evTeacher').value;
+  const price = document.getElementById('evPrice').value;
+
+  const btn = document.getElementById('aiBtn');
+  const spin = document.getElementById('aiSpinner');
+  btn.disabled = true;
+  spin.style.display = 'inline-block';
+
+  const system = `Ты копирайтер для студии событий «Детали». Пишешь короткие маркетинговые описания мероприятий для публикации в Telegram/Instagram. Стиль: тёплый, личный, цепляющий, без штампов и канцеляризмов. Используй эмодзи в меру. Длина: 4–7 предложений.`;
+  const prompt = `Напиши описание мероприятия:
+Формат: ${fmt}
+Название: ${name}
+${teacherName ? 'Ведущий/педагог: ' + teacherName : ''}
+${price ? 'Цена: ' + price + ' руб' : ''}
+${fmtTemplate ? 'Шаблон формата: ' + fmtTemplate : ''}
+
+Структура: цепляющее начало (1 предложение, что внутри необычного) → что будем делать → что заберут с собой / что включено → призыв.
+Не используй приветствия типа «Дорогие друзья». Сразу к сути.`;
+
+  try {
+    const r = await apiPost('claude', { prompt, system });
+    if (r.ok && r.text) {
+      document.getElementById('evDescr').value = r.text.trim();
+      toast('Сгенерировано ✨', 'ok');
+    } else {
+      toast('ИИ не ответил: ' + (r.error || ''), 'err');
+    }
+  } catch(e) {
+    toast('Ошибка вызова ИИ', 'err');
+  } finally {
+    btn.disabled = false;
+    spin.style.display = 'none';
+  }
+}
+
+// ============================================================
+// ЧЕРНОВИКИ И ПУБЛИКАЦИЯ
+// ============================================================
+function currentState() {
+  return {
+    monthKey: ymd(state.curMonth).slice(0, 7),
+    events: state.events,
+    publishedAt: new Date().toISOString(),
+    editorName: state.editorName
+  };
+}
+
+async function saveDraft() {
+  const monthLabel = MONTH_NAMES[state.curMonth.getMonth()] + ' ' + state.curMonth.getFullYear();
+  const name = state.draftName || prompt('Название черновика:', monthLabel);
+  if (!name) return;
+  state.draftName = name;
+  const r = await apiPost('saveDraft', { id: state.draftId, name, state: currentState() });
+  if (r.ok && r.draft) {
+    state.draftId = r.draft.id;
+    toast('Черновик сохранён', 'ok');
+  } else {
+    toast('Не удалось сохранить', 'err');
+  }
+}
+
+async function openDraftsList() {
+  const r = await apiGet('listDrafts');
+  if (!r.ok) { toast('Ошибка', 'err'); return; }
+  const list = document.getElementById('draftsList');
+  list.innerHTML = (r.drafts || []).length ? r.drafts.map(d => `
+    <div class="list-item">
+      <div style="flex:1; min-width:0;">
+        <div class="ttl">${escapeHtml(d.name)}</div>
+        <div class="meta">${formatTimeAgo(d.updated)}</div>
+      </div>
+      <button onclick="loadDraftById('${d.id}')">↩ Загрузить</button>
+      <button class="danger" onclick="deleteDraftById('${d.id}', this)">🗑</button>
+    </div>
+  `).join('') : '<div style="color:var(--muted); padding: 8px;">Черновиков нет</div>';
+  document.getElementById('draftsModal').classList.add('show');
+}
+
+async function loadDraftById(id) {
+  const r = await apiGet('loadDraft', { id });
+  if (r.ok && r.draft) {
+    state.draftId = r.draft.id;
+    state.draftName = r.draft.name;
+    state.events = (r.draft.state && r.draft.state.events) || [];
+    if (r.draft.state && r.draft.state.monthKey) {
+      const [y, m] = r.draft.state.monthKey.split('-').map(Number);
+      state.curMonth = new Date(y, m - 1, 1);
+    }
+    closeModal('draftsModal');
+    renderCalendar();
+    toast('Черновик загружен', 'ok');
+  } else {
+    toast('Не удалось загрузить', 'err');
+  }
+}
+
+async function deleteDraftById(id, btn) {
+  if (!confirm('Удалить черновик?')) return;
+  const r = await apiPost('deleteDraft', { id });
+  if (r.ok) { btn.closest('.list-item').remove(); }
+}
+
+async function testAlfaConnection() {
+  toast('Проверяю связь с Альфой…', 'ok');
+  try {
+    const r = await apiPost('testAlfaConnection', {});
+    if (r.ok) {
+      showResultModal('🔍 Тест Альфа CRM', `
+        <b style="color:var(--green)">✅ Связь работает</b><br><br>
+        Филиал: <b>${escapeHtml(r.branch.name)}</b> (id=${r.branch.id})<br>
+        Помещение id: ${r.roomId}<br>
+        Тип урока id: ${r.lessonType}<br><br>
+        Можно публиковать события — они улетят в Альфу одним кликом.
+      `);
+    } else {
+      toast('❌ ' + (r.error || 'Ошибка'), 'err');
+    }
+  } catch(e) {
+    toast('Не удалось связаться с сервером', 'err');
+  }
+}
+
+async function publishToAlfa() {
+  if (state.events.length === 0) {
+    toast('В календаре нет событий', 'err');
+    return;
+  }
+  const toPublish = state.events.filter(e => e.publishToAlfa);
+  const totalEv = state.events.length;
+
+  let confirmMsg;
+  if (toPublish.length === 0) {
+    confirmMsg = `В календаре ${totalEv} событий, но ни у одного нет галочки «Готово к публикации в Альфу».\n\n` +
+                 `Сохранить расписание (без отправки в Альфу)?`;
+  } else {
+    confirmMsg = `Сейчас будет:\n` +
+                 `• сохранён снимок месяца (${totalEv} событий)\n` +
+                 `• создано ${toPublish.length} групп в Альфа CRM\n\n` +
+                 `Продолжить?`;
+  }
+  if (!confirm(confirmMsg)) return;
+
+  const id = state.publishId || ('p_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4));
+  const monthLabel = MONTH_NAMES[state.curMonth.getMonth()] + ' ' + state.curMonth.getFullYear();
+
+  // Показываем индикатор «отправляется»
+  toast('Публикую и отправляю в Альфу…', 'ok');
+
+  const r = await apiPost('publishAndSendToAlfa', {
+    id,
+    name: monthLabel + ' — ' + state.editorName,
+    stateJson: JSON.stringify(currentState())
+  });
+
+  if (!r.ok) {
+    toast('Ошибка: ' + (r.error || ''), 'err');
+    return;
+  }
+
+  state.publishId = id;
+  const alfa = r.alfa || {};
+  const sync = r.sync || {};
+
+  // Обновляем локальное состояние: помечаем отправленные события
+  if (alfa.results) {
+    alfa.results.forEach(res => {
+      const ev = state.events.find(e => e.id === res.id);
+      if (ev && (res.groupId || res.skipped)) {
+        ev.publishedToAlfa = true;
+        ev.alfaGroupId = res.groupId;
+      }
+    });
+    renderCalendar();
+  }
+
+  // Большое окно с результатом
+  let html = `<b>✅ Снимок сохранён.</b><br>В лист «События» записано ${sync.written || 0} событий (новых: ${sync.created || 0}, обновлено: ${sync.updated || 0}).`;
+  if (toPublish.length > 0) {
+    html += `<br><br><b>Альфа CRM:</b><br>`;
+    html += `Отправлено: <b style="color:var(--green)">${alfa.sent}</b> · `;
+    html += `Пропущено: ${alfa.skipped} · `;
+    html += `Ошибок: <b style="color:${alfa.errors > 0 ? 'var(--red)' : 'var(--muted)'}">${alfa.errors}</b>`;
+    if (alfa.errors > 0) {
+      const errs = (alfa.results || []).filter(x => x.error).slice(0, 5);
+      html += '<br><br><b>Ошибки:</b><br>' + errs.map(e =>
+        '<div style="font-size:11px; color:var(--red); margin-top:4px;">• ' +
+          escapeHtml(e.name || e.id) + ' — ' + escapeHtml(e.error) +
+        '</div>'
+      ).join('');
+    }
+  }
+  showResultModal('Результат публикации', html);
+}
+
+function showResultModal(title, html) {
+  const old = document.getElementById('resultModal');
+  if (old) old.remove();
+  const div = document.createElement('div');
+  div.className = 'modal-bg show';
+  div.id = 'resultModal';
+  div.innerHTML = `
+    <div class="modal">
+      <div class="modal-head">
+        <h2>${escapeHtml(title)}</h2>
+        <button class="ghost" onclick="document.getElementById('resultModal').remove()">✕</button>
+      </div>
+      <div class="modal-body" style="line-height: 1.7;">${html}</div>
+      <div class="modal-foot">
+        <div></div>
+        <button class="primary" onclick="document.getElementById('resultModal').remove()">OK</button>
+      </div>
+    </div>
+  `;
+  div.addEventListener('click', e => { if (e.target === div) div.remove(); });
+  document.body.appendChild(div);
+}
+
+// ============================================================
+// СПРАВОЧНИКИ — ДОБАВЛЕНИЕ
+// ============================================================
+function openAddFormat() { document.getElementById('formatModal').classList.add('show'); }
+async function addFormat() {
+  const f = {
+    name: document.getElementById('fmtName').value.trim(),
+    category: document.getElementById('fmtCategory').value,
+    template: document.getElementById('fmtTemplate').value.trim(),
+    defaultPrice: parseFloat(document.getElementById('fmtPrice').value) || null,
+    defaultLimit: parseInt(document.getElementById('fmtLimit').value) || null,
+    defaultDuration: parseFloat(document.getElementById('fmtDuration').value) || null
+  };
+  if (!f.name) { toast('Введите название', 'err'); return; }
+  const r = await apiPost('addFormat', { format: f });
+  if (r.ok) {
+    state.formats.push(f);
+    closeModal('formatModal');
+    renderLibraryTab();
+    toast('Формат добавлен', 'ok');
+    document.getElementById('fmtName').value = '';
+    document.getElementById('fmtTemplate').value = '';
+  } else {
+    toast('Ошибка', 'err');
+  }
+}
+
+function openAddTeacher() { document.getElementById('teacherModal').classList.add('show'); }
+async function addTeacher() {
+  const t = {
+    name: document.getElementById('thName').value.trim(),
+    rate: parseFloat(document.getElementById('thRate').value) || null,
+    alfaId: parseInt(document.getElementById('thAlfaId').value) || null,
+    contact: document.getElementById('thContact').value.trim(),
+    spec: document.getElementById('thSpec').value.trim()
+  };
+  if (!t.name) { toast('Введите ФИО', 'err'); return; }
+  const r = await apiPost('addTeacher', { teacher: t });
+  if (r.ok) {
+    state.teachers.push(t);
+    closeModal('teacherModal');
+    renderStaffTab();
+    toast('Педагог добавлен', 'ok');
+    ['thName','thRate','thAlfaId','thContact','thSpec'].forEach(id => document.getElementById(id).value = '');
+  } else {
+    toast('Ошибка', 'err');
+  }
+}
+
+// ============================================================
+// HEARTBEAT — кто сейчас редактирует
+// ============================================================
+let heartbeatTimer = null;
+
+function startHeartbeat() {
+  // ID для совместного редактирования = текущий месяц
+  const sendBeat = async () => {
+    const publishId = ymd(state.curMonth).slice(0, 7);
+    try {
+      await apiPost('heartbeat', {
+        sessionId: state.sessionId,
+        publishId,
+        editorName: state.editorName,
+        userAgent: navigator.userAgent.slice(0, 80)
+      });
+      const r = await apiGet('listSessions', { publishId });
+      const others = (r.sessions || []).filter(s => s.sessionId !== state.sessionId);
+      const pill = document.getElementById('othersPill');
+      if (others.length > 0) {
+        pill.textContent = '⚠ Сейчас редактирует: ' + others.map(o => o.editorName).filter(Boolean).join(', ');
+        pill.style.display = 'inline-flex';
+      } else {
+        pill.style.display = 'none';
+      }
+    } catch(e) {
+      // молча
+    }
+  };
+  sendBeat();
+  heartbeatTimer = setInterval(sendBeat, 30000);
+  window.addEventListener('beforeunload', endSession);
+}
+
+async function endSession() {
+  try {
+    await apiPost('endSession', { sessionId: state.sessionId });
+  } catch(e) {}
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
+}
+
+// ============================================================
+// ЭКСПОРТ / ИМПОРТ
+// ============================================================
+function exportJson() {
+  const blob = new Blob([JSON.stringify(currentState(), null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'detali_' + ymd(state.curMonth).slice(0, 7) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJson() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.json';
+  inp.onchange = e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.events) state.events = data.events;
+        if (data.monthKey) {
+          const [y, m] = data.monthKey.split('-').map(Number);
+          state.curMonth = new Date(y, m - 1, 1);
+        }
+        renderCalendar();
+        toast('Импортировано', 'ok');
+      } catch(err) {
+        toast('Битый JSON', 'err');
+      }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+// ============================================================
+// УТИЛИТЫ UI
+// ============================================================
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function fmt(n) {
+  if (n == null || isNaN(n)) return '—';
+  return Math.round(n).toLocaleString('ru-RU') + ' р';
+}
+
+function formatTimeAgo(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return 'только что';
+  if (diff < 3600) return Math.round(diff / 60) + ' мин назад';
+  if (diff < 86400) return Math.round(diff / 3600) + ' ч назад';
+  return d.toLocaleDateString('ru-RU') + ' ' + d.toLocaleTimeString('ru-RU').slice(0,5);
+}
+
+// Закрытие модалок по клику на фон
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('show'); });
+});
+// Esc закрывает модалки
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show'));
+});
+</script>
+</body>
+</html>

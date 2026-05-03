@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Расписание · Детали</title>
+<style>
+  :root {
+    --bg: #faf8f5;
+    --card: #ffffff;
+    --ink: #2a2a2a;
+    --muted: #8a8580;
+    --line: #ece6dd;
+    --accent: #c2845b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  header {
+    background: white;
+    border-bottom: 1px solid var(--line);
+    padding: 18px 24px;
+    text-align: center;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  header em { color: var(--accent); font-style: normal; }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+  .picker { margin-bottom: 24px; text-align: center; }
+  .picker select {
+    font-size: 15px; padding: 8px 14px; border: 1px solid var(--line);
+    border-radius: 6px; background: white;
+  }
+  .day-block {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    padding: 14px 18px;
+  }
+  .day-head {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 8px;
+  }
+  .day-head .date { font-size: 18px; font-weight: 600; }
+  .day-head .weekday { color: var(--muted); font-size: 13px; text-transform: lowercase; }
+  .ev {
+    display: grid;
+    grid-template-columns: 65px 1fr;
+    gap: 14px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+  }
+  .ev:first-child { border-top: none; }
+  .ev .time { font-weight: 600; color: var(--accent); }
+  .ev .body .name { font-weight: 600; margin-bottom: 2px; }
+  .ev .body .meta { color: var(--muted); font-size: 13px; }
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Расписание <em>Детали</em></h1>
+  <div class="meta" id="metaLine">—</div>
+</header>
+<main>
+  <div class="picker">
+    <select id="versionPicker" onchange="loadVersion(this.value)">
+      <option>Загрузка…</option>
+    </select>
+  </div>
+  <div id="content"><div class="empty">Выберите месяц</div></div>
+</main>
+
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHrfjsxMyN2TGfAw-JH8MN0KW8QdUUy-bIQSlgjtEIciAw_FnbrL8ay5CrEcqrcQrF/exec';
+const PROJECT = 'details';
+const MONTH_NAMES = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const WEEKDAY = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+
+(async function init() {
+  if (APPS_SCRIPT_URL.includes('PUT_YOUR')) {
+    document.getElementById('content').innerHTML = '<div class="empty">⚠ APPS_SCRIPT_URL не настроен в view.html</div>';
+    return;
+  }
+  try {
+    const url = new URL(APPS_SCRIPT_URL);
+    url.searchParams.set('action', 'listPublished');
+    url.searchParams.set('project', PROJECT);
+    const r = await fetch(url.toString()).then(x => x.json());
+    if (!r.ok || !r.versions || r.versions.length === 0) {
+      document.getElementById('versionPicker').innerHTML = '<option>Опубликованных нет</option>';
+      document.getElementById('content').innerHTML = '<div class="empty">Опубликованных расписаний пока нет</div>';
+      return;
+    }
+    const sel = document.getElementById('versionPicker');
+    sel.innerHTML = r.versions.map(v => `<option value="${v.id}">${escapeHtml(v.name || v.monthKey)}</option>`).join('');
+    loadVersion(sel.value);
+  } catch(e) {
+    document.getElementById('content').innerHTML = '<div class="empty">Не удалось связаться с сервером</div>';
+  }
+})();
+
+async function loadVersion(id) {
+  if (!id) return;
+  const url = new URL(APPS_SCRIPT_URL);
+  url.searchParams.set('action', 'getPublished');
+  url.searchParams.set('project', PROJECT);
+  url.searchParams.set('id', id);
+  const r = await fetch(url.toString()).then(x => x.json());
+  if (!r.ok || !r.version) {
+    document.getElementById('content').innerHTML = '<div class="empty">Не удалось загрузить</div>';
+    return;
+  }
+  let st = {};
+  try { st = JSON.parse(r.version.stateJson || '{}'); } catch(e) {}
+  document.getElementById('metaLine').textContent =
+    'Обновлено: ' + (r.version.updated ? new Date(r.version.updated).toLocaleString('ru-RU') : '—');
+  renderEvents(st.events || []);
+}
+
+function renderEvents(events) {
+  if (!events.length) {
+    document.getElementById('content').innerHTML = '<div class="empty">Нет событий</div>';
+    return;
+  }
+  // группируем по датам
+  const byDate = {};
+  events.forEach(ev => {
+    if (!byDate[ev.date]) byDate[ev.date] = [];
+    byDate[ev.date].push(ev);
+  });
+  const dates = Object.keys(byDate).sort();
+  const html = dates.map(d => {
+    const dt = new Date(d);
+    const dayEvents = byDate[d].slice().sort((a, b) => (a.timeStart || '').localeCompare(b.timeStart || ''));
+    const inner = dayEvents.map(ev => `
+      <div class="ev">
+        <div class="time">${escapeHtml(ev.timeStart || '')}</div>
+        <div class="body">
+          <div class="name">${escapeHtml(ev.name || ev.format || '')}</div>
+          <div class="meta">${escapeHtml(ev.format || '')}${ev.teacher ? ' · ' + escapeHtml(ev.teacher) : ''}${ev.price ? ' · ' + ev.price + ' руб' : ''}</div>
+        </div>
+      </div>
+    `).join('');
+    return `
+      <div class="day-block">
+        <div class="day-head">
+          <div class="date">${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]}</div>
+          <div class="weekday">${WEEKDAY[dt.getDay()]}</div>
+        </div>
+        ${inner}
+      </div>
+    `;
+  }).join('');
+  document.getElementById('content').innerHTML = html;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+</script>
+</body>
+</html>
