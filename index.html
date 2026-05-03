@@ -663,6 +663,16 @@ main {
           </label>
         </div>
       </div>
+      <div class="row" id="evLinkRow">
+        <div>
+          <label>ID группы в Альфе <span style="color:var(--muted); font-weight: normal;">(для ручной привязки к уже существующей группе)</span></label>
+          <input type="number" id="evAlfaGroupId" placeholder="например: 333" min="1">
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button type="button" class="ghost" onclick="linkExistingAlfaGroup()" style="width: 100%; margin-top: 0;">🔗 Привязать к группе Альфы</button>
+        </div>
+      </div>
       <details style="margin-top: 12px;">
         <summary style="cursor: pointer; color: var(--muted); font-size: 12px;">💡 Финансовый прогноз</summary>
         <div class="fin-stats" style="margin-top: 8px;" id="evFinStats"></div>
@@ -1173,20 +1183,27 @@ function openEventEditor(eventId, defaultDate) {
   // Блок статуса
   const stBlock = document.getElementById('evStatusBlock');
   const createRow = document.getElementById('evCreateRow');
+  const linkRow = document.getElementById('evLinkRow');
+  const linkInput = document.getElementById('evAlfaGroupId');
   if (!ev || ev.status === 'draft' || !ev.status) {
     stBlock.innerHTML = '<span style="color:var(--muted)">◌ Черновик · в Альфе ещё не создано</span>';
     createRow.style.display = 'block';
+    linkRow.style.display = 'flex';
+    linkInput.value = '';
   } else if (ev.status === 'published') {
     stBlock.innerHTML = `<span style="color:var(--green)">✓ Опубликовано в Альфе · группа id=${ev.alfaGroupId}</span>` +
       (ev.formUrl ? `<br><a href="${ev.formUrl}" target="_blank" style="font-size:11px;">🔗 Ссылка для записи клиентов</a>` : '');
     createRow.style.display = 'none';
+    linkRow.style.display = 'none';
   } else if (ev.status === 'modified') {
     stBlock.innerHTML = `<span style="color:var(--yellow)">⏳ Есть изменения, не отправленные в Альфу (id=${ev.alfaGroupId})</span><br>` +
       `<span style="font-size:11px; color:var(--muted)">Нажмите «🔄 Применить изменения» в шапке, чтобы синхронизировать</span>`;
     createRow.style.display = 'none';
+    linkRow.style.display = 'none';
   } else if (ev.status === 'archived') {
     stBlock.innerHTML = '<span style="color:var(--red)">🗑 Помечено к архивации</span>';
     createRow.style.display = 'none';
+    linkRow.style.display = 'none';
   }
 
   updateEventFinStats();
@@ -1554,6 +1571,49 @@ async function testAlfaConnection() {
  *
  * На бэке всё обрабатывается одним actionом syncEventsToAlfa.
  */
+async function linkExistingAlfaGroup() {
+  const gidStr = document.getElementById('evAlfaGroupId').value.trim();
+  const gid = parseInt(gidStr, 10);
+  if (!gid || gid < 1) {
+    toast('Введите ID группы Альфы (положительное число)', 'err');
+    return;
+  }
+  if (!state.editingEventId) {
+    toast('Сначала сохраните событие как черновик', 'err');
+    return;
+  }
+  // Проверяем, нет ли уже события с таким groupId
+  const dup = state.events.find(e => e.alfaGroupId === gid && e.id !== state.editingEventId);
+  if (dup) {
+    if (!confirm('Группа ' + gid + ' уже привязана к другому событию: «' + (dup.name || '') +
+                 '» (' + dup.date + '). Всё равно привязать?')) return;
+  }
+  toast('Проверяю в Альфе…', 'ok');
+  const r = await apiPost('linkAlfaGroup', {
+    eventId: state.editingEventId,
+    groupId: gid
+  });
+  if (!r.ok) {
+    toast('Ошибка: ' + (r.error || ''), 'err');
+    return;
+  }
+  // Обновляем событие в состоянии
+  const ev = state.events.find(e => e.id === state.editingEventId);
+  if (ev) {
+    ev.alfaGroupId = r.alfaGroupId;
+    ev.formUrl = r.formUrl;
+    ev.status = 'published';
+    ev.publishedToAlfa = true;
+  }
+  toast('✓ Привязано к группе ' + gid, 'ok');
+  // Обновляем форму
+  closeModal('eventModal');
+  renderCalendar();
+  await autosaveDraft();
+  // Открываем заново — увидите новый статус
+  setTimeout(() => openEventEditor(state.editingEventId), 200);
+}
+
 async function publishEventsToAlfa(mode) {
   if (state.events.length === 0) {
     toast('В календаре нет событий', 'err');
