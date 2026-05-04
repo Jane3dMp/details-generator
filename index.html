@@ -474,13 +474,36 @@ main {
 .refs-block-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 10px;
 }
 .refs-block-head .ttl {
   font-size: 12px;
   color: var(--muted);
   font-weight: 500;
+}
+.refs-block-head .pinterest-link {
+  font-size: 11px;
+  color: #e60023;
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 4px 8px;
+  border: 1px solid #e60023;
+  border-radius: 4px;
+  transition: all .12s;
+  flex-shrink: 0;
+}
+.refs-block-head .pinterest-link:hover {
+  background: #e60023;
+  color: white;
+}
+.refs-block-head .pinterest-link.disabled {
+  opacity: .4;
+  pointer-events: none;
+  border-color: var(--line);
+  color: var(--muted);
 }
 .refs-add-row {
   display: grid;
@@ -774,6 +797,7 @@ main {
       <div class="refs-block">
         <div class="refs-block-head">
           <span class="ttl">📌 Референсы для команды <span style="color:var(--muted); font-weight: normal;">(Pinterest, фото, идеи — клиенты не увидят)</span></span>
+          <a href="#" id="pinterestSearchLink" class="pinterest-link" onclick="openPinterestSearch(event)" title="Открыть поиск по названию события на Pinterest">🔍 Найти на Pinterest ↗</a>
         </div>
         <div class="refs-add-row">
           <input type="url" id="refUrlInput" placeholder="Вставьте ссылку (Pinterest, картинка, статья…)">
@@ -1597,6 +1621,21 @@ function removeReference(idx) {
 function openReference(idx) {
   const r = state.editingRefs[idx];
   if (r && r.url) window.open(r.url, '_blank', 'noopener');
+}
+
+function openPinterestSearch(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const fmt = (document.getElementById('evFormat').value || '').trim();
+  const name = (document.getElementById('evName').value || '').trim();
+  // Очищаем формат от префикса «МК » — он шумный для поиска
+  const fmtClean = fmt.replace(/^МК\s+/i, '').trim();
+  const query = [fmtClean, name].filter(Boolean).join(' ').trim();
+  if (!query) {
+    toast('Сначала введите формат или название события', 'err');
+    return;
+  }
+  const url = 'https://ru.pinterest.com/search/pins/?q=' + encodeURIComponent(query);
+  window.open(url, '_blank', 'noopener');
 }
 
 function shortDomain(url) {
