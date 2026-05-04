@@ -756,13 +756,25 @@ main {
       </div>
       <div class="row full">
         <div>
-          <label>Описание (для маркетинга и Альфы)
+          <label>Описание (для маркетинга — соцсети, рассылки, team-страница)
             <button class="ghost" style="float:right; padding: 2px 8px; font-size: 11px;" onclick="aiGenerateDescription()" id="aiBtn">
               <span id="aiSpinner" style="display:none"><span class="ai-loader"></span></span>
               ✨ Сгенерировать ИИ
             </button>
           </label>
-          <textarea id="evDescr" rows="6" placeholder="Краткий маркетинговый текст для публикации"></textarea>
+          <textarea id="evDescr" rows="6" placeholder="Длинный маркетинговый текст для публикации"></textarea>
+        </div>
+      </div>
+      <div class="row full">
+        <div>
+          <label>Описание для Альфы <span style="color:var(--muted); font-weight: normal;">(уйдёт в карточку группы — лимит 255 символов)</span>
+            <button class="ghost" style="float:right; padding: 2px 8px; font-size: 11px;" onclick="aiGenerateAlfaNote()" id="aiAlfaBtn">
+              <span id="aiAlfaSpinner" style="display:none"><span class="ai-loader"></span></span>
+              ✨ Сгенерировать кратко
+            </button>
+          </label>
+          <textarea id="evAlfaNote" rows="3" maxlength="255" placeholder="Короткий текст до 255 символов — то, что увидит клиент в форме записи Альфы" oninput="updateAlfaNoteCounter()"></textarea>
+          <div id="evAlfaNoteCounter" style="font-size: 11px; color: var(--muted); text-align: right; margin-top: 2px;">0 / 255</div>
         </div>
       </div>
       <div class="row">
@@ -1320,6 +1332,8 @@ function openEventEditor(eventId, defaultDate) {
   document.getElementById('evLimit').value = ev ? (ev.limit ?? 12) : 12;
   document.getElementById('evCostPerson').value = ev ? (ev.costPerPerson ?? '') : '';
   document.getElementById('evDescr').value = ev ? (ev.description || '') : '';
+  document.getElementById('evAlfaNote').value = ev ? (ev.alfaNote || '') : '';
+  updateAlfaNoteCounter();
   document.getElementById('evPublishToAlfa').checked = ev ? !!ev.publishToAlfa : false;
   document.getElementById('evComment').value = ev ? (ev.comment || '') : '';
 
@@ -1413,6 +1427,7 @@ function saveEvent() {
     limit: parseInt(document.getElementById('evLimit').value) || null,
     costPerPerson: parseFloat(document.getElementById('evCostPerson').value) || null,
     description: document.getElementById('evDescr').value.trim(),
+    alfaNote: document.getElementById('evAlfaNote').value.trim(),
     publishToAlfa: document.getElementById('evPublishToAlfa').checked,
     comment: document.getElementById('evComment').value.trim(),
     // Референсы и комментарий команде — служебные маркетинговые поля.
@@ -1443,7 +1458,7 @@ function saveEvent() {
   } else {
     // Редактирование — определяем, изменилось ли что-то существенное
     const prev = state.events[idx];
-    const fieldsForAlfa = ['date','timeStart','duration','format','name','price','limit','description'];
+    const fieldsForAlfa = ['date','timeStart','duration','format','name','price','limit','description','alfaNote'];
     let hasAlfaChange = false;
     for (const f of fieldsForAlfa) {
       if ((prev[f] || '') !== (newData[f] || '')) { hasAlfaChange = true; break; }
@@ -1729,6 +1744,67 @@ ${fmtTemplate ? 'Шаблон формата: ' + fmtTemplate : ''}
     const r = await apiPost('claude', { prompt, system });
     if (r.ok && r.text) {
       document.getElementById('evDescr').value = r.text.trim();
+      toast('Сгенерировано ✨', 'ok');
+    } else {
+      toast('ИИ не ответил: ' + (r.error || ''), 'err');
+    }
+  } catch(e) {
+    toast('Ошибка вызова ИИ', 'err');
+  } finally {
+    btn.disabled = false;
+    spin.style.display = 'none';
+  }
+}
+
+function updateAlfaNoteCounter() {
+  const el = document.getElementById('evAlfaNote');
+  const counter = document.getElementById('evAlfaNoteCounter');
+  if (!el || !counter) return;
+  const len = el.value.length;
+  counter.textContent = len + ' / 255';
+  if (len > 240) counter.style.color = 'var(--red)';
+  else if (len > 200) counter.style.color = 'var(--yellow)';
+  else counter.style.color = 'var(--muted)';
+}
+
+async function aiGenerateAlfaNote() {
+  const fmt = document.getElementById('evFormat').value;
+  const name = document.getElementById('evName').value.trim();
+  if (!fmt || !name) {
+    toast('Сначала укажите формат и название', 'err');
+    return;
+  }
+  const longDescr = document.getElementById('evDescr').value.trim();
+  const teacherName = document.getElementById('evTeacher').value;
+  const price = document.getElementById('evPrice').value;
+  const fObj = state.formats.find(x => x.name === fmt);
+  const fmtTemplate = fObj && fObj.template ? fObj.template : '';
+
+  const btn = document.getElementById('aiAlfaBtn');
+  const spin = document.getElementById('aiAlfaSpinner');
+  btn.disabled = true;
+  spin.style.display = 'inline-block';
+
+  const system = `Ты копирайтер. Пишешь ультракраткие анонсы мероприятий для CRM-карточки группы. ЖЁСТКИЙ ЛИМИТ: 250 символов с пробелами (не больше). Стиль: сухой, информативный, без эмодзи, без призывов, без приветствий. Просто факты: что будет, для кого, что заберут. Одно-два предложения. Никаких "Приглашаем", "Дорогие друзья", "Ждём вас".`;
+  const prompt = `Сожми описание мероприятия до 250 символов максимум.
+
+Формат: ${fmt}
+Название: ${name}
+${teacherName ? 'Ведущий: ' + teacherName : ''}
+${price ? 'Цена: ' + price + ' руб' : ''}
+${fmtTemplate ? 'Шаблон: ' + fmtTemplate : ''}
+${longDescr ? '\nДлинное описание для справки (не копируй, переформулируй короче):\n' + longDescr : ''}
+
+ВАЖНО: ответ ДОЛЖЕН быть не длиннее 250 символов. Считай каждый символ. Только сам текст, без кавычек и пояснений.`;
+
+  try {
+    const r = await apiPost('claude', { prompt, system });
+    if (r.ok && r.text) {
+      let txt = r.text.trim();
+      // Подстраховка — если ИИ всё равно перекинул лимит, режем
+      if (txt.length > 255) txt = txt.slice(0, 252).trim() + '…';
+      document.getElementById('evAlfaNote').value = txt;
+      updateAlfaNoteCounter();
       toast('Сгенерировано ✨', 'ok');
     } else {
       toast('ИИ не ответил: ' + (r.error || ''), 'err');
