@@ -781,6 +781,7 @@ main {
             <input type="checkbox" id="evPublishToAlfa" style="width:auto;">
             <span>Готово к публикации в Альфу <span style="color:var(--muted)">(будет создано при нажатии «🚀 Опубликовать черновики»)</span></span>
           </label>
+          <button type="button" class="primary" id="evPublishOneBtn" onclick="publishSingleEvent()" style="margin-top: 8px; width: 100%; display: none;">🚀 Опубликовать только это событие сейчас</button>
         </div>
       </div>
       <div class="row" id="evLinkRow">
@@ -1341,6 +1342,9 @@ function openEventEditor(eventId, defaultDate) {
     createRow.style.display = 'block';
     linkRow.style.display = 'flex';
     linkInput.value = '';
+    // Кнопка «Опубликовать только это событие» — показываем только если событие уже сохранено
+    // (для нового события сначала «Сохранить», потом откроется заново — и кнопка появится)
+    document.getElementById('evPublishOneBtn').style.display = ev ? 'block' : 'none';
   } else if (ev.status === 'published') {
     stBlock.innerHTML = `<span style="color:var(--green)">✓ Опубликовано в Альфе · группа id=${ev.alfaGroupId}</span>` +
       (ev.formUrl ? `<br><a href="${ev.formUrl}" target="_blank" style="font-size:11px;">🔗 Ссылка для записи клиентов</a>` : '');
@@ -1882,6 +1886,114 @@ async function linkExistingAlfaGroup() {
   await autosaveDraft();
   // Открываем заново — увидите новый статус
   setTimeout(() => openEventEditor(state.editingEventId), 200);
+}
+
+async function publishSingleEvent() {
+  const eventId = state.editingEventId;
+  if (!eventId) {
+    toast('Сначала сохраните событие', 'err');
+    return;
+  }
+  const ev = state.events.find(e => e.id === eventId);
+  if (!ev) { toast('Событие не найдено', 'err'); return; }
+  if (ev.status && ev.status !== 'draft') {
+    toast('Это событие уже опубликовано', 'err');
+    return;
+  }
+  // Проверяем минимум полей
+  const name = (document.getElementById('evName').value || '').trim();
+  const fmt = document.getElementById('evFormat').value;
+  if (!fmt && !name) {
+    toast('Заполните хотя бы формат или название', 'err');
+    return;
+  }
+
+  if (!confirm(
+    `Создать в Альфе только это событие?\n\n` +
+    `📅 ${ev.date} ${ev.timeStart || ''}\n` +
+    `${fmt || ''} ${name ? '«' + name + '»' : ''}\n\n` +
+    `Остальные черновики останутся как есть.`
+  )) return;
+
+  // Сначала сохраняем форму как обычно (вдруг есть несохранённые правки)
+  saveEvent();
+  // saveEvent закрывает модалку → ev мог обновиться, ищем заново
+  const fresh = state.events.find(e => e.id === eventId);
+  if (!fresh) { toast('Событие пропало после сохранения', 'err'); return; }
+
+  // Снимаем publishToAlfa у всех ОСТАЛЬНЫХ draft на время отправки,
+  // ставим только нужному. Потом восстановим — но только если запрос упадёт.
+  const backup = state.events.map(e => ({ id: e.id, publishToAlfa: !!e.publishToAlfa }));
+  state.events.forEach(e => {
+    if (e.status && e.status !== 'draft') return;
+    e.publishToAlfa = (e.id === eventId);
+  });
+
+  const id = state.publishId || ('p_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4));
+  const monthLabel = MONTH_NAMES[state.curMonth.getMonth()] + ' ' + state.curMonth.getFullYear();
+
+  toast('Отправляю в Альфу…', 'ok');
+
+  const r = await apiPost('syncEventsToAlfa', {
+    id,
+    name: monthLabel + ' — ' + state.editorName,
+    stateJson: JSON.stringify(currentState())
+  });
+
+  if (!r.ok) {
+    // Восстанавливаем галочки из бэкапа
+    backup.forEach(b => {
+      const e = state.events.find(x => x.id === b.id);
+      if (e) e.publishToAlfa = b.publishToAlfa;
+    });
+    toast('Ошибка: ' + (r.error || ''), 'err');
+    return;
+  }
+
+  state.publishId = id;
+  const alfa = r.alfa || {};
+
+  // Применяем результат к этому событию
+  let resultMsg = '';
+  if (alfa.results) {
+    const res = alfa.results.find(x => x.id === eventId);
+    if (res) {
+      const target = state.events.find(e => e.id === eventId);
+      if (target) {
+        if (res.error) {
+          // Не получилось — восстанавливаем галочки
+          backup.forEach(b => {
+            const e = state.events.find(x => x.id === b.id);
+            if (e) e.publishToAlfa = b.publishToAlfa;
+          });
+          toast('Альфа отказалась: ' + res.error, 'err');
+          return;
+        }
+        if (res.groupId) {
+          target.status = 'published';
+          target.alfaGroupId = res.groupId;
+          target.alfaLessonId = res.lessonId;
+          target.formUrl = res.formUrl;
+          target.publishedToAlfa = true;
+          target.publishToAlfa = false;  // галочку гасим — событие уже создано
+          resultMsg = 'Создано в Альфе · группа ' + res.groupId;
+        }
+      }
+    }
+  }
+
+  // Восстанавливаем publishToAlfa у тех событий, которые мы временно сняли
+  backup.forEach(b => {
+    if (b.id === eventId) return; // у нашего события состояние уже актуальное
+    const e = state.events.find(x => x.id === b.id);
+    if (e) e.publishToAlfa = b.publishToAlfa;
+  });
+
+  renderCalendar();
+  await autosaveDraft();
+
+  toast(resultMsg || 'Готово', 'ok');
+  closeModal('eventModal');
 }
 
 async function publishEventsToAlfa(mode) {
