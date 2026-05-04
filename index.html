@@ -1992,8 +1992,37 @@ async function publishSingleEvent() {
   renderCalendar();
   await autosaveDraft();
 
-  toast(resultMsg || 'Готово', 'ok');
   closeModal('eventModal');
+  toast(resultMsg || 'Готово', 'ok');
+
+  // Напоминание про галочку «Разрешить публичную запись лидов» в карточке группы Альфы.
+  // Альфа по умолчанию не всегда её ставит, без неё ссылка для записи клиентов не работает.
+  const created = (alfa.results || []).find(x => x.id === eventId && x.groupId);
+  if (created) {
+    const groupId = created.groupId;
+    // Базовый URL Альфы — забираем из formUrl, который пришёл с бэка
+    let alfaBase = '';
+    try {
+      const fu = String(created.formUrl || '');
+      const m = fu.match(/^(https?:\/\/[^\/]+)\//);
+      if (m) alfaBase = m[1];
+    } catch(e) {}
+    const groupEditUrl = alfaBase ? (alfaBase + '/2/group/edit/' + groupId) : '';
+    const lines = [
+      '✓ Группа создана в Альфе (id=' + groupId + ').',
+      '',
+      '⚠️ ВАЖНО: проверьте в карточке группы Альфы галочку',
+      '«Разрешить публичную запись лидов».',
+      '',
+      'Без неё ссылка для записи клиентов работать НЕ БУДЕТ.',
+      ''
+    ];
+    if (groupEditUrl) {
+      lines.push('Открыть карточку группы:');
+      lines.push(groupEditUrl);
+    }
+    setTimeout(() => alert(lines.join('\n')), 250);
+  }
 }
 
 async function publishEventsToAlfa(mode) {
