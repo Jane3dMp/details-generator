@@ -93,7 +93,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
   padding: 8px 12px; font-size: 11px; font-weight: 600;
   color: var(--muted); text-transform: uppercase; letter-spacing: .5px;
 }
-.weekdays > div.weekend { color: var(--accent); }
+.weekdays > div.weekend { color: var(--accent); background: #fdf3e9; }
 .days { display: grid; grid-template-columns: repeat(7, 1fr); }
 .day {
   min-height: 110px; padding: 6px;
@@ -101,6 +101,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
 }
 .day:nth-child(7n) { border-right: none; }
 .day.other-month { background: #fafafa; opacity: .35; }
+.day.weekend { background: #fdf3e9; }
 .day.weekend .day-num { color: var(--accent); }
 .day.today { background: #fdf6e8; }
 .day.today .day-num { background: var(--accent); color: white; }
@@ -108,6 +109,22 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
   display: inline-block; min-width: 22px; height: 22px; line-height: 22px;
   text-align: center; font-size: 12px; font-weight: 600; border-radius: 50%; margin-bottom: 4px;
 }
+
+/* Переключатель Месяц / Неделя */
+.view-mode {
+  display: flex; gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+  margin-right: 12px;
+}
+.mode-btn {
+  background: white; border: none; padding: 6px 14px; font-size: 12px;
+  cursor: pointer; color: var(--ink); transition: all .12s;
+}
+.mode-btn:hover { background: #fafafa; }
+.mode-btn.active { background: var(--accent); color: white; }
+
+/* Недельный режим: дни шире */
+.calendar.week-mode .day { min-height: 360px; }
+.calendar.week-mode .day .event-pill { font-size: 12px; padding: 6px 9px; }
 .event-pill {
   display: block; border-left: 3px solid var(--accent); background: #fdf3e9;
   padding: 4px 7px; border-radius: 4px; font-size: 11px; margin-bottom: 3px;
@@ -284,13 +301,17 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
 
 <div class="app" id="app">
   <header>
-    <h1>Команда · <em>Детали</em></h1>
+    <h1>Пространство <em>Детали</em></h1>
     <span class="badge">только просмотр</span>
     <div class="spacer"></div>
+    <div class="view-mode">
+      <button id="modeMonthBtn" class="mode-btn active" onclick="setViewMode('month')">Месяц</button>
+      <button id="modeWeekBtn" class="mode-btn" onclick="setViewMode('week')">Неделя</button>
+    </div>
     <div class="month-nav">
-      <button onclick="prevMonth()">‹</button>
+      <button onclick="prevPeriod()">‹</button>
       <h2 id="monthTitle">—</h2>
-      <button onclick="nextMonth()">›</button>
+      <button onclick="nextPeriod()">›</button>
     </div>
   </header>
 
@@ -344,7 +365,7 @@ const MONTH_NAMES = ['январь','февраль','март','апрель','
 const WEEKDAY_SHORT = ['пн','вт','ср','чт','пт','сб','вс'];
 const WEEKDAY_LONG = ['понедельник','вторник','среда','четверг','пятница','суббота','воскресенье'];
 
-const state = { curMonth: new Date(), events: [], currentEvent: null };
+const state = { curMonth: new Date(), curWeekStart: null, viewMode: 'month', events: [], currentEvent: null };
 
 // === Login ===
 function tryLogin() {
@@ -408,6 +429,75 @@ async function loadEvents() {
 }
 
 function renderCalendar() {
+  // Делегируем в зависимости от режима
+  const cal = document.querySelector('.calendar');
+  if (state.viewMode === 'week') {
+    cal.classList.add('week-mode');
+    renderWeek();
+  } else {
+    cal.classList.remove('week-mode');
+    renderMonth();
+  }
+}
+
+function startOfWeek_(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const wd = (x.getDay() + 6) % 7; // 0=пн ... 6=вс
+  x.setDate(x.getDate() - wd);
+  return x;
+}
+
+function setViewMode(mode) {
+  state.viewMode = mode;
+  document.getElementById('modeMonthBtn').classList.toggle('active', mode === 'month');
+  document.getElementById('modeWeekBtn').classList.toggle('active', mode === 'week');
+  if (mode === 'week' && !state.curWeekStart) {
+    state.curWeekStart = startOfWeek_(new Date());
+  }
+  renderCalendar();
+}
+
+function renderWeek() {
+  const ws = state.curWeekStart || startOfWeek_(new Date());
+  const we = new Date(ws); we.setDate(ws.getDate() + 6);
+  document.getElementById('monthTitle').textContent =
+    ws.getDate() + ' ' + MONTH_NAMES[ws.getMonth()] + ' — ' +
+    we.getDate() + ' ' + MONTH_NAMES[we.getMonth()] + ' ' + we.getFullYear();
+
+  const wd = document.getElementById('weekdays');
+  wd.innerHTML = WEEKDAY_SHORT.map((d, i) => `<div class="${i >= 5 ? 'weekend' : ''}">${d}</div>`).join('');
+
+  const grid = document.getElementById('daysGrid');
+  const today = new Date(); today.setHours(0,0,0,0);
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(ws);
+    d.setDate(ws.getDate() + i);
+    const dStr = ymd(d);
+    const isToday = d.getTime() === today.getTime();
+    const wkd = d.getDay();
+    const isWe = wkd === 0 || wkd === 6;
+    const dayEvents = state.events.filter(e => e.date === dStr && e.status !== 'archived');
+    dayEvents.sort((a, b) => (a.timeStart || '99').localeCompare(b.timeStart || '99'));
+    const eventsHtml = dayEvents.map(ev => {
+      const st = ev.status || 'draft';
+      return `
+        <div class="event-pill ${categoryClass(ev.format)} ${st}" onclick="openEvent('${ev.id}')">
+          <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">${escapeHtml(ev.name || ev.format || '')}</span>
+        </div>
+      `;
+    }).join('');
+    html += `
+      <div class="day ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''}">
+        <span class="day-num">${d.getDate()}</span>
+        ${eventsHtml}
+      </div>
+    `;
+  }
+  grid.innerHTML = html;
+}
+
+function renderMonth() {
   const m = state.curMonth.getMonth();
   const y = state.curMonth.getFullYear();
   document.getElementById('monthTitle').textContent = MONTH_NAMES[m] + ' ' + y;
@@ -450,8 +540,29 @@ function renderCalendar() {
   grid.innerHTML = html;
 }
 
-function prevMonth() { state.curMonth = new Date(state.curMonth.getFullYear(), state.curMonth.getMonth() - 1, 1); renderCalendar(); }
-function nextMonth() { state.curMonth = new Date(state.curMonth.getFullYear(), state.curMonth.getMonth() + 1, 1); renderCalendar(); }
+function prevPeriod() {
+  if (state.viewMode === 'week') {
+    const ws = state.curWeekStart || startOfWeek_(new Date());
+    const nw = new Date(ws); nw.setDate(ws.getDate() - 7);
+    state.curWeekStart = nw;
+  } else {
+    state.curMonth = new Date(state.curMonth.getFullYear(), state.curMonth.getMonth() - 1, 1);
+  }
+  renderCalendar();
+}
+function nextPeriod() {
+  if (state.viewMode === 'week') {
+    const ws = state.curWeekStart || startOfWeek_(new Date());
+    const nw = new Date(ws); nw.setDate(ws.getDate() + 7);
+    state.curWeekStart = nw;
+  } else {
+    state.curMonth = new Date(state.curMonth.getFullYear(), state.curMonth.getMonth() + 1, 1);
+  }
+  renderCalendar();
+}
+// Сохраняем старые имена для обратной совместимости (если где-то onclick остался)
+function prevMonth() { prevPeriod(); }
+function nextMonth() { nextPeriod(); }
 
 function openEvent(id) {
   const ev = state.events.find(e => e.id === id);
