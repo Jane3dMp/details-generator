@@ -104,6 +104,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   min-height: 110px; padding: 6px;
   border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
   position: relative;
+  min-width: 0;
+  overflow: hidden;
 }
 .day:nth-child(7n) { border-right: none; }
 .day.other-month { background: #fafafa; opacity: .35; }
@@ -122,7 +124,9 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   padding: 5px 8px; border-radius: 5px; font-size: 11px; margin-bottom: 4px;
   cursor: pointer; transition: all .15s;
   white-space: normal;
-  word-break: break-word;
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: none;
   line-height: 1.35;
 }
 .event-pill:hover {
@@ -554,13 +558,25 @@ body.view-mode-table .calendar, body.view-mode-table .list-view { display: none;
 
   main { padding: 14px 12px 30px; }
 
-  /* Таблица на мобиле — компактнее */
-  .events-table th, .events-table td { padding: 10px 8px; font-size: 13px; }
+  /* Таблица на мобиле — компактнее, скрываем неважные колонки */
+  .events-table th, .events-table td { padding: 8px 6px; font-size: 13px; }
+  .events-table th.col-thumb { padding-left: 10px; padding-right: 0; width: 56px; }
+  .events-table .col-thumb-cell { padding-left: 10px; padding-right: 0; width: 56px; }
+  .events-table .col-thumb-cell .thumb { width: 44px; height: 44px; border-radius: 6px; }
   .events-table .col-format { font-size: 10px; }
   .events-table .col-name { font-size: 13px; }
-  .events-table .col-action .btn-row { padding: 6px 10px; font-size: 11px; }
+  .events-table .col-date { font-size: 13px; }
+  .events-table .col-date .date-day { font-size: 13px; display: block; line-height: 1.2; }
+  .events-table .col-date .date-wd { font-size: 10px; margin-left: 0; display: block; }
+  .events-table .col-time { font-size: 13px; }
+  /* Скрываем «Действие» — клик по строке всё равно открывает модалку с кнопкой */
+  .events-table .col-action,
+  .events-table th.col-action { display: none; }
   .view-mode { margin-bottom: 12px; }
   .view-mode .mode-btn { padding: 6px 10px; font-size: 11px; }
+
+  /* Календарная плашка на мобиле — крупнее текст события, но все ещё переносится по словам */
+  .event-pill { font-size: 11px; padding: 4px 6px; }
 
   /* Модалка на всю высоту экрана */
   .modal-bg { padding: 0; align-items: stretch; }

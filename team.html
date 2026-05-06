@@ -98,6 +98,8 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
 .day {
   min-height: 110px; padding: 6px;
   border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  min-width: 0;     /* чтобы grid-ячейки не раздувались от длинного контента */
+  overflow: hidden;
 }
 .day:nth-child(7n) { border-right: none; }
 .day.other-month { background: #fafafa; opacity: .35; }
@@ -214,7 +216,11 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
   display: block; border-left: 3px solid var(--accent); background: #fdf3e9;
   padding: 4px 7px; border-radius: 4px; font-size: 11px; margin-bottom: 3px;
   cursor: pointer; transition: all .15s;
-  white-space: normal; word-break: break-word; line-height: 1.35;
+  white-space: normal; line-height: 1.35;
+  /* перенос только между словами; длинные слова не режем по слогам */
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: none;
 }
 .event-pill:hover { background: white; box-shadow: 0 0 0 1px var(--accent); }
 .event-pill.draft     { opacity: 0.78; border-left-style: dashed; }
@@ -365,9 +371,32 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
 
 @media (max-width: 700px) {
   .day { min-height: 80px; padding: 3px; }
-  .event-pill { font-size: 9px; padding: 2px 4px; }
+  .event-pill { font-size: 10px; padding: 3px 5px; }
   .event-pill .time { margin-right: 2px; }
   header h1 { font-size: 16px; }
+
+  /* Таблица на мобиле */
+  .events-table th, .events-table td { padding: 8px 6px; font-size: 12px; }
+  .events-table th.col-thumb { padding-left: 10px; padding-right: 0; width: 56px; }
+  .events-table .col-thumb-cell { padding-left: 10px; padding-right: 0; width: 56px; }
+  .events-table .col-thumb-cell .thumb { width: 44px; height: 44px; border-radius: 6px; }
+  .events-table .col-format { font-size: 10px; }
+  .events-table .col-name { font-size: 12px; }
+  .events-table .col-date { font-size: 12px; }
+  .events-table .col-date .wd { font-size: 10px; margin-left: 0; display: block; }
+  /* Скрываем педагога и статус (статус всё равно виден через цвет строки .modified) */
+  .events-table th:nth-child(5),
+  .events-table td:nth-child(5),
+  .events-table th.col-status,
+  .events-table .col-status { display: none; }
+
+  /* Неделя на мобиле — переключиться на месяц физически нельзя в коде,
+     но если кто-то всё же откроет: дни уменьшим */
+  .calendar.week-mode .day { min-height: 200px; }
+  .calendar.week-mode .event-pill { font-size: 10px; padding: 3px 5px; }
+
+  /* Кнопки переключателя режимов компактнее */
+  .view-mode .mode-btn { padding: 6px 10px; font-size: 11px; }
 }
 </style>
 </head>
