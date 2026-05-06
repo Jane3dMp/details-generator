@@ -583,7 +583,7 @@ body.view-mode-table .calendar, body.view-mode-table .list-view { display: none;
   .modal {
     max-width: 100%;
     border-radius: 0;
-    min-height: 100vh;
+    /* min-height не ставим — пусть модалка растёт по контенту, иначе кнопка уходит вниз */
     display: flex;
     flex-direction: column;
   }
@@ -594,7 +594,8 @@ body.view-mode-table .calendar, body.view-mode-table .list-view { display: none;
   .modal-banner .when { font-size: 13px; }
   .modal-close { top: 14px; right: 14px; width: 36px; height: 36px; }
 
-  .modal-body { padding: 16px 18px; max-height: none; flex: 1; }
+  /* Body растёт по контенту, не флекс-расширяется на всю высоту */
+  .modal-body { padding: 16px 18px; max-height: none; }
   .detail-row { padding: 8px 0; font-size: 14px; }
   .detail-row .lbl { width: 100px; font-size: 13px; }
   .detail-row .val.price { font-size: 17px; }
