@@ -2333,13 +2333,36 @@ function normalizeDateForCompare(s) {
   return str;
 }
 
+/**
+ * Извлекает «название события» из строки имени группы Альфы.
+ * Примеры:
+ *   'Глина "Тарелка для салата" - 65 руб.' → 'Тарелка для салата'
+ *   'Гавайская вечеринка - 120 руб.'        → 'Гавайская вечеринка'
+ *   'Просто текст'                            → 'Просто текст'
+ */
+function parseAlfaName(s) {
+  if (!s) return '';
+  let str = String(s).trim();
+  // Откусываем хвост ' - 120 руб.' / ' - 30 руб'
+  str = str.replace(/\s*-\s*\d+\s*руб\.?\s*$/i, '').trim();
+  // Если есть кавычки — забираем содержимое
+  const m = str.match(/[«"„]([^»"]+)[»"”]/);
+  if (m) return m[1].trim();
+  return str;
+}
+
 function computeAlfaDiff(ev, a) {
   const diff = {};
-  // name
-  // Альфа хранит имя в формате «Формат "Название" - 30 руб.». Строим ожидаемое и сравниваем.
+  // name — парсим имя из Альфы. Альфа хранит:
+  //   А) «Формат "Название" - 120 руб.» — когда создавали через конструктор
+  //   Б) «Гавайская вечеринка - 120 руб.» — когда создавали вручную (без кавычек)
+  // Применяем только в поле name события (формат не трогаем — слишком хрупко).
   const ourAlfaName = (ev.format || '') + (ev.name ? ' "' + ev.name + '"' : '') + (ev.price ? ' - ' + ev.price + ' руб.' : '');
   if (a.name && ourAlfaName.trim() !== String(a.name).trim()) {
-    diff.name = { ours: ourAlfaName, alfa: a.name, label: 'Название (в Альфе)', readOnly: true };
+    diff.name = {
+      ours: ourAlfaName, alfa: a.name, label: 'Название (в Альфе)',
+      applyValue: parseAlfaName(a.name)
+    };
   }
   // note vs alfaNote / description
   const ourNote = String(ev.alfaNote || ev.description || '').slice(0, 255).trim();
@@ -2396,10 +2419,14 @@ function renderAlfaDiffBlock(ev) {
   const rows = Object.keys(diff).map(k => {
     const d = diff[k];
     const ours = d.ours == null || d.ours === '' ? '<i style="opacity:.5">пусто</i>' : escapeHtml(String(d.ours));
-    const alfa = d.alfa == null || d.alfa === '' ? '<i style="opacity:.5">пусто</i>' : escapeHtml(String(d.alfa));
-    // Поля только для чтения (name) — без чекбокса, с пометкой
+    let alfa = d.alfa == null || d.alfa === '' ? '<i style="opacity:.5">пусто</i>' : escapeHtml(String(d.alfa));
+    // Если applyValue отличается от alfa — покажем мелкой строкой что именно применится
+    if (d.applyValue != null && String(d.applyValue) !== String(d.alfa)) {
+      alfa += `<br><span style="font-size:10px; color:#7a5408;">→ применится: <b>${escapeHtml(String(d.applyValue))}</b></span>`;
+    }
+    // Поля только для чтения (если есть) — без чекбокса, с пометкой
     const checkbox = d.readOnly
-      ? '<span title="Это поле нельзя автоматически применить — сделай вручную в Альфе или в форме" style="opacity:.4; font-size:14px;">🔒</span>'
+      ? '<span title="Это поле нельзя автоматически применить" style="opacity:.4; font-size:14px;">🔒</span>'
       : `<input type="checkbox" data-diff-key="${escapeAttr(k)}" id="diffChk_${escapeAttr(k)}" checked>`;
     return `<div style="display:grid; grid-template-columns: 24px 110px 1fr 1fr; gap:6px; padding:5px 0; border-bottom:1px dashed #e6c69a; align-items:center;">
       <div style="text-align:center;">${checkbox}</div>
@@ -2439,12 +2466,12 @@ async function alfaApplyFromAlfa() {
   checked.forEach(k => {
     const d = ev._alfaDiff[k];
     if (!d) return;
-    if (k === 'date' && d.applyValue) ev.date = d.applyValue;
+    if (k === 'name' && d.applyValue) ev.name = d.applyValue;
+    else if (k === 'date' && d.applyValue) ev.date = d.applyValue;
     else if (k === 'timeStart' && snap.time_from) ev.timeStart = snap.time_from;
     else if (k === 'duration' && d.applyValue != null) ev.duration = d.applyValue;
     else if (k === 'limit' && snap.limit != null) ev.limit = snap.limit;
     else if (k === 'note' && snap.note != null) ev.alfaNote = snap.note;
-    // 'name' — readOnly, пропускаем (его нет в чекбоксах)
   });
 
   // Сбрасываем дифф у этого события (или пересчитываем — но проще сбросить, при следующем pull обновится)
