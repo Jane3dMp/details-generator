@@ -146,6 +146,21 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
   letter-spacing: .5px;
 }
 .events-table th.right { text-align: right; }
+.events-table th.col-thumb { width: 72px; padding-left: 14px; padding-right: 0; }
+.events-table .col-thumb-cell {
+  padding-left: 14px;
+  padding-right: 0;
+  width: 72px;
+}
+.events-table .col-thumb-cell .thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  background-color: #f5efe5;
+}
+.events-table .col-thumb-cell .thumb.empty { background: transparent; }
 .events-table tbody tr {
   border-bottom: 1px solid var(--line);
   cursor: pointer;
@@ -660,9 +675,14 @@ function renderTable() {
     if (isToday) cls.push('today');
 
     const priceHtml = ev.price ? (ev.price + ' р') : '<span class="em">—</span>';
+    const refs = (ev.references || []).filter(r => r && r.thumb);
+    const thumbHtml = refs.length > 0
+      ? `<div class="thumb" style="background-image: url('${refs[0].thumb.replace(/'/g, "%27")}')"></div>`
+      : `<div class="thumb empty"></div>`;
 
     return `
       <tr class="${cls.join(' ')}" onclick="openEvent('${ev.id}')">
+        <td class="col-thumb-cell">${thumbHtml}</td>
         <td class="col-date">${d.getDate()} ${MONTH_NAMES[m].slice(0,3)}<span class="wd">${wdShort}</span></td>
         <td class="col-time">${escapeHtml(ev.timeStart || '—')}</td>
         <td>
@@ -680,6 +700,7 @@ function renderTable() {
     <table class="events-table">
       <thead>
         <tr>
+          <th class="col-thumb"></th>
           <th>Дата</th>
           <th>Время</th>
           <th>Событие</th>

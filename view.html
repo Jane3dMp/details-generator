@@ -247,6 +247,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   font-family: 'Onest', sans-serif;
 }
 .events-table th.col-price, .events-table th.col-action { text-align: right; }
+.events-table th.col-thumb { width: 72px; padding-left: 16px; padding-right: 0; }
 .events-table tbody tr {
   border-bottom: 1px solid var(--line);
   transition: background .12s;
@@ -270,6 +271,20 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   font-family: 'Manrope', sans-serif;
   font-weight: 600;
 }
+.events-table .col-thumb-cell {
+  padding-left: 16px;
+  padding-right: 0;
+  width: 72px;
+}
+.events-table .col-thumb-cell .thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--milk);
+}
+.events-table .col-thumb-cell .thumb.empty { background: transparent; }
 .events-table .col-date .date-day { font-size: 16px; color: var(--dark); }
 .events-table .col-date .date-wd { font-size: 11px; color: var(--muted); text-transform: lowercase; margin-left: 4px; }
 .events-table .col-time {
@@ -887,6 +902,7 @@ function renderTable() {
     if (ev.isPrivate) {
       return `
         <tr class="${cls.join(' ')}" onclick="openEvent('${ev.id}')">
+          <td class="col-thumb-cell"><div class="thumb empty"></div></td>
           <td class="col-date"><span class="date-day">${d.getDate()} ${MONTH_NAMES_GEN[m]}</span><span class="date-wd">${wdShort}</span></td>
           <td class="col-time">${escapeHtml(ev.timeStart || '—')}</td>
           <td><div class="col-format">Приватное</div><div class="col-name">Слот занят</div></td>
@@ -897,8 +913,13 @@ function renderTable() {
     }
 
     const priceHtml = ev.price ? (ev.price + ' руб') : '<span class="em">по запросу</span>';
+    const refs = (ev.references || []).filter(r => r && r.thumb);
+    const thumbHtml = refs.length > 0
+      ? `<div class="thumb" style="background-image: url('${refs[0].thumb.replace(/'/g, "%27")}')"></div>`
+      : `<div class="thumb empty"></div>`;
     return `
       <tr class="${cls.join(' ')}" onclick="openEvent('${ev.id}')">
+        <td class="col-thumb-cell">${thumbHtml}</td>
         <td class="col-date"><span class="date-day">${d.getDate()} ${MONTH_NAMES_GEN[m]}</span><span class="date-wd">${wdShort}</span></td>
         <td class="col-time">${escapeHtml(ev.timeStart || '—')}</td>
         <td>
@@ -917,6 +938,7 @@ function renderTable() {
     <table class="events-table">
       <thead>
         <tr>
+          <th class="col-thumb"></th>
           <th>Дата</th>
           <th>Время</th>
           <th>Событие</th>
