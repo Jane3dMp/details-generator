@@ -2321,13 +2321,25 @@ async function pullFromAlfa() {
  * Сравнивает наши данные события с альфа-снимком.
  * Возвращает { поле: { ours, alfa, label } } для отличающихся полей.
  */
+function normalizeDateForCompare(s) {
+  if (!s) return '';
+  const str = String(s).trim();
+  // ISO 'yyyy-MM-dd' или 'yyyy-MM-ddT...'
+  let m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[1] + '-' + m[2] + '-' + m[3];
+  // Русский 'dd.MM.yyyy'
+  m = str.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if (m) return m[3] + '-' + String(m[2]).padStart(2,'0') + '-' + String(m[1]).padStart(2,'0');
+  return str;
+}
+
 function computeAlfaDiff(ev, a) {
   const diff = {};
   // name
   // Альфа хранит имя в формате «Формат "Название" - 30 руб.». Строим ожидаемое и сравниваем.
   const ourAlfaName = (ev.format || '') + (ev.name ? ' "' + ev.name + '"' : '') + (ev.price ? ' - ' + ev.price + ' руб.' : '');
   if (a.name && ourAlfaName.trim() !== String(a.name).trim()) {
-    diff.name = { ours: ourAlfaName, alfa: a.name, label: 'Название (в Альфе)' };
+    diff.name = { ours: ourAlfaName, alfa: a.name, label: 'Название (в Альфе)', readOnly: true };
   }
   // note vs alfaNote / description
   const ourNote = String(ev.alfaNote || ev.description || '').slice(0, 255).trim();
@@ -2338,9 +2350,11 @@ function computeAlfaDiff(ev, a) {
   if (a.limit != null && Number(a.limit) !== Number(ev.limit || 0)) {
     diff.limit = { ours: ev.limit, alfa: a.limit, label: 'Лимит участников' };
   }
-  // дата (b_date группы — формат yyyy-MM-dd)
-  if (a.b_date && a.b_date !== ev.date) {
-    diff.date = { ours: ev.date, alfa: a.b_date, label: 'Дата' };
+  // дата (b_date группы) — нормализуем оба формата к 'yyyy-MM-dd'
+  const ourDateNorm = normalizeDateForCompare(ev.date);
+  const alfaDateNorm = normalizeDateForCompare(a.b_date);
+  if (alfaDateNorm && ourDateNorm !== alfaDateNorm) {
+    diff.date = { ours: ev.date, alfa: a.b_date, label: 'Дата', applyValue: alfaDateNorm };
   }
   // время (из урока, если есть)
   if (a.time_from && ev.timeStart && a.time_from !== ev.timeStart) {
@@ -2350,7 +2364,8 @@ function computeAlfaDiff(ev, a) {
   if (a.duration_min != null && ev.duration) {
     const ourMin = Math.round((ev.duration || 0) * 60);
     if (Math.abs(ourMin - a.duration_min) > 1) {
-      diff.duration = { ours: ev.duration + ' ч', alfa: (a.duration_min / 60).toFixed(1) + ' ч', label: 'Длительность' };
+      diff.duration = { ours: ev.duration + ' ч', alfa: (a.duration_min / 60).toFixed(1) + ' ч',
+                        label: 'Длительность', applyValue: +(a.duration_min / 60).toFixed(2) };
     }
   }
   return diff;
@@ -2369,19 +2384,31 @@ function renderAlfaDiffBlock(ev) {
     body.innerHTML = '<b>Группа в Альфе не найдена</b> (возможно, удалена или архивирована).<br>' +
       'Можно отвязать событие или создать заново.';
     row.style.display = 'block';
+    // Кнопку «Применить из Альфы» прячем — нечего применять
+    const btn = row.querySelector('button[onclick="alfaApplyFromAlfa()"]');
+    if (btn) btn.style.display = 'none';
     return;
   }
+  // Восстанавливаем кнопку (на случай если ранее скрыли)
+  const applyBtn = row.querySelector('button[onclick="alfaApplyFromAlfa()"]');
+  if (applyBtn) applyBtn.style.display = '';
+
   const rows = Object.keys(diff).map(k => {
     const d = diff[k];
     const ours = d.ours == null || d.ours === '' ? '<i style="opacity:.5">пусто</i>' : escapeHtml(String(d.ours));
     const alfa = d.alfa == null || d.alfa === '' ? '<i style="opacity:.5">пусто</i>' : escapeHtml(String(d.alfa));
-    return `<div style="display:grid; grid-template-columns: 100px 1fr 1fr; gap:6px; padding:3px 0; border-bottom:1px dashed #e6c69a;">
-      <div style="font-weight:500;">${escapeHtml(d.label)}</div>
+    // Поля только для чтения (name) — без чекбокса, с пометкой
+    const checkbox = d.readOnly
+      ? '<span title="Это поле нельзя автоматически применить — сделай вручную в Альфе или в форме" style="opacity:.4; font-size:14px;">🔒</span>'
+      : `<input type="checkbox" data-diff-key="${escapeAttr(k)}" id="diffChk_${escapeAttr(k)}" checked>`;
+    return `<div style="display:grid; grid-template-columns: 24px 110px 1fr 1fr; gap:6px; padding:5px 0; border-bottom:1px dashed #e6c69a; align-items:center;">
+      <div style="text-align:center;">${checkbox}</div>
+      <label for="diffChk_${escapeAttr(k)}" style="font-weight:500; cursor:${d.readOnly ? 'default' : 'pointer'};">${escapeHtml(d.label)}</label>
       <div><span style="color:#888; font-size:10px;">у нас:</span><br>${ours}</div>
       <div><span style="color:#a85a13; font-size:10px;">в Альфе:</span><br>${alfa}</div>
     </div>`;
   }).join('');
-  body.innerHTML = rows;
+  body.innerHTML = `<div style="font-size:11px; color:#a85a13; margin-bottom:6px;">Отметь галочками что применить, потом жми «⬇ Применить из Альфы»:</div>` + rows;
   row.style.display = 'block';
 }
 
@@ -2395,18 +2422,32 @@ async function alfaApplyFromAlfa() {
     toast('Нет свежего снимка из Альфы', 'err');
     return;
   }
-  if (!confirm('Применить данные из Альфы?\nЛокальные значения будут перезаписаны: ' + Object.keys(ev._alfaDiff).join(', '))) return;
 
-  // Применяем поля из снимка
-  if (snap.b_date) ev.date = snap.b_date;
-  if (snap.time_from) ev.timeStart = snap.time_from;
-  if (snap.duration_min != null) ev.duration = +(snap.duration_min / 60).toFixed(2);
-  if (snap.limit != null) ev.limit = snap.limit;
-  if (snap.note != null) ev.alfaNote = snap.note;
-  // Имя — подменяем только evNote/description при наличии. Имя/формат не парсим обратно из «Формат "Название"…»
-  // — слишком хрупко. Оставляем как есть, иначе можно сломать.
+  // Собираем отмеченные ключи
+  const checked = [];
+  document.querySelectorAll('#evAlfaDiffBody input[type="checkbox"][data-diff-key]:checked').forEach(c => {
+    checked.push(c.getAttribute('data-diff-key'));
+  });
+  if (checked.length === 0) {
+    toast('Не выбрано ни одного поля', 'err');
+    return;
+  }
+  const labels = checked.map(k => (ev._alfaDiff[k] && ev._alfaDiff[k].label) || k);
+  if (!confirm('Применить из Альфы?\n\n' + labels.map(l => '• ' + l).join('\n') + '\n\nЛокальные значения будут перезаписаны.')) return;
 
-  // Сбрасываем диф у этого события
+  // Применяем только отмеченные поля
+  checked.forEach(k => {
+    const d = ev._alfaDiff[k];
+    if (!d) return;
+    if (k === 'date' && d.applyValue) ev.date = d.applyValue;
+    else if (k === 'timeStart' && snap.time_from) ev.timeStart = snap.time_from;
+    else if (k === 'duration' && d.applyValue != null) ev.duration = d.applyValue;
+    else if (k === 'limit' && snap.limit != null) ev.limit = snap.limit;
+    else if (k === 'note' && snap.note != null) ev.alfaNote = snap.note;
+    // 'name' — readOnly, пропускаем (его нет в чекбоксах)
+  });
+
+  // Сбрасываем дифф у этого события (или пересчитываем — но проще сбросить, при следующем pull обновится)
   ev._alfaDiff = {};
   ev._alfaSnapshot = null;
 
@@ -2415,7 +2456,7 @@ async function alfaApplyFromAlfa() {
   closeModal('eventModal');
   setTimeout(() => openEventEditor(ev.id), 50);
   renderCalendar();
-  toast('Данные из Альфы применены', 'ok');
+  toast('Применено: ' + labels.join(', '), 'ok');
 }
 
 async function alfaUnlink() {
