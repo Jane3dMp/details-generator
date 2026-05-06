@@ -1463,6 +1463,34 @@ function renderStaffTab() {
 // ============================================================
 // СОБЫТИЕ — РЕДАКТОР
 // ============================================================
+/**
+ * Управляет видимостью элементов внутри блока «Куда публиковать».
+ *  mode='draft' → видны все 3 чекбокса и (если eventSaved) все 3 кнопки.
+ *  mode='published' → скрыты «🚀 В Альфу» (он бессмыслен, группа уже есть),
+ *                     видны «🌐 Клиентам» и «📣 Промо».
+ */
+function _setPublishBlockMode(mode, eventSaved) {
+  const alfaCheckboxLabel = document.getElementById('evPublishToAlfa').closest('label');
+  const alfaButton = document.querySelector('button[onclick="publishOneToAlfa()"]');
+  const buttonsRow = document.getElementById('evPublishButtons');
+  if (mode === 'published') {
+    if (alfaCheckboxLabel) alfaCheckboxLabel.style.display = 'none';
+    if (alfaButton) alfaButton.style.display = 'none';
+    if (buttonsRow) {
+      buttonsRow.style.display = 'grid';
+      buttonsRow.style.gridTemplateColumns = '1fr 1fr';  // только 2 кнопки теперь
+    }
+  } else {
+    // draft
+    if (alfaCheckboxLabel) alfaCheckboxLabel.style.display = 'flex';
+    if (alfaButton) alfaButton.style.display = '';
+    if (buttonsRow) {
+      buttonsRow.style.display = eventSaved ? 'grid' : 'none';
+      buttonsRow.style.gridTemplateColumns = '1fr 1fr 1fr';
+    }
+  }
+}
+
 function openEventEditor(eventId, defaultDate) {
   state.editingEventId = eventId;
   const isEdit = !!eventId;
@@ -1511,26 +1539,33 @@ function openEventEditor(eventId, defaultDate) {
   const createRow = document.getElementById('evCreateRow');
   const linkRow = document.getElementById('evLinkRow');
   const linkInput = document.getElementById('evAlfaGroupId');
+
+  // Блок «Куда публиковать» виден ВСЕГДА (кроме archived).
+  // Кнопки внутри показываются если событие уже сохранено (есть state.editingEventId).
+  // А вот видимость отдельных чекбоксов/кнопок «В Альфу» зависит от того, опубликовано ли уже:
+  //   - draft → виден весь блок (Альфа+Клиенты+Промо)
+  //   - published/modified → Альфа уже есть, скрываем «🚀 В Альфу», но Клиенты/Промо доступны
+
   if (!ev || ev.status === 'draft' || !ev.status) {
     stBlock.innerHTML = '<span style="color:var(--muted)">◌ Черновик · в Альфе ещё не создано</span>';
     createRow.style.display = 'block';
     linkRow.style.display = 'flex';
     linkInput.value = '';
-    // Кнопка «Опубликовать только это событие» — показываем только если событие уже сохранено
-    // (для нового события сначала «Сохранить», потом откроется заново — и кнопка появится)
-    // Новые 3 кнопки — показываем только если событие уже сохранено.
-    // (Для нового сначала нужен «Сохранить», потом откроется заново и кнопки появятся.)
-    document.getElementById('evPublishButtons').style.display = ev ? 'grid' : 'none';
+    // Все 3 чекбокса и 3 кнопки видны
+    _setPublishBlockMode('draft', !!ev);
   } else if (ev.status === 'published') {
     stBlock.innerHTML = `<span style="color:var(--green)">✓ Опубликовано в Альфе · группа id=${ev.alfaGroupId}</span>` +
       (ev.formUrl ? `<br><a href="${ev.formUrl}" target="_blank" style="font-size:11px;">🔗 Ссылка для записи клиентов</a>` : '');
-    createRow.style.display = 'none';
+    createRow.style.display = 'block';
     linkRow.style.display = 'none';
+    // Альфа уже создана — скрываем «🚀 В Альфу», но Клиентам/Промо нужны
+    _setPublishBlockMode('published', true);
   } else if (ev.status === 'modified') {
     stBlock.innerHTML = `<span style="color:var(--yellow)">⏳ Есть изменения, не отправленные в Альфу (id=${ev.alfaGroupId})</span><br>` +
       `<span style="font-size:11px; color:var(--muted)">Нажмите «🔄 Применить изменения» в шапке, чтобы синхронизировать</span>`;
-    createRow.style.display = 'none';
+    createRow.style.display = 'block';
     linkRow.style.display = 'none';
+    _setPublishBlockMode('published', true);
   } else if (ev.status === 'archived') {
     stBlock.innerHTML = '<span style="color:var(--red)">🗑 Помечено к архивации</span>';
     createRow.style.display = 'none';
