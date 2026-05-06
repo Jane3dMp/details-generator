@@ -670,6 +670,7 @@ main {
       <button class="primary" onclick="publishEventsToAlfa('create')" title="Создать в Альфе все события со статусом «Черновик»">🚀 Опубликовать черновики</button>
       <button onclick="publishEventsToAlfa('sync')" title="Применить в Альфе все изменения" id="syncBtn" style="display:none">🔄 Применить изменения <span id="syncCount" class="badge"></span></button>
       <button onclick="pullFromAlfa()" title="Сравнить локальные данные с Альфой и подсветить расхождения" id="pullBtn">⬇ Подтянуть из Альфы <span id="pullDiffCount" class="badge" style="display:none">0</span></button>
+      <button onclick="rebuildFromAlfa()" title="Полностью переписать админку из Альфы (Альфа = мастер)" style="border-color: var(--red); color: var(--red);">🔁 Перезагрузить из Альфы</button>
       <button class="ghost" onclick="testAlfaConnection()" title="Проверить связь с Альфа CRM">🔍</button>
     </div>
     <div class="sep"></div>
@@ -2258,6 +2259,79 @@ async function publishSingleEvent() {
  * Расхождения сохраняем в ev._alfaDiff = { поле: { ours, alfa } }.
  * Также сохраняем «снимок» в ev._alfaSnapshot для подстановки при «Применить из Альфы».
  */
+/**
+ * Полная перезапись админки из Альфы. Двухшаговая:
+ *   1) Dry-run — бэк собирает превью, что произойдёт. Показываем модалку.
+ *   2) Apply — реальная перезапись. Бэк делает бэкапы.
+ * После apply — перезагружаем страницу, чтобы подхватить новый working_main.
+ */
+async function rebuildFromAlfa() {
+  if (!confirm(
+    '🔁 Перезагрузить админку из Альфы?\n\n' +
+    'Сейчас сделаю «сухой прогон» — покажу что произойдёт.\n' +
+    'Перезаписывать ничего не буду пока ты не подтвердишь второй раз.'
+  )) return;
+
+  toast('Тяну данные из Альфы…', 'ok');
+  const dry = await apiPost('rebuildFromAlfaDryRun', {});
+  if (!dry.ok) {
+    toast('Ошибка: ' + (dry.error || ''), 'err');
+    return;
+  }
+  const s = dry.stats || {};
+  const msgLines = [
+    '📊 ЧТО БУДЕТ:',
+    '',
+    '• Групп в Альфе: ' + (s.totalGroups || 0),
+    '• Активных (не архивированных, нашего филиала): ' + (s.activeGroups || 0),
+    '• Из них станет событиями в админке: ' + (s.eventsToCreate || 0),
+    '• Из них с распознанным форматом: ' + (s.formatMatched || 0),
+    '• С неизвестным форматом (формат пустой): ' + (s.formatUnknown || 0),
+    '• Уникальных шаблонов в библиотеке: ' + (s.templatesToCreate || 0),
+    ''
+  ];
+  if (s.samples && s.samples.length) {
+    msgLines.push('Примеры (первые ' + s.samples.length + '):');
+    s.samples.forEach(p => {
+      const fmt = p.format || '(?)';
+      const nm = p.name || '(без названия)';
+      const pr = p.price ? p.price + ' р' : '—';
+      msgLines.push('  ' + p.date + ' ' + p.time + ' — ' + fmt + ' / ' + nm + ' / ' + pr);
+    });
+    msgLines.push('');
+  }
+  msgLines.push('⚠ ВАЖНО ПРИ ПРИМЕНЕНИИ:');
+  msgLines.push('• Текущий рабочий черновик БУДЕТ ПЕРЕЗАПИСАН.');
+  msgLines.push('  (Бэкап сохранится в листе «Черновики_детали».)');
+  msgLines.push('• Шаблоны_детали БУДУТ ПЕРЕЗАПИСАНЫ.');
+  msgLines.push('  (Старый лист скопируется в «Шаблоны_бэкап_<дата>».)');
+  msgLines.push('• view.html и team.html сразу подхватят новые данные.');
+  msgLines.push('');
+  msgLines.push('Применить?');
+
+  if (!confirm(msgLines.join('\n'))) {
+    toast('Отменено. Ничего не изменилось.', 'ok');
+    return;
+  }
+
+  toast('Применяю… подожди ~10 сек', 'ok');
+  const r = await apiPost('rebuildFromAlfaApply', {});
+  if (!r.ok) {
+    toast('Ошибка: ' + (r.error || ''), 'err');
+    return;
+  }
+  alert(
+    '✅ Готово.\n\n' +
+    'Создано событий: ' + (r.stats?.eventsToCreate || 0) + '\n' +
+    'Создано шаблонов: ' + (r.stats?.templatesToCreate || 0) + '\n\n' +
+    'Бэкап старого черновика: ' + (r.backups?.workingMain || '—') + '\n' +
+    'Бэкап шаблонов: ' + (r.backups?.templates || '—') + '\n\n' +
+    'Сейчас страница перезагрузится, чтобы подхватить новые данные.'
+  );
+  // Перезагрузка с обходом кэша
+  location.reload();
+}
+
 async function pullFromAlfa() {
   const linked = state.events.filter(e => e.alfaGroupId && e.status !== 'archived');
   if (linked.length === 0) {
