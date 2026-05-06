@@ -775,8 +775,18 @@ main {
           <input type="number" id="evLimit" min="1" value="12">
         </div>
         <div>
-          <label>Расход на чел., руб</label>
+          <label>Расход на чел., руб <span style="color:var(--muted); font-weight:normal">(материалы)</span></label>
           <input type="number" id="evCostPerson" min="0">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Расход на группу, руб <span style="color:var(--muted); font-weight:normal">(педагог, админ, аренда — фикс)</span></label>
+          <input type="number" id="evCostGroup" min="0">
+        </div>
+        <div>
+          <label>Итого расход <span style="color:var(--muted); font-weight:normal">(автосчёт)</span></label>
+          <div id="evCostTotalBlock" style="padding:7px 10px; border:1px solid var(--line); border-radius:6px; background:#fafafa; min-height:34px; font-size:12px; line-height:1.4;">—</div>
         </div>
       </div>
       <div class="row full">
@@ -1301,7 +1311,7 @@ function renderFinanceTab() {
     const r = (e.price || 0) * (e.limit || 0);
     const teacher = state.teachers.find(t => t.name === e.teacher);
     const teacherCost = teacher && teacher.rate ? teacher.rate : 0;
-    const c = teacherCost + (e.costPerPerson || 0) * (e.limit || 0);
+    const c = teacherCost + (e.costPerPerson || 0) * (e.limit || 0) + (e.costGroup || 0);
     revenue += r;
     cost += c;
   });
@@ -1387,6 +1397,8 @@ function openEventEditor(eventId, defaultDate) {
   document.getElementById('evPrice').value = ev ? (ev.price ?? '') : '';
   document.getElementById('evLimit').value = ev ? (ev.limit ?? 12) : 12;
   document.getElementById('evCostPerson').value = ev ? (ev.costPerPerson ?? '') : '';
+  document.getElementById('evCostGroup').value = ev ? (ev.costGroup ?? '') : '';
+  updateCostTotal();
   document.getElementById('evDescr').value = ev ? (ev.description || '') : '';
   document.getElementById('evAlfaNote').value = ev ? (ev.alfaNote || '') : '';
   updateAlfaNoteCounter();
@@ -1432,7 +1444,7 @@ function openEventEditor(eventId, defaultDate) {
   }
 
   updateEventFinStats();
-  ['evPrice','evLimit','evCostPerson','evTeacher'].forEach(id =>
+  ['evPrice','evLimit','evCostPerson','evCostGroup','evTeacher'].forEach(id =>
     document.getElementById(id).addEventListener('input', updateEventFinStats, { once: true })
   );
 
@@ -1457,17 +1469,40 @@ function updateEventFinStats() {
   const price = parseFloat(document.getElementById('evPrice').value) || 0;
   const limit = parseInt(document.getElementById('evLimit').value) || 0;
   const cpp = parseFloat(document.getElementById('evCostPerson').value) || 0;
+  const cgr = parseFloat(document.getElementById('evCostGroup').value) || 0;
   const teacherName = document.getElementById('evTeacher').value;
   const teacher = state.teachers.find(t => t.name === teacherName);
   const teacherRate = teacher && teacher.rate ? teacher.rate : 0;
   const revenue = price * limit;
-  const cost = teacherRate + cpp * limit;
+  const cost = teacherRate + cpp * limit + cgr;
   const margin = revenue - cost;
   document.getElementById('evFinStats').innerHTML = `
     <div><div class="ttl">Выручка max</div><div class="val">${fmt(revenue)}</div></div>
     <div><div class="ttl">Расход</div><div class="val">${fmt(cost)}</div></div>
     <div class="${margin >= 0 ? 'green' : ''}"><div class="ttl">Маржа</div><div class="val">${fmt(margin)}</div></div>
   `;
+  updateCostTotal();
+}
+
+function updateCostTotal() {
+  const limitEl = document.getElementById('evLimit');
+  const cppEl = document.getElementById('evCostPerson');
+  const cgrEl = document.getElementById('evCostGroup');
+  const block = document.getElementById('evCostTotalBlock');
+  if (!block || !limitEl || !cppEl || !cgrEl) return;
+  const limit = parseInt(limitEl.value) || 0;
+  const cpp = parseFloat(cppEl.value) || 0;
+  const cgr = parseFloat(cgrEl.value) || 0;
+  const perGroupFromPersons = cpp * limit;
+  const total = perGroupFromPersons + cgr;
+  if (total === 0) {
+    block.innerHTML = '<span style="color:var(--muted)">—</span>';
+    return;
+  }
+  const parts = [];
+  if (perGroupFromPersons > 0) parts.push(fmt(cpp) + ' × ' + limit + ' = ' + fmt(perGroupFromPersons));
+  if (cgr > 0) parts.push('+ ' + fmt(cgr) + ' (на группу)');
+  block.innerHTML = '<b>' + fmt(total) + '</b><br><span style="color:var(--muted); font-size:11px;">' + parts.join(' ') + '</span>';
 }
 
 function saveEvent() {
@@ -1482,6 +1517,7 @@ function saveEvent() {
     price: parseFloat(document.getElementById('evPrice').value) || null,
     limit: parseInt(document.getElementById('evLimit').value) || null,
     costPerPerson: parseFloat(document.getElementById('evCostPerson').value) || null,
+    costGroup: parseFloat(document.getElementById('evCostGroup').value) || null,
     description: document.getElementById('evDescr').value.trim(),
     alfaNote: document.getElementById('evAlfaNote').value.trim(),
     publishToAlfa: document.getElementById('evPublishToAlfa').checked,
