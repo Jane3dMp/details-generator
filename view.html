@@ -140,7 +140,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 .event-pill.cat-expert  { border-left-color: var(--olive-light); background: #eef0e5; }
 .event-pill.cat-private { border-left-color: var(--muted); background: #ece6dd; opacity: .85; }
 
-/* ================ СПИСОК (мобильный) ================ */
+/* ================ СПИСОК ================ */
 .list-view { display: none; }
 .list-day {
   background: white;
@@ -220,6 +220,142 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   flex-shrink: 0;
 }
 .list-event.private .ev-name { color: var(--muted); font-style: italic; }
+
+/* ================ ТАБЛИЦА ================ */
+.table-view { display: none; }
+.events-table {
+  width: 100%;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border-collapse: collapse;
+}
+.events-table thead {
+  background: var(--milk);
+  border-bottom: 2px solid var(--line);
+}
+.events-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  font-family: 'Onest', sans-serif;
+}
+.events-table th.col-price, .events-table th.col-action { text-align: right; }
+.events-table tbody tr {
+  border-bottom: 1px solid var(--line);
+  transition: background .12s;
+  cursor: pointer;
+}
+.events-table tbody tr:last-child { border-bottom: none; }
+.events-table tbody tr:hover { background: var(--milk); }
+.events-table tbody tr.weekend { background: #fdf6e8; }
+.events-table tbody tr.weekend:hover { background: #f9eed8; }
+.events-table tbody tr.today { background: #fff1d9; }
+.events-table tbody tr.private { opacity: .7; }
+.events-table tbody tr.private:hover { background: #efe5d3; }
+.events-table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  vertical-align: middle;
+  font-family: 'Onest', sans-serif;
+}
+.events-table .col-date {
+  white-space: nowrap;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+}
+.events-table .col-date .date-day { font-size: 16px; color: var(--dark); }
+.events-table .col-date .date-wd { font-size: 11px; color: var(--muted); text-transform: lowercase; margin-left: 4px; }
+.events-table .col-time {
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--terracotta);
+  font-family: 'Manrope', sans-serif;
+}
+.events-table .col-format {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-weight: 600;
+  font-family: 'Onest', sans-serif;
+  margin-bottom: 2px;
+}
+.events-table .col-name {
+  font-weight: 600;
+  color: var(--dark);
+  font-family: 'Manrope', sans-serif;
+}
+.events-table tr.private .col-name { font-style: italic; color: var(--muted); }
+.events-table .col-price {
+  text-align: right;
+  white-space: nowrap;
+  color: var(--amber-dark);
+  font-weight: 700;
+  font-family: 'Manrope', sans-serif;
+}
+.events-table .col-price .em { color: var(--muted); font-weight: 400; font-style: italic; }
+.events-table .col-action { text-align: right; white-space: nowrap; }
+.events-table .col-action .btn-row {
+  display: inline-block;
+  background: var(--amber);
+  color: white;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background .15s;
+}
+.events-table .col-action .btn-row:hover { background: var(--amber-dark); }
+.events-table .col-action .btn-row.olive { background: var(--olive); }
+.events-table .col-action .btn-row.olive:hover { background: #5a6a3e; }
+
+/* ================ ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ ================ */
+.view-mode {
+  display: inline-flex;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.view-mode .mode-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: 'Onest', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  transition: all .15s;
+}
+.view-mode .mode-btn:hover { color: var(--dark); }
+.view-mode .mode-btn.active {
+  background: var(--terracotta);
+  color: white;
+}
+
+/* Видимость режимов через класс на body */
+body.view-mode-calendar .calendar { display: block; }
+body.view-mode-calendar .list-view, body.view-mode-calendar .table-wrap { display: none; }
+body.view-mode-list .list-view { display: block; }
+body.view-mode-list .calendar, body.view-mode-list .table-wrap { display: none; }
+body.view-mode-table .table-wrap { display: block; overflow-x: auto; }
+body.view-mode-table .calendar, body.view-mode-table .list-view { display: none; }
 
 .empty {
   padding: 80px 20px; text-align: center; color: var(--muted); font-size: 14px;
@@ -382,10 +518,6 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 
 /* ================ МОБИЛЬНАЯ АДАПТАЦИЯ ================ */
 @media (max-width: 720px) {
-  /* Скрываем календарь, показываем список */
-  .calendar { display: none; }
-  .list-view { display: block; }
-
   body { font-size: 15px; }
 
   header {
@@ -406,6 +538,14 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   .month-nav h2 { font-size: 15px; min-width: 130px; margin: 0 4px; }
 
   main { padding: 14px 12px 30px; }
+
+  /* Таблица на мобиле — компактнее */
+  .events-table th, .events-table td { padding: 10px 8px; font-size: 13px; }
+  .events-table .col-format { font-size: 10px; }
+  .events-table .col-name { font-size: 13px; }
+  .events-table .col-action .btn-row { padding: 6px 10px; font-size: 11px; }
+  .view-mode { margin-bottom: 12px; }
+  .view-mode .mode-btn { padding: 6px 10px; font-size: 11px; }
 
   /* Модалка на всю высоту экрана */
   .modal-bg { padding: 0; align-items: stretch; }
@@ -448,7 +588,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 }
 </style>
 </head>
-<body>
+<body class="view-mode-calendar">
 
 <header>
   <h1>
@@ -464,14 +604,23 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 </header>
 
 <main>
-  <!-- Календарная сетка для десктопа -->
+  <div class="view-mode" role="tablist">
+    <button class="mode-btn active" data-mode="calendar" onclick="setViewMode('calendar')">Календарь</button>
+    <button class="mode-btn" data-mode="list" onclick="setViewMode('list')">Список</button>
+    <button class="mode-btn" data-mode="table" onclick="setViewMode('table')">Таблица</button>
+  </div>
+
+  <!-- Календарная сетка -->
   <div class="calendar" id="calendarView">
     <div class="weekdays" id="weekdays"></div>
     <div class="days" id="daysGrid"><div class="empty"><div class="big">📅</div>Загрузка…</div></div>
   </div>
 
-  <!-- Список по дням для мобильного -->
+  <!-- Список по дням -->
   <div class="list-view" id="listView"></div>
+
+  <!-- Таблица -->
+  <div class="table-wrap" id="tableView"></div>
 </main>
 
 <div class="modal-bg" id="evModal">
@@ -553,7 +702,28 @@ async function loadEvents() {
 function render() {
   renderCalendar();
   renderList();
+  renderTable();
 }
+
+function setViewMode(mode) {
+  document.body.classList.remove('view-mode-calendar', 'view-mode-list', 'view-mode-table');
+  document.body.classList.add('view-mode-' + mode);
+  document.querySelectorAll('.view-mode .mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  try { localStorage.setItem('viewMode', mode); } catch(e) {}
+}
+
+// При загрузке восстанавливаем сохранённый режим. На мобиле дефолт — список.
+(function initViewMode() {
+  let saved = null;
+  try { saved = localStorage.getItem('viewMode'); } catch(e) {}
+  if (saved && ['calendar','list','table'].indexOf(saved) >= 0) {
+    setViewMode(saved);
+  } else if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) {
+    setViewMode('list');
+  }
+})();
 
 // Рендерит плашку события для десктопа. Учитывает приватные.
 function renderEventPill(ev) {
@@ -681,6 +851,82 @@ function renderList() {
     `;
   });
   container.innerHTML = html;
+}
+
+// === ТАБЛИЦА ===
+function renderTable() {
+  const m = state.curMonth.getMonth();
+  const y = state.curMonth.getFullYear();
+  const monthEvents = state.events.filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() === m && d.getFullYear() === y;
+  }).slice().sort((a, b) =>
+    (a.date + (a.timeStart || '99')).localeCompare(b.date + (b.timeStart || '99'))
+  );
+
+  const container = document.getElementById('tableView');
+  if (monthEvents.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="big">📅</div>В этом месяце событий нет</div>';
+    return;
+  }
+
+  const todayStr = ymd(new Date());
+
+  const rows = monthEvents.map(ev => {
+    const d = new Date(ev.date);
+    const wkd = d.getDay();
+    const isWe = wkd === 0 || wkd === 6;
+    const isToday = ev.date === todayStr;
+    const wdShort = WEEKDAY_SHORT[(wkd + 6) % 7];
+
+    const cls = [];
+    if (isWe) cls.push('weekend');
+    if (isToday) cls.push('today');
+    if (ev.isPrivate) cls.push('private');
+
+    if (ev.isPrivate) {
+      return `
+        <tr class="${cls.join(' ')}" onclick="openEvent('${ev.id}')">
+          <td class="col-date"><span class="date-day">${d.getDate()} ${MONTH_NAMES_GEN[m]}</span><span class="date-wd">${wdShort}</span></td>
+          <td class="col-time">${escapeHtml(ev.timeStart || '—')}</td>
+          <td><div class="col-format">Приватное</div><div class="col-name">Слот занят</div></td>
+          <td class="col-price"><span class="em">—</span></td>
+          <td class="col-action"><a class="btn-row olive" href="tel:${CONTACT_PHONE}" onclick="event.stopPropagation()">Связаться</a></td>
+        </tr>
+      `;
+    }
+
+    const priceHtml = ev.price ? (ev.price + ' руб') : '<span class="em">по запросу</span>';
+    return `
+      <tr class="${cls.join(' ')}" onclick="openEvent('${ev.id}')">
+        <td class="col-date"><span class="date-day">${d.getDate()} ${MONTH_NAMES_GEN[m]}</span><span class="date-wd">${wdShort}</span></td>
+        <td class="col-time">${escapeHtml(ev.timeStart || '—')}</td>
+        <td>
+          <div class="col-format">${escapeHtml(ev.format || '')}</div>
+          <div class="col-name">${escapeHtml(ev.name || '')}</div>
+        </td>
+        <td class="col-price">${priceHtml}</td>
+        <td class="col-action">
+          <a class="btn-row" href="${escapeHtml(ev.formUrl || '#')}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Записаться</a>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <table class="events-table">
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Время</th>
+          <th>Событие</th>
+          <th class="col-price">Цена</th>
+          <th class="col-action"></th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
 }
 
 function prevMonth() { state.curMonth = new Date(state.curMonth.getFullYear(), state.curMonth.getMonth() - 1, 1); render(); }

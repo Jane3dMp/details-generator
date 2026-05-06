@@ -125,6 +125,76 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
 /* Недельный режим: дни шире */
 .calendar.week-mode .day { min-height: 360px; }
 .calendar.week-mode .day .event-pill { font-size: 12px; padding: 6px 9px; }
+
+/* ================ ТАБЛИЦА ================ */
+.events-table {
+  width: 100%;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  border-collapse: collapse;
+}
+.events-table thead { background: #f5efe5; border-bottom: 2px solid var(--line); }
+.events-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.events-table th.right { text-align: right; }
+.events-table tbody tr {
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.events-table tbody tr:last-child { border-bottom: none; }
+.events-table tbody tr:hover { background: #fafafa; }
+.events-table tbody tr.weekend { background: #fdf3e9; }
+.events-table tbody tr.weekend:hover { background: #f7e5d3; }
+.events-table tbody tr.draft { opacity: .78; }
+.events-table tbody tr.modified { background: #fff7eb; }
+.events-table td {
+  padding: 12px 14px;
+  font-size: 13px;
+  vertical-align: middle;
+}
+.events-table .col-date { white-space: nowrap; font-weight: 600; }
+.events-table .col-date .wd { font-size: 11px; color: var(--muted); margin-left: 4px; }
+.events-table .col-time { white-space: nowrap; color: var(--accent); font-weight: 600; }
+.events-table .col-format {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.events-table .col-name { font-weight: 600; }
+.events-table .col-status {
+  font-size: 11px;
+  text-align: right;
+  white-space: nowrap;
+}
+.events-table .col-status .sw {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.events-table .col-status .sw.published { background: #5b8a4e; }
+.events-table .col-status .sw.draft { background: var(--muted); }
+.events-table .col-status .sw.modified { background: #d4a85c; }
+.events-table .col-price {
+  text-align: right;
+  white-space: nowrap;
+  color: var(--accent-dark);
+  font-weight: 700;
+}
+.events-table .col-price .em { color: var(--muted); font-weight: 400; font-style: italic; }
 .event-pill {
   display: block; border-left: 3px solid var(--accent); background: #fdf3e9;
   padding: 4px 7px; border-radius: 4px; font-size: 11px; margin-bottom: 3px;
@@ -307,6 +377,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
     <div class="view-mode">
       <button id="modeMonthBtn" class="mode-btn active" onclick="setViewMode('month')">Месяц</button>
       <button id="modeWeekBtn" class="mode-btn" onclick="setViewMode('week')">Неделя</button>
+      <button id="modeTableBtn" class="mode-btn" onclick="setViewMode('table')">Таблица</button>
     </div>
     <div class="month-nav">
       <button onclick="prevPeriod()">‹</button>
@@ -326,6 +397,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
       <div class="weekdays" id="weekdays"></div>
       <div class="days" id="daysGrid"><div class="empty"><div class="big">📅</div>Загрузка…</div></div>
     </div>
+    <div id="tableView" style="display:none; overflow-x:auto;"></div>
   </main>
 </div>
 
@@ -429,8 +501,19 @@ async function loadEvents() {
 }
 
 function renderCalendar() {
-  // Делегируем в зависимости от режима
   const cal = document.querySelector('.calendar');
+  const tableWrap = document.getElementById('tableView');
+
+  if (state.viewMode === 'table') {
+    if (cal) cal.style.display = 'none';
+    if (tableWrap) tableWrap.style.display = 'block';
+    renderTable();
+    return;
+  }
+  // Календарные режимы
+  if (cal) cal.style.display = '';
+  if (tableWrap) tableWrap.style.display = 'none';
+
   if (state.viewMode === 'week') {
     cal.classList.add('week-mode');
     renderWeek();
@@ -451,6 +534,7 @@ function setViewMode(mode) {
   state.viewMode = mode;
   document.getElementById('modeMonthBtn').classList.toggle('active', mode === 'month');
   document.getElementById('modeWeekBtn').classList.toggle('active', mode === 'week');
+  document.getElementById('modeTableBtn').classList.toggle('active', mode === 'table');
   if (mode === 'week' && !state.curWeekStart) {
     state.curWeekStart = startOfWeek_(new Date());
   }
@@ -538,6 +622,75 @@ function renderMonth() {
     `;
   }
   grid.innerHTML = html;
+}
+
+// === ТАБЛИЦА (для команды/маркетологов) ===
+function renderTable() {
+  const m = state.curMonth.getMonth();
+  const y = state.curMonth.getFullYear();
+  document.getElementById('monthTitle').textContent = MONTH_NAMES[m] + ' ' + y;
+
+  const monthEvents = state.events.filter(e => {
+    if (!e.date) return false;
+    const d = new Date(e.date);
+    return d.getMonth() === m && d.getFullYear() === y;
+  }).slice().sort((a, b) =>
+    (a.date + (a.timeStart || '99')).localeCompare(b.date + (b.timeStart || '99'))
+  );
+
+  const container = document.getElementById('tableView');
+  if (monthEvents.length === 0) {
+    container.innerHTML = '<div class="empty" style="padding:60px 20px; text-align:center; color:var(--muted);"><div class="big" style="font-size:40px; opacity:.4;">📅</div>В этом месяце событий нет</div>';
+    return;
+  }
+
+  const todayStr = ymd(new Date());
+  const statusLabel = { published: 'В Альфе', modified: 'К синку', draft: 'Черновик', archived: 'Архив' };
+
+  const rows = monthEvents.map(ev => {
+    const d = new Date(ev.date);
+    const wkd = d.getDay();
+    const isWe = wkd === 0 || wkd === 6;
+    const isToday = ev.date === todayStr;
+    const wdShort = WEEKDAY_SHORT[(wkd + 6) % 7];
+    const st = ev.status || 'draft';
+
+    const cls = [st];
+    if (isWe) cls.push('weekend');
+    if (isToday) cls.push('today');
+
+    const priceHtml = ev.price ? (ev.price + ' р') : '<span class="em">—</span>';
+
+    return `
+      <tr class="${cls.join(' ')}" onclick="openEvent('${ev.id}')">
+        <td class="col-date">${d.getDate()} ${MONTH_NAMES[m].slice(0,3)}<span class="wd">${wdShort}</span></td>
+        <td class="col-time">${escapeHtml(ev.timeStart || '—')}</td>
+        <td>
+          <div class="col-format">${escapeHtml(ev.format || '')}</div>
+          <div class="col-name">${escapeHtml(ev.name || '')}</div>
+        </td>
+        <td>${escapeHtml(ev.teacher || '')}</td>
+        <td class="col-price">${priceHtml}</td>
+        <td class="col-status"><span class="sw ${st}"></span>${statusLabel[st] || st}</td>
+      </tr>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <table class="events-table">
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Время</th>
+          <th>Событие</th>
+          <th>Педагог</th>
+          <th class="right">Цена</th>
+          <th class="right">Статус</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
 }
 
 function prevPeriod() {
