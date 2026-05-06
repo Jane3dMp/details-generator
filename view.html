@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Расписание · Детали</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg: #faf8f5;
@@ -31,15 +34,31 @@ body {
 header {
   background: white;
   border-bottom: 1px solid var(--line);
-  padding: 18px 20px 14px;
+  padding: 22px 20px 16px;
   text-align: center;
   position: sticky;
   top: 0;
   z-index: 5;
 }
-header h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.3px; }
-header h1 em { color: var(--accent); font-style: normal; }
-header .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+header h1 {
+  margin: 0; font-size: 28px; font-weight: 400; letter-spacing: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  line-height: 1.05;
+}
+header h1 .small { font-size: 14px; color: var(--muted); display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 500; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 2px; }
+header h1 em {
+  color: var(--accent); font-style: italic; font-weight: 500;
+  font-size: 36px; letter-spacing: -.5px;
+}
+header h1 .ornament {
+  display: inline-block; width: 60px; height: 1px; background: var(--line); vertical-align: middle;
+  position: relative; margin: 0 8px;
+}
+header h1 .ornament::before {
+  content: '✦'; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  background: white; padding: 0 6px; color: var(--accent); font-size: 10px;
+}
+header .sub { color: var(--muted); font-size: 12px; margin-top: 6px; letter-spacing: .3px; }
 .month-nav { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; }
 .month-nav button {
   border: 1px solid var(--line); background: white; padding: 6px 12px;
@@ -96,9 +115,10 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   line-height: 1.35;
 }
 .event-pill:hover {
-  background: white; box-shadow: 0 0 0 1px var(--accent), 0 4px 8px rgba(0,0,0,.06);
+  background: white; box-shadow: 0 0 0 1px var(--accent), 0 4px 12px rgba(194,132,91,.15);
   transform: translateY(-1px);
 }
+.event-pill .ev-icon { font-size: 12px; margin-right: 3px; vertical-align: -1px; }
 .event-pill .time { color: var(--muted); margin-right: 4px; font-weight: 500; }
 .event-pill .name { font-weight: 500; }
 .event-pill.cat-mk      { border-left-color: #c2845b; background: #fdf3e9; }
@@ -159,8 +179,12 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   width: 56px;
   font-weight: 600;
   color: var(--accent);
-  font-size: 15px;
+  font-size: 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
   padding-top: 1px;
+}
+.list-event .time-col .list-icon {
+  font-size: 22px; line-height: 1; margin-bottom: 2px;
 }
 .list-event .body-col { flex: 1; min-width: 0; }
 .list-event .ev-name {
@@ -209,16 +233,40 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 }
 .modal-banner {
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  color: white; padding: 20px 22px; position: relative;
+  color: white; padding: 24px 22px 22px; position: relative;
+  overflow: hidden;
+}
+.modal-banner::before {
+  content: ''; position: absolute; top: -40px; right: -40px;
+  width: 140px; height: 140px; border-radius: 50%;
+  background: rgba(255,255,255,.07);
+  pointer-events: none;
+}
+.modal-banner::after {
+  content: ''; position: absolute; bottom: -60px; left: -30px;
+  width: 100px; height: 100px; border-radius: 50%;
+  background: rgba(255,255,255,.05);
+  pointer-events: none;
 }
 .modal-banner.private { background: linear-gradient(135deg, #d4a85c, #b08840); }
+.modal-banner .banner-icon {
+  font-size: 36px; line-height: 1; margin-bottom: 10px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.15));
+  position: relative; z-index: 1;
+}
 .modal-banner .format-pill {
   display: inline-block; background: rgba(255,255,255,.22);
   padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 500;
   margin-bottom: 8px; text-transform: uppercase; letter-spacing: .3px;
+  position: relative; z-index: 1;
 }
-.modal-banner h2 { margin: 0 0 6px 0; font-size: 22px; font-weight: 600; line-height: 1.25; }
-.modal-banner .when { font-size: 14px; opacity: .9; }
+.modal-banner h2 {
+  margin: 0 0 6px 0; font-size: 22px; font-weight: 500; line-height: 1.25;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 26px; letter-spacing: -.2px;
+  position: relative; z-index: 1;
+}
+.modal-banner .when { font-size: 14px; opacity: .92; position: relative; z-index: 1; }
 .modal-close {
   position: absolute; top: 16px; right: 16px;
   background: rgba(0,0,0,.15); border: none; color: white;
@@ -229,10 +277,19 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 }
 .modal-close:hover, .modal-close:active { background: rgba(0,0,0,.3); }
 .modal-body { padding: 18px 22px; max-height: 50vh; overflow-y: auto; }
-.detail-row { display: flex; gap: 10px; padding: 6px 0; font-size: 13px; }
-.detail-row .lbl { width: 90px; color: var(--muted); font-size: 12px; flex-shrink: 0; }
+.detail-row { display: flex; gap: 10px; padding: 8px 0; font-size: 13px; align-items: center; }
+.detail-row .lbl { width: 110px; color: var(--muted); font-size: 12px; flex-shrink: 0; }
 .detail-row .val { flex: 1; }
-.detail-row .val.price { font-weight: 600; color: var(--accent); font-size: 15px; }
+.detail-row .val.price {
+  display: inline-block;
+  background: linear-gradient(135deg, #fff5e8, #fdf3e9);
+  color: var(--accent-dark);
+  font-weight: 700;
+  font-size: 16px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid #f3dfc8;
+}
 .descr {
   margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line);
   font-size: 13px; white-space: pre-line; line-height: 1.6; color: #444;
@@ -287,9 +344,11 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   body { font-size: 15px; }
 
   header {
-    padding: 14px 16px 12px;
+    padding: 16px 16px 14px;
   }
-  header h1 { font-size: 19px; }
+  header h1 { font-size: 24px; }
+  header h1 em { font-size: 30px; }
+  header h1 .small { font-size: 12px; }
   header .sub { font-size: 11px; }
 
   .month-nav { margin-top: 10px; gap: 6px; }
@@ -346,7 +405,10 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 <body>
 
 <header>
-  <h1>Расписание <em>Детали</em></h1>
+  <h1>
+    <span class="small">Расписание</span>
+    <em>Детали</em>
+  </h1>
   <div class="sub">Клуб событий и впечатлений · Могилёв</div>
   <div class="month-nav">
     <button onclick="prevMonth()" aria-label="Предыдущий месяц">‹</button>
@@ -370,6 +432,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   <div class="modal">
     <div class="modal-banner" id="mBanner">
       <button class="modal-close" onclick="closeModal()" aria-label="Закрыть">✕</button>
+      <div class="banner-icon" id="mIcon">✨</div>
       <div class="format-pill" id="mFormat">—</div>
       <h2 id="mName">—</h2>
       <div class="when" id="mWhen">—</div>
@@ -408,6 +471,29 @@ function categoryClass(fmt) {
   if (fmt === 'Вечеринка' || fmt === 'Дегустация' || fmt === 'Винная дегустация') return 'cat-party';
   if (fmt === 'Встреча с экспертом') return 'cat-expert';
   return '';
+}
+
+// Эмодзи-иконка по формату — для плашек и баннеров
+function formatIcon(fmt) {
+  if (!fmt) return '✨';
+  const f = String(fmt).toLowerCase();
+  if (f.indexOf('глин') >= 0)            return '🏺';
+  if (f.indexOf('живопис') >= 0 || f.indexOf('рисован') >= 0) return '🎨';
+  if (f.indexOf('макрам') >= 0 || f.indexOf('украшен') >= 0)  return '🧶';
+  if (f.indexOf('бьюти') >= 0)           return '💄';
+  if (f.indexOf('кулинар') >= 0)         return '👨‍🍳';
+  if (f.indexOf('мастер-класс') >= 0 || f.startsWith('мк'))   return '✂️';
+  if (f.indexOf('киновечер') >= 0)       return '🎬';
+  if (f.indexOf('книжн') >= 0)           return '📚';
+  if (f.indexOf('караоке') >= 0)         return '🎤';
+  if (f.indexOf('винная') >= 0 || f.indexOf('дегустац') >= 0) return '🍷';
+  if (f.indexOf('вечеринка') >= 0)       return '🎉';
+  if (f.indexOf('встреча') >= 0)         return '💬';
+  if (f.indexOf('настолки') >= 0)        return '🎲';
+  if (f.indexOf('разговорник') >= 0)     return '🗣️';
+  if (f.indexOf('свидание') >= 0)        return '🌹';
+  if (f.indexOf('день рождени') >= 0)    return '🎂';
+  return '✨';
 }
 
 async function loadEvents() {
@@ -449,14 +535,14 @@ function renderEventPill(ev) {
   if (ev.isPrivate) {
     return `
       <div class="event-pill cat-private" onclick="openEvent('${ev.id}')">
-        <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">🔒 Приватное мероприятие</span>
+        <span class="ev-icon">🔒</span><span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">Приватное мероприятие</span>
       </div>
     `;
   }
   const label = [ev.format, ev.name].filter(Boolean).join(' · ') || '?';
   return `
     <div class="event-pill ${categoryClass(ev.format)}" onclick="openEvent('${ev.id}')">
-      <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">${escapeHtml(label)}</span>
+      <span class="ev-icon">${formatIcon(ev.format)}</span><span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">${escapeHtml(label)}</span>
     </div>
   `;
 }
@@ -535,9 +621,12 @@ function renderList() {
       if (ev.isPrivate) {
         return `
           <div class="list-event private" onclick="openEvent('${ev.id}')">
-            <div class="time-col">${escapeHtml(ev.timeStart || '')}</div>
+            <div class="time-col">
+              <div class="list-icon">🔒</div>
+              <div>${escapeHtml(ev.timeStart || '')}</div>
+            </div>
             <div class="body-col">
-              <div class="ev-name">🔒 Приватное мероприятие</div>
+              <div class="ev-name">Приватное мероприятие</div>
               <div class="ev-meta">слот занят</div>
             </div>
             <div class="arrow">›</div>
@@ -547,7 +636,10 @@ function renderList() {
       const label = [ev.format, ev.name].filter(Boolean).join(' · ') || '?';
       return `
         <div class="list-event" onclick="openEvent('${ev.id}')">
-          <div class="time-col">${escapeHtml(ev.timeStart || '')}</div>
+          <div class="time-col">
+            <div class="list-icon">${formatIcon(ev.format)}</div>
+            <div>${escapeHtml(ev.timeStart || '')}</div>
+          </div>
           <div class="body-col">
             <div class="ev-name">${escapeHtml(label)}</div>
             <div class="ev-meta">
@@ -589,7 +681,8 @@ function openEvent(id) {
   if (ev.isPrivate) {
     // Заглушка для приватных (День рождения / Свидание / Частное мероприятие)
     document.getElementById('mFormat').textContent = 'Приватное мероприятие';
-    document.getElementById('mName').textContent = '🔒 Слот занят';
+    document.getElementById('mIcon').textContent = '🔒';
+    document.getElementById('mName').textContent = 'Слот занят';
     document.getElementById('mWhen').textContent = `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]}, ${wd}, в ${ev.timeStart || '—'}`;
     body.innerHTML = `
       <div class="private-message">
@@ -605,13 +698,14 @@ function openEvent(id) {
   } else {
     // Обычное событие
     document.getElementById('mFormat').textContent = ev.format || '';
+    document.getElementById('mIcon').textContent = formatIcon(ev.format);
     const label = [ev.format, ev.name].filter(Boolean).join(' · ');
     document.getElementById('mName').textContent = label || ev.format || ev.name || '';
     document.getElementById('mWhen').textContent = `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]}, ${wd}, в ${ev.timeStart || '—'}`;
     const details = [];
-    if (ev.duration) details.push(`<div class="detail-row"><div class="lbl">Длительность</div><div class="val">${ev.duration} ч</div></div>`);
-    if (ev.price) details.push(`<div class="detail-row"><div class="lbl">Цена</div><div class="val price">${ev.price} руб</div></div>`);
-    if (ev.limit) details.push(`<div class="detail-row"><div class="lbl">Мест</div><div class="val">до ${ev.limit}</div></div>`);
+    if (ev.duration) details.push(`<div class="detail-row"><div class="lbl">⏱ Длительность</div><div class="val">${ev.duration} ч</div></div>`);
+    if (ev.price)    details.push(`<div class="detail-row"><div class="lbl">💰 Цена</div><div class="val price">${ev.price} руб</div></div>`);
+    if (ev.limit)    details.push(`<div class="detail-row"><div class="lbl">👥 Мест</div><div class="val">до ${ev.limit}</div></div>`);
     body.innerHTML = `
       <div>${details.join('')}</div>
       <div class="descr">${escapeHtml(ev.description || '')}</div>
