@@ -302,6 +302,27 @@ main {
 .event-pill.st-published .status-mark { color: var(--green); opacity: 1; }
 .event-pill.st-modified .status-mark { color: var(--yellow); opacity: 1; }
 
+.event-pill .pub-flags {
+  display: inline-flex;
+  gap: 1px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.event-pill .pub-flag {
+  display: inline-block;
+  font-size: 8px;
+  font-weight: 700;
+  width: 11px;
+  height: 11px;
+  line-height: 11px;
+  text-align: center;
+  border-radius: 2px;
+  background: rgba(0,0,0,0.06);
+  color: rgba(0,0,0,0.25);
+  letter-spacing: 0;
+}
+.event-pill .pub-flag.on { background: var(--green); color: white; }
+
 .event-pill.published-alfa::after {
   content: '✓';
   margin-left: 4px;
@@ -859,11 +880,29 @@ main {
       </div>
       <div class="row full" id="evCreateRow">
         <div>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-            <input type="checkbox" id="evPublishToAlfa" style="width:auto;">
-            <span>Готово к публикации в Альфу <span style="color:var(--muted)">(будет создано при нажатии «🚀 Опубликовать черновики»)</span></span>
-          </label>
-          <button type="button" class="primary" id="evPublishOneBtn" onclick="publishSingleEvent()" style="margin-top: 8px; width: 100%; display: none;">🚀 Опубликовать только это событие сейчас</button>
+          <div style="border:1px solid var(--line); border-radius:8px; padding:10px 12px; background:#fafafa;">
+            <div style="font-weight:600; font-size:12px; margin-bottom:8px;">Куда публиковать это событие:</div>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:4px 0;">
+              <input type="checkbox" id="evPublishToAlfa" style="width:auto;">
+              <span>🚀 <b>В Альфу</b> <span style="color:var(--muted); font-size:11px;">(создать группу для записи клиентов)</span></span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:4px 0;">
+              <input type="checkbox" id="evPublishToClients" style="width:auto;">
+              <span>🌐 <b>Клиентам</b> <span style="color:var(--muted); font-size:11px;">(показать на view.html, чтобы клиенты увидели)</span></span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:4px 0;">
+              <input type="checkbox" id="evPublishToTeam" style="width:auto;">
+              <span>📣 <b>Промо/SMM</b> <span style="color:var(--muted); font-size:11px;">(показать на team.html для маркетологов)</span></span>
+            </label>
+            <div id="evPublishButtons" style="display:none; margin-top:10px; display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px;">
+              <button type="button" class="primary" onclick="publishOneToAlfa()" style="font-size:12px; padding:7px 4px;">🚀 В Альфу</button>
+              <button type="button" onclick="publishOneToClients()" style="font-size:12px; padding:7px 4px; background:#5b8a4e; color:white; border-color:#5b8a4e;">🌐 Клиентам</button>
+              <button type="button" onclick="publishOneToTeam()" style="font-size:12px; padding:7px 4px; background:#7a5b9a; color:white; border-color:#7a5b9a;">📣 Промо</button>
+            </div>
+            <div style="font-size:11px; color: var(--muted); margin-top: 6px;">
+              Чекбоксы — флаги. Кнопки — публикуют сейчас (поставят галочку и сразу обновят).
+            </div>
+          </div>
         </div>
       </div>
       <div class="row" id="evLinkRow">
@@ -1220,17 +1259,26 @@ function renderCalendar() {
     dayEvents.sort((a, b) => (a.timeStart || '99').localeCompare(b.timeStart || '99'));
     const eventsHtml = dayEvents.map(ev => {
       const st = ev.status || 'draft';
-      const stIcon = st === 'published' ? '✓' : st === 'modified' ? '⏳' : '◌';
-      const stTitle = st === 'published' ? 'Опубликовано в Альфе' : st === 'modified' ? 'Есть несохранённые изменения' : 'Черновик';
       const labelParts = [];
       if (ev.format) labelParts.push(ev.format);
       if (ev.name) labelParts.push(ev.name);
       const label = labelParts.length ? labelParts.join(' · ') : '?';
       const diffClass = (ev._alfaDiff && Object.keys(ev._alfaDiff).length > 0) ? ' alfa-diff' : '';
       const diffTitle = diffClass ? '\nВ Альфе данные отличаются: ' + Object.keys(ev._alfaDiff).join(', ') : '';
+
+      // 3 индикатора: А (Альфа), К (Клиенты), П (Промо)
+      const inAlfa = !!ev.alfaGroupId;
+      const toClients = ev.publishedToClients !== false;
+      const toTeam = ev.publishedToTeam !== false;
+      const flagsHtml =
+        `<span class="pub-flag ${inAlfa ? 'on' : ''}" title="${inAlfa ? 'В Альфе ✓' : 'В Альфе ✗'}">А</span>` +
+        `<span class="pub-flag ${toClients ? 'on' : ''}" title="${toClients ? 'Клиентам ✓' : 'Клиентам ✗'}">К</span>` +
+        `<span class="pub-flag ${toTeam ? 'on' : ''}" title="${toTeam ? 'Промо ✓' : 'Промо ✗'}">П</span>`;
+      const stTitle = st === 'modified' ? 'Есть несохранённые изменения · ' : '';
+
       return `
-        <div class="event-pill ${categoryClass(ev.format)} st-${st}${diffClass}" onclick="event.stopPropagation(); openEventEditor('${ev.id}')" title="${stTitle}${diffTitle}">
-          <span class="time">${ev.timeStart || '—'}</span><span class="status-mark">${stIcon}</span><span class="name">${escapeHtml(label)}</span>
+        <div class="event-pill ${categoryClass(ev.format)} st-${st}${diffClass}" onclick="event.stopPropagation(); openEventEditor('${ev.id}')" title="${stTitle}А=в Альфе, К=клиентам, П=промо${diffTitle}">
+          <span class="time">${ev.timeStart || '—'}</span><span class="pub-flags">${flagsHtml}</span><span class="name">${escapeHtml(label)}</span>
         </div>
       `;
     }).join('');
@@ -1444,6 +1492,9 @@ function openEventEditor(eventId, defaultDate) {
   document.getElementById('evAlfaNote').value = ev ? (ev.alfaNote || '') : '';
   updateAlfaNoteCounter();
   document.getElementById('evPublishToAlfa').checked = ev ? !!ev.publishToAlfa : false;
+  // Новые два флага. Если поля нет вовсе — для уже существующих событий считаем true (вариант Б).
+  document.getElementById('evPublishToClients').checked = ev ? (ev.publishedToClients !== false) : false;
+  document.getElementById('evPublishToTeam').checked = ev ? (ev.publishedToTeam !== false) : false;
   document.getElementById('evComment').value = ev ? (ev.comment || '') : '';
 
   // Референсы и комментарий команде
@@ -1467,7 +1518,9 @@ function openEventEditor(eventId, defaultDate) {
     linkInput.value = '';
     // Кнопка «Опубликовать только это событие» — показываем только если событие уже сохранено
     // (для нового события сначала «Сохранить», потом откроется заново — и кнопка появится)
-    document.getElementById('evPublishOneBtn').style.display = ev ? 'block' : 'none';
+    // Новые 3 кнопки — показываем только если событие уже сохранено.
+    // (Для нового сначала нужен «Сохранить», потом откроется заново и кнопки появятся.)
+    document.getElementById('evPublishButtons').style.display = ev ? 'grid' : 'none';
   } else if (ev.status === 'published') {
     stBlock.innerHTML = `<span style="color:var(--green)">✓ Опубликовано в Альфе · группа id=${ev.alfaGroupId}</span>` +
       (ev.formUrl ? `<br><a href="${ev.formUrl}" target="_blank" style="font-size:11px;">🔗 Ссылка для записи клиентов</a>` : '');
@@ -1569,6 +1622,8 @@ function saveEvent() {
     description: document.getElementById('evDescr').value.trim(),
     alfaNote: document.getElementById('evAlfaNote').value.trim(),
     publishToAlfa: document.getElementById('evPublishToAlfa').checked,
+    publishedToClients: document.getElementById('evPublishToClients').checked,
+    publishedToTeam: document.getElementById('evPublishToTeam').checked,
     comment: document.getElementById('evComment').value.trim(),
     // Референсы и комментарий команде — служебные маркетинговые поля.
     // НЕ влияют на статус «modified» в Альфе (см. ниже fieldsForAlfa).
@@ -2113,7 +2168,7 @@ async function linkExistingAlfaGroup() {
   setTimeout(() => openEventEditor(state.editingEventId), 200);
 }
 
-async function publishSingleEvent() {
+async function publishOneToAlfa() {
   const eventId = state.editingEventId;
   if (!eventId) {
     toast('Сначала сохраните событие', 'err');
@@ -2248,6 +2303,53 @@ async function publishSingleEvent() {
     }
     setTimeout(() => alert(lines.join('\n')), 250);
   }
+}
+
+/**
+ * Опубликовать это событие на view.html (клиентская страница).
+ * Ставит флаг publishedToClients=true, сохраняет, пушит весь стейт в snapshot_main.
+ */
+async function publishOneToClients() {
+  await _publishOneToChannel('clients');
+}
+
+/**
+ * Опубликовать это событие на team.html (промо/SMM).
+ */
+async function publishOneToTeam() {
+  await _publishOneToChannel('team');
+}
+
+async function _publishOneToChannel(channel) {
+  const eventId = state.editingEventId;
+  if (!eventId) { toast('Сначала сохраните событие', 'err'); return; }
+  const ev = state.events.find(e => e.id === eventId);
+  if (!ev) { toast('Событие не найдено', 'err'); return; }
+
+  const flagName = channel === 'clients' ? 'publishedToClients' : 'publishedToTeam';
+  const checkboxId = channel === 'clients' ? 'evPublishToClients' : 'evPublishToTeam';
+  const channelLabel = channel === 'clients' ? 'клиентам (view.html)' : 'промо/SMM (team.html)';
+
+  // Проставляем чекбокс и сохраняем
+  document.getElementById(checkboxId).checked = true;
+  saveEvent();
+  // saveEvent закрывает модалку; ev мог обновиться — берём свежий
+  const fresh = state.events.find(e => e.id === eventId);
+  if (!fresh) { toast('Событие пропало', 'err'); return; }
+  fresh[flagName] = true;
+
+  await autosaveDraft();
+  toast('Публикую ' + channelLabel + '…', 'ok');
+
+  const r = await apiPost('pushSnapshot', {
+    stateJson: JSON.stringify(currentState())
+  });
+  if (!r.ok) {
+    toast('Ошибка: ' + (r.error || ''), 'err');
+    return;
+  }
+  toast('✓ Опубликовано ' + channelLabel + '. Видимо событий: ' +
+    (channel === 'clients' ? r.visibleClients : r.visibleTeam), 'ok');
 }
 
 // ============================================================
