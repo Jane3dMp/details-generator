@@ -245,55 +245,69 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 }
 .modal-banner {
   background: linear-gradient(135deg, var(--terracotta), var(--terracotta-dark));
-  color: white; padding: 26px 24px 22px; position: relative;
+  color: white; position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  min-height: 200px;
 }
-.modal-banner::before {
+.modal-banner.private { background: linear-gradient(135deg, var(--olive), var(--olive-light)); }
+.modal-banner.private .banner-image { display: none; } /* у приватных нет картинки */
+
+/* Левая колонка — вертикальная картинка референса 1:4 */
+.banner-image {
+  flex: 0 0 auto;
+  width: 22%;        /* пропорция ~5:20 — узкая вертикальная полоса */
+  min-width: 100px;
+  max-width: 140px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: rgba(0,0,0,.15);
+  align-self: stretch;
+}
+.banner-image.empty { display: none; } /* если нет референсов — прячем, баннер растягивается */
+
+/* Правая колонка — текст шапки */
+.banner-text {
+  flex: 1 1 auto;
+  padding: 26px 24px 22px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.banner-text::before {
   content: ''; position: absolute; top: -40px; right: -40px;
   width: 140px; height: 140px; border-radius: 50%;
   background: rgba(255,255,255,.08);
   pointer-events: none;
 }
-.modal-banner::after {
-  content: ''; position: absolute; bottom: -60px; left: -30px;
+.banner-text::after {
+  content: ''; position: absolute; bottom: -60px; right: -30px;
   width: 100px; height: 100px; border-radius: 50%;
   background: rgba(255,255,255,.05);
   pointer-events: none;
 }
-.modal-banner.private { background: linear-gradient(135deg, var(--olive), var(--olive-light)); }
+
 .modal-banner .format-pill {
   display: inline-block; background: rgba(255,255,255,.22);
   padding: 4px 12px; border-radius: 16px; font-size: 11px; font-weight: 600;
   margin-bottom: 10px; text-transform: uppercase; letter-spacing: .8px;
   font-family: 'Onest', sans-serif;
   position: relative; z-index: 1;
+  align-self: flex-start;
 }
 .modal-banner h2 {
   margin: 0 0 8px 0; font-weight: 500; line-height: 1.2;
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 30px; letter-spacing: -.3px;
+  font-size: 28px; letter-spacing: -.3px;
   font-style: italic;
   position: relative; z-index: 1;
 }
 .modal-banner .when {
   font-size: 14px; opacity: .95; position: relative; z-index: 1;
   font-family: 'Onest', sans-serif;
-}
-
-/* Полоса референсов под шапкой карточки */
-.refs-bar {
-  height: 90px;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  position: relative;
-  border-bottom: 1px solid var(--line);
-}
-.refs-bar::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: rgba(192,109,84,.25);   /* терракот 25% поверх изображения */
-  pointer-events: none;
 }
 .modal-close {
   position: absolute; top: 16px; right: 16px;
@@ -402,8 +416,10 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
     display: flex;
     flex-direction: column;
   }
-  .modal-banner { padding: 22px 18px 24px; }
-  .modal-banner h2 { font-size: 20px; }
+  .modal-banner { min-height: 160px; }
+  .banner-image { width: 28%; min-width: 90px; max-width: 110px; }
+  .banner-text { padding: 20px 16px 22px; }
+  .modal-banner h2 { font-size: 22px; }
   .modal-banner .when { font-size: 13px; }
   .modal-close { top: 14px; right: 14px; width: 36px; height: 36px; }
 
@@ -461,12 +477,14 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 <div class="modal-bg" id="evModal">
   <div class="modal">
     <div class="modal-banner" id="mBanner">
-      <button class="modal-close" onclick="closeModal()" aria-label="Закрыть">✕</button>
-      <div class="format-pill" id="mFormat">—</div>
-      <h2 id="mName">—</h2>
-      <div class="when" id="mWhen">—</div>
+      <div class="banner-image empty" id="mBannerImage"></div>
+      <div class="banner-text">
+        <button class="modal-close" onclick="closeModal()" aria-label="Закрыть">✕</button>
+        <div class="format-pill" id="mFormat">—</div>
+        <h2 id="mName">—</h2>
+        <div class="when" id="mWhen">—</div>
+      </div>
     </div>
-    <div class="refs-bar" id="mRefsBar" style="display:none"></div>
     <div class="modal-body" id="mBody"></div>
     <div class="modal-foot" id="mFoot"></div>
   </div>
@@ -679,6 +697,20 @@ function openEvent(id) {
 
   banner.classList.toggle('private', !!ev.isPrivate);
 
+  // Картинка референса слева — берём первый ref.thumb (для приватных всё равно скрыта через CSS)
+  const bannerImage = document.getElementById('mBannerImage');
+  if (bannerImage) {
+    const refs = (ev.references || []).filter(r => r && r.thumb);
+    if (refs.length > 0 && !ev.isPrivate) {
+      const thumb = refs[0].thumb;
+      bannerImage.style.backgroundImage = `url('${thumb.replace(/'/g, "%27")}')`;
+      bannerImage.classList.remove('empty');
+    } else {
+      bannerImage.style.backgroundImage = '';
+      bannerImage.classList.add('empty');
+    }
+  }
+
   if (ev.isPrivate) {
     // Заглушка для приватных (День рождения / Свидание / Частное мероприятие)
     document.getElementById('mFormat').textContent = 'Приватное мероприятие';
@@ -694,9 +726,6 @@ function openEvent(id) {
       <button class="btn-cancel" onclick="closeModal()">Закрыть</button>
       <a class="btn-call" href="tel:${CONTACT_PHONE}">Связаться · ${escapeHtml(CONTACT_PHONE_DISPLAY)}</a>
     `;
-    // Убираем полосу референсов (для приватных её нет)
-    const refsBar = document.getElementById('mRefsBar');
-    if (refsBar) refsBar.style.display = 'none';
   } else {
     // Обычное событие
     document.getElementById('mFormat').textContent = ev.format || '';
@@ -715,8 +744,6 @@ function openEvent(id) {
       <button class="btn-cancel" onclick="closeModal()">Закрыть</button>
       <a class="btn-book" href="${escapeHtml(ev.formUrl || '#')}" target="_blank" rel="noopener">Записаться</a>
     `;
-    // Полоса референсов под шапкой
-    renderRefsBar(ev);
   }
 
   document.getElementById('evModal').classList.add('show');
@@ -726,22 +753,6 @@ function openEvent(id) {
 function closeModal() {
   document.getElementById('evModal').classList.remove('show');
   document.body.style.overflow = '';
-}
-
-// Рисует тонкую полосу с первым референсом из ev.references[].thumb под шапкой модалки
-function renderRefsBar(ev) {
-  const bar = document.getElementById('mRefsBar');
-  if (!bar) return;
-  const refs = (ev.references || []).filter(r => r && r.thumb);
-  if (refs.length === 0) {
-    bar.style.display = 'none';
-    bar.style.backgroundImage = '';
-    return;
-  }
-  // Берём первый референс с превью
-  const thumb = refs[0].thumb;
-  bar.style.backgroundImage = `url('${thumb.replace(/'/g, "%27")}')`;
-  bar.style.display = 'block';
 }
 
 document.getElementById('evModal').addEventListener('click', e => {
