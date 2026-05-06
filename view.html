@@ -6,7 +6,7 @@
 <title>Расписание · Детали</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Onest:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
 <style>
 :root {
   /* === ФИРМЕННЫЕ ЦВЕТА «ДЕТАЛИ» === */
@@ -62,8 +62,10 @@ header h1 .small {
   letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;
 }
 header h1 em {
-  color: var(--terracotta); font-style: normal; font-weight: 800;
-  font-size: 38px; letter-spacing: -1.2px;
+  color: var(--terracotta); font-style: italic; font-weight: 500;
+  font-size: 44px; letter-spacing: -.5px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  line-height: 1;
 }
 header .sub { color: var(--muted); font-size: 12px; margin-top: 6px; letter-spacing: .3px; }
 .month-nav { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; }
@@ -127,7 +129,6 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   background: white; box-shadow: 0 0 0 1px var(--terracotta), 0 4px 14px rgba(192,109,84,.18);
   transform: translateY(-1px);
 }
-.event-pill .ev-icon { font-size: 12px; margin-right: 3px; vertical-align: -1px; }
 .event-pill .time { color: var(--muted); margin-right: 4px; font-weight: 600; }
 .event-pill .name { font-weight: 500; }
 
@@ -192,13 +193,9 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   width: 56px;
   font-weight: 700;
   color: var(--terracotta);
-  font-size: 14px;
+  font-size: 15px;
   font-family: 'Manrope', sans-serif;
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
   padding-top: 1px;
-}
-.list-event .time-col .list-icon {
-  font-size: 22px; line-height: 1; margin-bottom: 2px;
 }
 .list-event .body-col { flex: 1; min-width: 0; }
 .list-event .ev-name {
@@ -264,11 +261,6 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   pointer-events: none;
 }
 .modal-banner.private { background: linear-gradient(135deg, var(--olive), var(--olive-light)); }
-.modal-banner .banner-icon {
-  font-size: 40px; line-height: 1; margin-bottom: 12px;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,.2));
-  position: relative; z-index: 1;
-}
 .modal-banner .format-pill {
   display: inline-block; background: rgba(255,255,255,.22);
   padding: 4px 12px; border-radius: 16px; font-size: 11px; font-weight: 600;
@@ -277,14 +269,31 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   position: relative; z-index: 1;
 }
 .modal-banner h2 {
-  margin: 0 0 8px 0; font-weight: 700; line-height: 1.2;
-  font-family: 'Manrope', sans-serif;
-  font-size: 24px; letter-spacing: -.4px;
+  margin: 0 0 8px 0; font-weight: 500; line-height: 1.2;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 30px; letter-spacing: -.3px;
+  font-style: italic;
   position: relative; z-index: 1;
 }
 .modal-banner .when {
   font-size: 14px; opacity: .95; position: relative; z-index: 1;
   font-family: 'Onest', sans-serif;
+}
+
+/* Полоса референсов под шапкой карточки */
+.refs-bar {
+  height: 90px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  border-bottom: 1px solid var(--line);
+}
+.refs-bar::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(192,109,84,.25);   /* терракот 25% поверх изображения */
+  pointer-events: none;
 }
 .modal-close {
   position: absolute; top: 16px; right: 16px;
@@ -320,10 +329,9 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   line-height: 1.65;
   color: var(--ink);
   text-align: center;
-  padding: 8px 6px;
+  padding: 12px 6px 6px;
 }
-.private-message .emoji { font-size: 36px; margin-bottom: 10px; display: block; }
-.private-message p { margin: 6px 0; }
+.private-message p { margin: 8px 0; }
 .modal-foot {
   padding: 14px 22px; border-top: 1px solid var(--line);
   background: var(--bg); display: flex; gap: 8px;
@@ -405,7 +413,6 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   .detail-row .val.price { font-size: 17px; }
   .descr { font-size: 14px; line-height: 1.6; }
   .private-message { font-size: 16px; }
-  .private-message .emoji { font-size: 44px; }
 
   .modal-foot {
     padding: 12px 14px;
@@ -432,7 +439,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
     <span class="small">Расписание</span>
     <em>Детали</em>
   </h1>
-  <div class="sub">Клуб событий и впечатлений · Могилёв</div>
+  <div class="sub">Пространство событий и впечатлений · Могилёв</div>
   <div class="month-nav">
     <button onclick="prevMonth()" aria-label="Предыдущий месяц">‹</button>
     <h2 id="monthTitle">—</h2>
@@ -455,11 +462,11 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   <div class="modal">
     <div class="modal-banner" id="mBanner">
       <button class="modal-close" onclick="closeModal()" aria-label="Закрыть">✕</button>
-      <div class="banner-icon" id="mIcon">✨</div>
       <div class="format-pill" id="mFormat">—</div>
       <h2 id="mName">—</h2>
       <div class="when" id="mWhen">—</div>
     </div>
+    <div class="refs-bar" id="mRefsBar" style="display:none"></div>
     <div class="modal-body" id="mBody"></div>
     <div class="modal-foot" id="mFoot"></div>
   </div>
@@ -494,29 +501,6 @@ function categoryClass(fmt) {
   if (fmt === 'Вечеринка' || fmt === 'Дегустация' || fmt === 'Винная дегустация') return 'cat-party';
   if (fmt === 'Встреча с экспертом') return 'cat-expert';
   return '';
-}
-
-// Эмодзи-иконка по формату — для плашек и баннеров
-function formatIcon(fmt) {
-  if (!fmt) return '✨';
-  const f = String(fmt).toLowerCase();
-  if (f.indexOf('глин') >= 0)            return '🏺';
-  if (f.indexOf('живопис') >= 0 || f.indexOf('рисован') >= 0) return '🎨';
-  if (f.indexOf('макрам') >= 0 || f.indexOf('украшен') >= 0)  return '🧶';
-  if (f.indexOf('бьюти') >= 0)           return '💄';
-  if (f.indexOf('кулинар') >= 0)         return '👨‍🍳';
-  if (f.indexOf('мастер-класс') >= 0 || f.startsWith('мк'))   return '✂️';
-  if (f.indexOf('киновечер') >= 0)       return '🎬';
-  if (f.indexOf('книжн') >= 0)           return '📚';
-  if (f.indexOf('караоке') >= 0)         return '🎤';
-  if (f.indexOf('винная') >= 0 || f.indexOf('дегустац') >= 0) return '🍷';
-  if (f.indexOf('вечеринка') >= 0)       return '🎉';
-  if (f.indexOf('встреча') >= 0)         return '💬';
-  if (f.indexOf('настолки') >= 0)        return '🎲';
-  if (f.indexOf('разговорник') >= 0)     return '🗣️';
-  if (f.indexOf('свидание') >= 0)        return '🌹';
-  if (f.indexOf('день рождени') >= 0)    return '🎂';
-  return '✨';
 }
 
 async function loadEvents() {
@@ -558,14 +542,14 @@ function renderEventPill(ev) {
   if (ev.isPrivate) {
     return `
       <div class="event-pill cat-private" onclick="openEvent('${ev.id}')">
-        <span class="ev-icon">🔒</span><span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">Приватное мероприятие</span>
+        <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">Приватное мероприятие</span>
       </div>
     `;
   }
   const label = [ev.format, ev.name].filter(Boolean).join(' · ') || '?';
   return `
     <div class="event-pill ${categoryClass(ev.format)}" onclick="openEvent('${ev.id}')">
-      <span class="ev-icon">${formatIcon(ev.format)}</span><span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">${escapeHtml(label)}</span>
+      <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">${escapeHtml(label)}</span>
     </div>
   `;
 }
@@ -644,10 +628,7 @@ function renderList() {
       if (ev.isPrivate) {
         return `
           <div class="list-event private" onclick="openEvent('${ev.id}')">
-            <div class="time-col">
-              <div class="list-icon">🔒</div>
-              <div>${escapeHtml(ev.timeStart || '')}</div>
-            </div>
+            <div class="time-col">${escapeHtml(ev.timeStart || '')}</div>
             <div class="body-col">
               <div class="ev-name">Приватное мероприятие</div>
               <div class="ev-meta">слот занят</div>
@@ -659,10 +640,7 @@ function renderList() {
       const label = [ev.format, ev.name].filter(Boolean).join(' · ') || '?';
       return `
         <div class="list-event" onclick="openEvent('${ev.id}')">
-          <div class="time-col">
-            <div class="list-icon">${formatIcon(ev.format)}</div>
-            <div>${escapeHtml(ev.timeStart || '')}</div>
-          </div>
+          <div class="time-col">${escapeHtml(ev.timeStart || '')}</div>
           <div class="body-col">
             <div class="ev-name">${escapeHtml(label)}</div>
             <div class="ev-meta">
@@ -704,39 +682,41 @@ function openEvent(id) {
   if (ev.isPrivate) {
     // Заглушка для приватных (День рождения / Свидание / Частное мероприятие)
     document.getElementById('mFormat').textContent = 'Приватное мероприятие';
-    document.getElementById('mIcon').textContent = '🔒';
     document.getElementById('mName').textContent = 'Слот занят';
     document.getElementById('mWhen').textContent = `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]}, ${wd}, в ${ev.timeStart || '—'}`;
     body.innerHTML = `
       <div class="private-message">
-        <span class="emoji">🎉</span>
         <p>В этот день у нас приватное мероприятие.</p>
         <p>Если хотите устроить такой же классный праздник в Деталях — свяжитесь с нами, и он будет великолепен!</p>
       </div>
     `;
     foot.innerHTML = `
       <button class="btn-cancel" onclick="closeModal()">Закрыть</button>
-      <a class="btn-call" href="tel:${CONTACT_PHONE}">📞 Связаться · ${escapeHtml(CONTACT_PHONE_DISPLAY)}</a>
+      <a class="btn-call" href="tel:${CONTACT_PHONE}">Связаться · ${escapeHtml(CONTACT_PHONE_DISPLAY)}</a>
     `;
+    // Убираем полосу референсов (для приватных её нет)
+    const refsBar = document.getElementById('mRefsBar');
+    if (refsBar) refsBar.style.display = 'none';
   } else {
     // Обычное событие
     document.getElementById('mFormat').textContent = ev.format || '';
-    document.getElementById('mIcon').textContent = formatIcon(ev.format);
     const label = [ev.format, ev.name].filter(Boolean).join(' · ');
     document.getElementById('mName').textContent = label || ev.format || ev.name || '';
     document.getElementById('mWhen').textContent = `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]}, ${wd}, в ${ev.timeStart || '—'}`;
     const details = [];
-    if (ev.duration) details.push(`<div class="detail-row"><div class="lbl">⏱ Длительность</div><div class="val">${ev.duration} ч</div></div>`);
-    if (ev.price)    details.push(`<div class="detail-row"><div class="lbl">💰 Цена</div><div class="val price">${ev.price} руб</div></div>`);
-    if (ev.limit)    details.push(`<div class="detail-row"><div class="lbl">👥 Мест</div><div class="val">до ${ev.limit}</div></div>`);
+    if (ev.duration) details.push(`<div class="detail-row"><div class="lbl">Длительность</div><div class="val">${ev.duration} ч</div></div>`);
+    if (ev.price)    details.push(`<div class="detail-row"><div class="lbl">Цена</div><div class="val price">${ev.price} руб</div></div>`);
+    if (ev.limit)    details.push(`<div class="detail-row"><div class="lbl">Мест</div><div class="val">до ${ev.limit}</div></div>`);
     body.innerHTML = `
       <div>${details.join('')}</div>
       <div class="descr">${escapeHtml(ev.description || '')}</div>
     `;
     foot.innerHTML = `
       <button class="btn-cancel" onclick="closeModal()">Закрыть</button>
-      <a class="btn-book" href="${escapeHtml(ev.formUrl || '#')}" target="_blank" rel="noopener">📝 Записаться</a>
+      <a class="btn-book" href="${escapeHtml(ev.formUrl || '#')}" target="_blank" rel="noopener">Записаться</a>
     `;
+    // Полоса референсов под шапкой
+    renderRefsBar(ev);
   }
 
   document.getElementById('evModal').classList.add('show');
@@ -746,6 +726,22 @@ function openEvent(id) {
 function closeModal() {
   document.getElementById('evModal').classList.remove('show');
   document.body.style.overflow = '';
+}
+
+// Рисует тонкую полосу с первым референсом из ev.references[].thumb под шапкой модалки
+function renderRefsBar(ev) {
+  const bar = document.getElementById('mRefsBar');
+  if (!bar) return;
+  const refs = (ev.references || []).filter(r => r && r.thumb);
+  if (refs.length === 0) {
+    bar.style.display = 'none';
+    bar.style.backgroundImage = '';
+    return;
+  }
+  // Берём первый референс с превью
+  const thumb = refs[0].thumb;
+  bar.style.backgroundImage = `url('${thumb.replace(/'/g, "%27")}')`;
+  bar.style.display = 'block';
 }
 
 document.getElementById('evModal').addEventListener('click', e => {
