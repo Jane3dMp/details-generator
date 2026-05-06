@@ -822,6 +822,20 @@ main {
           <input type="text" id="evComment">
         </div>
       </div>
+      <div class="row full" id="evAlfaActionsRow" style="display:none">
+        <div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button type="button" class="ghost" onclick="alfaPushUpdates()" style="flex:1; min-width:140px; font-size:12px;">🔄 Внести правки в Альфу</button>
+            <button type="button" class="ghost" onclick="alfaUnlink()" style="flex:1; min-width:140px; font-size:12px;">🔓 Отвязать от Альфы</button>
+            <button type="button" class="ghost" onclick="alfaDelete()" style="flex:1; min-width:140px; font-size:12px; color: var(--red); border-color: var(--red);">🗑 Удалить в Альфе</button>
+          </div>
+          <div style="font-size:11px; color: var(--muted); margin-top: 4px;">
+            «Правки» — отправит в Альфу текущие данные формы (название, время, лимит, описание).
+            «Отвязать» — разорвёт связь, в Альфе группа останется.
+            «Удалить» — архивирует группу в Альфе.
+          </div>
+        </div>
+      </div>
       <div class="row full" id="evCreateRow">
         <div>
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
@@ -1446,6 +1460,10 @@ function openEventEditor(eventId, defaultDate) {
     createRow.style.display = 'none';
     linkRow.style.display = 'none';
   }
+
+  // Блок управления Альфой — показываем только когда есть alfaGroupId (событие связано с группой)
+  document.getElementById('evAlfaActionsRow').style.display =
+    (ev && ev.alfaGroupId && ev.status !== 'archived') ? 'flex' : 'none';
 
   updateEventFinStats();
   ['evPrice','evLimit','evCostPerson','evCostGroup','evTeacher'].forEach(id =>
@@ -2195,6 +2213,111 @@ async function publishSingleEvent() {
     }
     setTimeout(() => alert(lines.join('\n')), 250);
   }
+}
+
+async function alfaUnlink() {
+  const eventId = state.editingEventId;
+  if (!eventId) return;
+  const ev = state.events.find(e => e.id === eventId);
+  if (!ev || !ev.alfaGroupId) return;
+  if (!confirm(
+    `Отвязать событие от группы Альфы (id=${ev.alfaGroupId})?\n\n` +
+    `В самой Альфе группа останется — мы только разорвём связь.\n` +
+    `Событие станет черновиком, можно будет привязать к другой группе или создать заново.`
+  )) return;
+
+  ev.alfaGroupId = null;
+  ev.alfaLessonId = null;
+  ev.formUrl = '';
+  ev.publishedToAlfa = false;
+  ev.status = 'draft';
+  ev.publishToAlfa = false;
+  renderCalendar();
+  await autosaveDraft();
+  toast('Событие отвязано от Альфы', 'ok');
+  closeModal('eventModal');
+}
+
+async function alfaPushUpdates() {
+  const eventId = state.editingEventId;
+  if (!eventId) return;
+  const ev = state.events.find(e => e.id === eventId);
+  if (!ev || !ev.alfaGroupId) return;
+
+  if (!confirm(
+    `Отправить текущие данные формы в Альфу для группы id=${ev.alfaGroupId}?\n\n` +
+    `Обновятся: название, время, лимит, описание (note).\n` +
+    `Поля Альфы будут перезаписаны.`
+  )) return;
+
+  // Сохраняем форму и временно ставим этому событию статус 'modified'
+  // (бэк отправляет в Альфу всё что modified). У других modified-событий
+  // сейчас тоже могут быть изменения — мы их не трогаем, они тоже улетят.
+  // Если нужна изоляция — раскомментируй блок backup ниже.
+  saveEvent();
+  const fresh = state.events.find(e => e.id === eventId);
+  if (!fresh) { toast('Событие пропало', 'err'); return; }
+  if (fresh.status !== 'modified') fresh.status = 'modified';
+
+  toast('Отправляю в Альфу…', 'ok');
+
+  const id = state.publishId || ('p_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4));
+  const monthLabel = MONTH_NAMES[state.curMonth.getMonth()] + ' ' + state.curMonth.getFullYear();
+
+  const r = await apiPost('syncEventsToAlfa', {
+    id,
+    name: monthLabel + ' — ' + state.editorName,
+    stateJson: JSON.stringify(currentState())
+  });
+
+  if (!r.ok) {
+    toast('Ошибка: ' + (r.error || ''), 'err');
+    return;
+  }
+  state.publishId = id;
+  const alfa = r.alfa || {};
+  const res = (alfa.results || []).find(x => x.id === eventId);
+  if (res && res.error) {
+    toast('Альфа отказалась: ' + res.error, 'err');
+    return;
+  }
+  // Успех — статус возвращаем в published
+  fresh.status = 'published';
+  renderCalendar();
+  await autosaveDraft();
+  toast('Изменения отправлены в Альфу', 'ok');
+  closeModal('eventModal');
+}
+
+async function alfaDelete() {
+  const eventId = state.editingEventId;
+  if (!eventId) return;
+  const ev = state.events.find(e => e.id === eventId);
+  if (!ev || !ev.alfaGroupId) return;
+
+  if (!confirm(
+    `🗑 Удалить группу id=${ev.alfaGroupId} в Альфе?\n\n` +
+    `В Альфе группа будет архивирована (removed=1) — записи клиентов останутся,\n` +
+    `но новых записей больше не будет.\n\n` +
+    `Само событие в конструкторе останется со статусом «архивировано» —\n` +
+    `можешь удалить его вручную позже.\n\n` +
+    `Это действие нельзя откатить.`
+  )) return;
+
+  toast('Архивирую в Альфе…', 'ok');
+  const r = await apiPost('archiveInAlfa', { groupId: ev.alfaGroupId });
+  if (!r.ok) {
+    toast('Ошибка: ' + (r.error || ''), 'err');
+    return;
+  }
+  ev.status = 'archived';
+  ev.publishedToAlfa = false;
+  ev.publishToAlfa = false;
+  // alfaGroupId оставляем для истории — видно что было привязано
+  renderCalendar();
+  await autosaveDraft();
+  toast('Группа удалена в Альфе', 'ok');
+  closeModal('eventModal');
 }
 
 async function publishEventsToAlfa(mode) {
