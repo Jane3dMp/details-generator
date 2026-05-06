@@ -745,14 +745,14 @@ function setViewMode(mode) {
   try { localStorage.setItem('viewMode', mode); } catch(e) {}
 }
 
-// При загрузке восстанавливаем сохранённый режим. На мобиле дефолт — список.
+// При загрузке восстанавливаем сохранённый режим. На мобиле дефолт — таблица.
 (function initViewMode() {
   let saved = null;
   try { saved = localStorage.getItem('viewMode'); } catch(e) {}
   if (saved && ['calendar','list','table'].indexOf(saved) >= 0) {
     setViewMode(saved);
   } else if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) {
-    setViewMode('list');
+    setViewMode('table');
   }
 })();
 

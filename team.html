@@ -79,7 +79,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
 }
 .legend .sw.published { background: white; border-color: var(--accent); border: 1px solid var(--line); border-left: 4px solid var(--accent); }
 .legend .sw.draft { background: #fafafa; border-color: var(--accent); border-left-style: dashed; opacity: .85; }
-.legend .sw.modified { background: #fdf6e8; border-color: var(--yellow); border: 1px solid var(--yellow); border-left: 4px solid var(--yellow); }
+.legend .sw.modified { background: #fde6ec; border-color: #d6557a; border: 1px solid #d6557a; border-left: 4px solid #d6557a; }
 
 .calendar {
   background: white; border: 1px solid var(--line);
@@ -172,7 +172,8 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
 .events-table tbody tr.weekend { background: #fdf3e9; }
 .events-table tbody tr.weekend:hover { background: #f7e5d3; }
 .events-table tbody tr.draft { opacity: .78; }
-.events-table tbody tr.modified { background: #fff7eb; }
+.events-table tbody tr.modified { background: #fde6ec; }
+.events-table tbody tr.modified:hover { background: #fad5df; }
 .events-table td {
   padding: 12px 14px;
   font-size: 13px;
@@ -204,7 +205,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
 }
 .events-table .col-status .sw.published { background: #5b8a4e; }
 .events-table .col-status .sw.draft { background: var(--muted); }
-.events-table .col-status .sw.modified { background: #d4a85c; }
+.events-table .col-status .sw.modified { background: #d6557a; }
 .events-table .col-price {
   text-align: right;
   white-space: nowrap;
@@ -224,7 +225,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
 }
 .event-pill:hover { background: white; box-shadow: 0 0 0 1px var(--accent); }
 .event-pill.draft     { opacity: 0.78; border-left-style: dashed; }
-.event-pill.modified  { background: #fdf6e8; box-shadow: inset 0 0 0 2px var(--yellow); }
+.event-pill.modified  { background: #fde6ec; box-shadow: inset 0 0 0 2px #d6557a; }
 .event-pill .time { color: var(--muted); margin-right: 4px; font-weight: 500; }
 .event-pill .name { font-weight: 500; }
 .event-pill.cat-mk      { border-left-color: #c2845b; }
@@ -481,7 +482,12 @@ const MONTH_NAMES = ['январь','февраль','март','апрель','
 const WEEKDAY_SHORT = ['пн','вт','ср','чт','пт','сб','вс'];
 const WEEKDAY_LONG = ['понедельник','вторник','среда','четверг','пятница','суббота','воскресенье'];
 
-const state = { curMonth: new Date(), curWeekStart: null, viewMode: 'month', events: [], currentEvent: null };
+// На мобиле сразу открываем «Таблица» — на узком экране сетка нечитаемая
+const _isMobile = (typeof window !== 'undefined' && window.matchMedia &&
+                   window.matchMedia('(max-width: 700px)').matches);
+const state = { curMonth: new Date(), curWeekStart: null,
+                viewMode: _isMobile ? 'table' : 'month',
+                events: [], currentEvent: null };
 
 // === Login ===
 function tryLogin() {
@@ -501,6 +507,13 @@ function tryLogin() {
 function showApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').classList.add('show');
+  // Синхронизируем активную кнопку переключателя со state.viewMode
+  // (на мобиле дефолт 'table', не 'month')
+  const btnIds = { month: 'modeMonthBtn', week: 'modeWeekBtn', table: 'modeTableBtn' };
+  Object.entries(btnIds).forEach(([mode, id]) => {
+    const b = document.getElementById(id);
+    if (b) b.classList.toggle('active', state.viewMode === mode);
+  });
   loadEvents();
 }
 
@@ -735,7 +748,7 @@ function renderTable() {
           <th>Событие</th>
           <th>Педагог</th>
           <th class="right">Цена</th>
-          <th class="right">Статус</th>
+          <th class="right col-status">Статус</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
