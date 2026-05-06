@@ -69,7 +69,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   padding: 8px 12px; font-size: 11px; font-weight: 600;
   color: var(--muted); text-transform: uppercase; letter-spacing: .5px;
 }
-.weekdays > div.weekend { color: var(--accent); }
+.weekdays > div.weekend { color: var(--accent); background: #fdf3e9; }
 .days { display: grid; grid-template-columns: repeat(7, 1fr); }
 .day {
   min-height: 110px; padding: 6px;
@@ -78,6 +78,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 }
 .day:nth-child(7n) { border-right: none; }
 .day.other-month { background: #fafafa; opacity: .35; }
+.day.weekend { background: #fdf3e9; }
 .day.weekend .day-num { color: var(--accent); }
 .day.today { background: #fdf6e8; }
 .day.today .day-num { background: var(--accent); color: white; }
@@ -105,6 +106,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 .event-pill.cat-book    { border-left-color: #5b8a4e; background: #eef5ec; }
 .event-pill.cat-party   { border-left-color: #b15a8a; background: #f9eaf2; }
 .event-pill.cat-expert  { border-left-color: #7a5b9a; background: #f1edf7; }
+.event-pill.cat-private { border-left-color: #d4a85c; background: #fdf6e8; opacity: .85; }
 
 /* ================ СПИСОК (мобильный) ================ */
 .list-view { display: none; }
@@ -116,6 +118,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   margin-bottom: 10px;
   box-shadow: var(--shadow);
 }
+.list-day.weekend { background: #fdf3e9; }
 .list-day.today { border-color: var(--accent); background: #fdf6e8; }
 .list-day-head {
   display: flex;
@@ -180,6 +183,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   align-self: center;
   flex-shrink: 0;
 }
+.list-event.private .ev-name { color: var(--muted); font-style: italic; }
 
 .empty {
   padding: 80px 20px; text-align: center; color: var(--muted); font-size: 14px;
@@ -207,6 +211,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: white; padding: 20px 22px; position: relative;
 }
+.modal-banner.private { background: linear-gradient(135deg, #d4a85c, #b08840); }
 .modal-banner .format-pill {
   display: inline-block; background: rgba(255,255,255,.22);
   padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 500;
@@ -232,6 +237,15 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line);
   font-size: 13px; white-space: pre-line; line-height: 1.6; color: #444;
 }
+.private-message {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink);
+  text-align: center;
+  padding: 8px 6px;
+}
+.private-message .emoji { font-size: 36px; margin-bottom: 10px; display: block; }
+.private-message p { margin: 6px 0; }
 .modal-foot {
   padding: 14px 22px; border-top: 1px solid var(--line);
   background: var(--bg); display: flex; gap: 8px;
@@ -246,6 +260,16 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   appearance: none;
 }
 .btn-book:hover, .btn-book:active { background: var(--accent-dark); }
+.btn-call {
+  flex: 1; background: var(--green); color: white; border: none;
+  padding: 14px 16px; font-size: 14px; font-weight: 600;
+  border-radius: 8px; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; text-decoration: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.btn-call:hover, .btn-call:active { background: #4a7240; }
 .btn-cancel {
   background: white; color: var(--ink); border: 1px solid var(--line);
   padding: 14px 16px; font-size: 14px; border-radius: 8px;
@@ -298,6 +322,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   .detail-row .lbl { width: 100px; font-size: 13px; }
   .detail-row .val.price { font-size: 17px; }
   .descr { font-size: 14px; line-height: 1.6; }
+  .private-message { font-size: 16px; }
+  .private-message .emoji { font-size: 44px; }
 
   .modal-foot {
     padding: 12px 14px;
@@ -306,13 +332,14 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
     bottom: 0;
   }
   .btn-cancel { padding: 14px 18px; }
-  .btn-book { padding: 14px 18px; font-size: 15px; }
+  .btn-book, .btn-call { padding: 14px 18px; font-size: 15px; }
 }
 
 @media (max-width: 380px) {
   .list-event .time-col { width: 50px; font-size: 14px; }
   .list-event .ev-name { font-size: 14px; }
   .month-nav h2 { font-size: 14px; min-width: 110px; }
+  .btn-call { font-size: 13px; }
 }
 </style>
 </head>
@@ -341,26 +368,23 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 
 <div class="modal-bg" id="evModal">
   <div class="modal">
-    <div class="modal-banner">
+    <div class="modal-banner" id="mBanner">
       <button class="modal-close" onclick="closeModal()" aria-label="Закрыть">✕</button>
       <div class="format-pill" id="mFormat">—</div>
       <h2 id="mName">—</h2>
       <div class="when" id="mWhen">—</div>
     </div>
-    <div class="modal-body">
-      <div id="mDetails"></div>
-      <div class="descr" id="mDescr"></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn-cancel" onclick="closeModal()">Закрыть</button>
-      <a class="btn-book" id="mBookBtn" target="_blank" rel="noopener">📝 Записаться</a>
-    </div>
+    <div class="modal-body" id="mBody"></div>
+    <div class="modal-foot" id="mFoot"></div>
   </div>
 </div>
 
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHrfjsxMyN2TGfAw-JH8MN0KW8QdUUy-bIQSlgjtEIciAw_FnbrL8ay5CrEcqrcQrF/exec';
 const PROJECT = 'details';
+// Контактный телефон для приватных мероприятий
+const CONTACT_PHONE = '+375293151583';
+const CONTACT_PHONE_DISPLAY = '+375 (29) 315-15-83';
 
 const MONTH_NAMES = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
 const MONTH_NAMES_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
@@ -377,10 +401,11 @@ function escapeHtml(s) {
 }
 function categoryClass(fmt) {
   if (!fmt) return '';
-  if (fmt.toLowerCase().startsWith('мк')) return 'cat-mk';
+  const f = String(fmt).toLowerCase();
+  if (f.startsWith('мк') || f.indexOf('мастер-класс') >= 0) return 'cat-mk';
   if (fmt === 'Киновечер') return 'cat-kino';
   if (fmt === 'Книжный клуб') return 'cat-book';
-  if (fmt === 'Вечеринка' || fmt === 'Дегустация') return 'cat-party';
+  if (fmt === 'Вечеринка' || fmt === 'Дегустация' || fmt === 'Винная дегустация') return 'cat-party';
   if (fmt === 'Встреча с экспертом') return 'cat-expert';
   return '';
 }
@@ -419,6 +444,23 @@ function render() {
   renderList();
 }
 
+// Рендерит плашку события для десктопа. Учитывает приватные.
+function renderEventPill(ev) {
+  if (ev.isPrivate) {
+    return `
+      <div class="event-pill cat-private" onclick="openEvent('${ev.id}')">
+        <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">🔒 Приватное мероприятие</span>
+      </div>
+    `;
+  }
+  const label = [ev.format, ev.name].filter(Boolean).join(' · ') || '?';
+  return `
+    <div class="event-pill ${categoryClass(ev.format)}" onclick="openEvent('${ev.id}')">
+      <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">${escapeHtml(label)}</span>
+    </div>
+  `;
+}
+
 // === КАЛЕНДАРНАЯ СЕТКА (десктоп) ===
 function renderCalendar() {
   const m = state.curMonth.getMonth();
@@ -445,11 +487,7 @@ function renderCalendar() {
     const isWe = wkd === 0 || wkd === 6;
     const dayEvents = state.events.filter(e => e.date === dStr);
     dayEvents.sort((a, b) => (a.timeStart || '99').localeCompare(b.timeStart || '99'));
-    const eventsHtml = dayEvents.map(ev => `
-      <div class="event-pill ${categoryClass(ev.format)}" onclick="openEvent('${ev.id}')">
-        <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">${escapeHtml(ev.name || ev.format || '')}</span>
-      </div>
-    `).join('');
+    const eventsHtml = dayEvents.map(renderEventPill).join('');
     html += `
       <div class="day ${inMonth ? '' : 'other-month'} ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''}">
         <span class="day-num">${d.getDate()}</span>
@@ -493,18 +531,33 @@ function renderList() {
     const isToday = dateStr === todayStr;
     const dayEvents = byDate[dateStr].slice().sort((a, b) => (a.timeStart || '99').localeCompare(b.timeStart || '99'));
 
-    const eventsHtml = dayEvents.map(ev => `
-      <div class="list-event" onclick="openEvent('${ev.id}')">
-        <div class="time-col">${escapeHtml(ev.timeStart || '')}</div>
-        <div class="body-col">
-          <div class="ev-name">${escapeHtml(ev.name || ev.format || '')}</div>
-          <div class="ev-meta">
-            ${escapeHtml(ev.format || '')}${ev.price ? ' · <span class="price-tag">' + ev.price + ' руб</span>' : ''}
+    const eventsHtml = dayEvents.map(ev => {
+      if (ev.isPrivate) {
+        return `
+          <div class="list-event private" onclick="openEvent('${ev.id}')">
+            <div class="time-col">${escapeHtml(ev.timeStart || '')}</div>
+            <div class="body-col">
+              <div class="ev-name">🔒 Приватное мероприятие</div>
+              <div class="ev-meta">слот занят</div>
+            </div>
+            <div class="arrow">›</div>
           </div>
+        `;
+      }
+      const label = [ev.format, ev.name].filter(Boolean).join(' · ') || '?';
+      return `
+        <div class="list-event" onclick="openEvent('${ev.id}')">
+          <div class="time-col">${escapeHtml(ev.timeStart || '')}</div>
+          <div class="body-col">
+            <div class="ev-name">${escapeHtml(label)}</div>
+            <div class="ev-meta">
+              ${escapeHtml(ev.format || '')}${ev.price ? ' · <span class="price-tag">' + ev.price + ' руб</span>' : ''}
+            </div>
+          </div>
+          <div class="arrow">›</div>
         </div>
-        <div class="arrow">›</div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
     html += `
       <div class="list-day ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''}">
@@ -527,18 +580,49 @@ function openEvent(id) {
   if (!ev) return;
   const dt = new Date(ev.date);
   const wd = WEEKDAY_LONG[(dt.getDay() + 6) % 7];
-  document.getElementById('mFormat').textContent = ev.format || '';
-  document.getElementById('mName').textContent = ev.name || ev.format || '';
-  document.getElementById('mWhen').textContent = `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]}, ${wd}, в ${ev.timeStart || '—'}`;
-  const details = [];
-  if (ev.duration) details.push(`<div class="detail-row"><div class="lbl">Длительность</div><div class="val">${ev.duration} ч</div></div>`);
-  if (ev.price) details.push(`<div class="detail-row"><div class="lbl">Цена</div><div class="val price">${ev.price} руб</div></div>`);
-  if (ev.limit) details.push(`<div class="detail-row"><div class="lbl">Мест</div><div class="val">до ${ev.limit}</div></div>`);
-  document.getElementById('mDetails').innerHTML = details.join('');
-  document.getElementById('mDescr').textContent = ev.description || '';
-  document.getElementById('mBookBtn').href = ev.formUrl || '#';
+  const banner = document.getElementById('mBanner');
+  const body = document.getElementById('mBody');
+  const foot = document.getElementById('mFoot');
+
+  banner.classList.toggle('private', !!ev.isPrivate);
+
+  if (ev.isPrivate) {
+    // Заглушка для приватных (День рождения / Свидание / Частное мероприятие)
+    document.getElementById('mFormat').textContent = 'Приватное мероприятие';
+    document.getElementById('mName').textContent = '🔒 Слот занят';
+    document.getElementById('mWhen').textContent = `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]}, ${wd}, в ${ev.timeStart || '—'}`;
+    body.innerHTML = `
+      <div class="private-message">
+        <span class="emoji">🎉</span>
+        <p>В этот день у нас приватное мероприятие.</p>
+        <p>Если хотите устроить такой же классный праздник в Деталях — свяжитесь с нами, и он будет великолепен!</p>
+      </div>
+    `;
+    foot.innerHTML = `
+      <button class="btn-cancel" onclick="closeModal()">Закрыть</button>
+      <a class="btn-call" href="tel:${CONTACT_PHONE}">📞 Связаться · ${escapeHtml(CONTACT_PHONE_DISPLAY)}</a>
+    `;
+  } else {
+    // Обычное событие
+    document.getElementById('mFormat').textContent = ev.format || '';
+    const label = [ev.format, ev.name].filter(Boolean).join(' · ');
+    document.getElementById('mName').textContent = label || ev.format || ev.name || '';
+    document.getElementById('mWhen').textContent = `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]}, ${wd}, в ${ev.timeStart || '—'}`;
+    const details = [];
+    if (ev.duration) details.push(`<div class="detail-row"><div class="lbl">Длительность</div><div class="val">${ev.duration} ч</div></div>`);
+    if (ev.price) details.push(`<div class="detail-row"><div class="lbl">Цена</div><div class="val price">${ev.price} руб</div></div>`);
+    if (ev.limit) details.push(`<div class="detail-row"><div class="lbl">Мест</div><div class="val">до ${ev.limit}</div></div>`);
+    body.innerHTML = `
+      <div>${details.join('')}</div>
+      <div class="descr">${escapeHtml(ev.description || '')}</div>
+    `;
+    foot.innerHTML = `
+      <button class="btn-cancel" onclick="closeModal()">Закрыть</button>
+      <a class="btn-book" href="${escapeHtml(ev.formUrl || '#')}" target="_blank" rel="noopener">📝 Записаться</a>
+    `;
+  }
+
   document.getElementById('evModal').classList.add('show');
-  // Блокируем скролл фона на мобильных
   document.body.style.overflow = 'hidden';
 }
 
