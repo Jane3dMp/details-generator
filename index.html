@@ -1187,9 +1187,13 @@ function renderCalendar() {
       const st = ev.status || 'draft';
       const stIcon = st === 'published' ? '✓' : st === 'modified' ? '⏳' : '◌';
       const stTitle = st === 'published' ? 'Опубликовано в Альфе' : st === 'modified' ? 'Есть несохранённые изменения' : 'Черновик';
+      const labelParts = [];
+      if (ev.format) labelParts.push(ev.format);
+      if (ev.name) labelParts.push(ev.name);
+      const label = labelParts.length ? labelParts.join(' · ') : '?';
       return `
         <div class="event-pill ${categoryClass(ev.format)} st-${st}" onclick="event.stopPropagation(); openEventEditor('${ev.id}')" title="${stTitle}">
-          <span class="time">${ev.timeStart || '—'}</span><span class="status-mark">${stIcon}</span><span class="name">${escapeHtml(ev.name || ev.format || '?')}</span>
+          <span class="time">${ev.timeStart || '—'}</span><span class="status-mark">${stIcon}</span><span class="name">${escapeHtml(label)}</span>
         </div>
       `;
     }).join('');
