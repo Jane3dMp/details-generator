@@ -1755,6 +1755,7 @@ main {
         <div>
           <label>Какой референс на постер?</label>
           <div id="epRefPicker" class="ep-ref-picker"></div>
+          <input type="file" id="epFileInput" accept="image/*" hidden onchange="_epOnFileSelected(event)">
         </div>
       </div>
 
@@ -4404,7 +4405,42 @@ function _epRenderRefPicker() {
   html += `<div class="${noneCls}" onclick="setEventPosterRef(-1)">Без<br>фото</div>`;
   // Плитка «+ Свой URL»
   html += `<div class="ep-ref-add" onclick="addEventPosterCustomUrl()" title="Вставить прямую ссылку на картинку (Pinterest, любая JPG/PNG)">📌<br>+ URL</div>`;
+  // Плитка «📤 Файл» — загрузка картинки с диска (лучшее качество)
+  html += `<div class="ep-ref-add" onclick="document.getElementById('epFileInput').click()" title="Загрузить картинку с диска — гарантированно полное разрешение">📤<br>Файл</div>`;
   picker.innerHTML = html;
+}
+
+function _epOnFileSelected(event) {
+  const file = event.target.files && event.target.files[0];
+  // Сбрасываем input, чтобы повторная загрузка того же файла триггерила onchange
+  event.target.value = '';
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    toast('Это не картинка', 'err');
+    return;
+  }
+  // Лимит — 10 МБ, иначе DOM подвиснет
+  if (file.size > 10 * 1024 * 1024) {
+    toast('Файл слишком большой (>10 МБ). Сожмите перед загрузкой.', 'err');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;  // base64 data URL
+    _epState.customRefs.push({
+      url: file.name,
+      thumb: dataUrl,
+      note: 'Файл с диска',
+      domain: ''
+    });
+    _epState.refIdx = _epAllRefs().length - 1;
+    _epRenderRefPicker();
+    renderEventPoster();
+    if (_epState.lastVariants && _epState.lastVariants.length) _epRenderVariants(_epState.lastVariants);
+    toast('Файл подставлен ✓', 'ok');
+  };
+  reader.onerror = () => toast('Не удалось прочитать файл', 'err');
+  reader.readAsDataURL(file);
 }
 
 function addEventPosterCustomUrl() {
