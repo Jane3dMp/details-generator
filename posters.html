@@ -1934,10 +1934,13 @@ body {
   line-height: 0.88;
   letter-spacing: -0.04em;
   text-transform: uppercase;
-  word-break: break-word;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  font-size: var(--ss-word-size);
 }
-.poster.stacked-split.stories .ss-word { font-size: 52px; }
-.poster.stacked-split.square .ss-word { font-size: 34px; }
+.poster.stacked-split.stories .ss-word { --ss-word-size: 52px; }
+.poster.stacked-split.square .ss-word { --ss-word-size: 34px; }
 .poster.stacked-split .ss-facts {
   margin-top: auto;
   display: flex;
@@ -2755,7 +2758,7 @@ function buildDayFromEvent(e, regenSeed) {
   regenSeed = regenSeed || 0;
   const d = parseDate(e.date);
   const accent = pickAccentByFormat(e.format);
-  const photos = (e.references || []).map(r => r.thumb).filter(Boolean);
+  const photos = (e.references || []).map(r => upgradePinterestUrl(r.thumb || r.url || '')).filter(Boolean);
   const photo = photos[0] || null;
 
   // Tagline
@@ -2842,80 +2845,103 @@ function pickHeroWord(name, format) {
 function pickLayoutsForEvent(e, photoCount, regenSeed) {
   regenSeed = regenSeed || 0;
   const f = (e.format || '').toLowerCase();
-
-  // Категория события → пул подходящих макетов
-  let pool;
-
-  if (/настолк|караоке|кино/.test(f)) {
-    pool = photoCount >= 1
-      ? ['bold', 'frame', 'halftone', 'broken-grid', 'editorial-layer', 'collage', 'clipping', 'arch-trio']
-      : ['bold', 'halftone', 'editorial', 'editorial-layer', 'collage', 'cutout'];
-  } else if (/вечеринк|дегустац/.test(f)) {
-    pool = photoCount >= 1
-      ? ['frame', 'editorial-layer', 'casual', 'bold', 'split', 'collage', 'stacked-split', 'clipping']
-      : ['bold', 'editorial', 'editorial-layer', 'cutout', 'collage'];
-  } else if (/глина|рисов|украш|кулинар/.test(f)) {
-    pool = photoCount >= 2
-      ? ['scrapbook', 'grid-layout', 'split-elegant', 'editorial-layer', 'product', 'arch-trio']
-      : photoCount === 1
-        ? ['scrapbook', 'split-elegant', 'hero', 'editorial-layer', 'product', 'stacked-split']
-        : ['editorial', 'scrapbook', 'editorial-layer', 'cutout'];
-  } else if (/бьюти/.test(f)) {
-    pool = photoCount >= 1
-      ? ['split-elegant', 'casual', 'scrapbook', 'hero', 'clipping', 'product']
-      : ['editorial', 'split-elegant', 'cutout'];
-  } else if (/книжн|эксперт|разговор|встреч/.test(f)) {
-    pool = photoCount >= 1
-      ? ['editorial', 'frame', 'split-elegant', 'editorial-layer', 'clipping', 'stacked-split']
-      : ['editorial', 'editorial-layer', 'cutout', 'product'];
-  } else if (/день рождения|свидан/.test(f)) {
-    pool = photoCount >= 1
-      ? ['casual', 'frame', 'scrapbook', 'editorial-layer', 'collage', 'clipping']
-      : ['editorial', 'casual', 'cutout'];
-  } else if (/макраме|вышив|рукодел/.test(f)) {
-    pool = photoCount >= 1
-      ? ['product', 'arch-trio', 'split-elegant', 'scrapbook']
-      : ['product', 'cutout', 'editorial'];
-  } else {
-    pool = photoCount >= 2
-      ? ['hero', 'grid-layout', 'editorial-layer', 'scrapbook', 'arch-trio', 'stacked-split']
-      : photoCount === 1
-        ? ['hero', 'split', 'frame', 'editorial-layer', 'collage', 'stacked-split']
-        : ['editorial', 'editorial-layer', 'cutout', 'bold'];
-  }
-
-  // Фильтр по длине названия события:
-  // SCRAPBOOK и EDITORIAL-LAYER плохо работают с длинными/сложными названиями
   const nameLen = (e.name || '').length;
-  const nameWords = (e.name || '').split(' ').length;
-  const isTitleShort = nameLen <= 20 && nameWords <= 3;
-  const isTitleMedium = nameLen <= 32 && nameWords <= 5;
+  const nameWords = (e.name || '').split(' ').filter(Boolean).length;
+  const isTitleShort  = nameLen <= 18 && nameWords <= 3;  // до 3 слов
+  const isTitleMedium = nameLen <= 30 && nameWords <= 5;  // до 5 слов
 
-  if (!isTitleMedium && pool.includes('scrapbook')) {
-    pool = pool.filter(l => l !== 'scrapbook');
-    if (!pool.includes('hero')) pool.push('hero');
-  }
-  if (!isTitleShort && pool.includes('editorial-layer')) {
-    pool = pool.filter(l => l !== 'editorial-layer');
-    if (!pool.includes('split-elegant')) pool.push('split-elegant');
-  }
-  if (pool.length < 2) pool.push('hero');
+  // Все 18 макетов — базовый вес 1.
+  // Макеты требующие фото отсекаем если photoCount === 0.
+  // Весовая таблица: [layout, weight, needsPhoto, needsShortTitle, needsMultiPhoto]
+  // needsPhoto: 1=нужно хотя бы 1, 2=нужно 2+
+  const ALL = [
+    // layout,            w,  needsPhoto, shortTitle, multiPhoto
+    ['hero',              3,  0,  false, false],
+    ['split',             2,  1,  false, false],
+    ['grid-layout',       2,  2,  false, true ],
+    ['editorial',         2,  0,  false, false],
+    ['bold',              2,  0,  false, false],
+    ['scrapbook',         2,  1,  true,  false],
+    ['broken-grid',       1,  1,  false, false],
+    ['halftone',          2,  1,  false, false],
+    ['frame',             3,  1,  false, false],
+    ['casual',            2,  1,  false, false],
+    ['split-elegant',     2,  1,  false, false],
+    ['editorial-layer',   2,  1,  true,  false],
+    ['collage',           2,  1,  false, false],
+    ['stacked-split',     2,  1,  false, false],
+    ['cutout',            2,  1,  false, false],
+    ['product',           2,  1,  false, false],
+    ['arch-trio',         2,  1,  false, false],
+    ['clipping',          2,  1,  false, false],
+  ];
 
-  // Берём 2 разных макета. Псевдослучайный шафл с учётом id события + regenSeed.
-  const seed = (e.id || e.date || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) + regenSeed * 17;
+  // Бонусные веса по категории события (+3 = сильно предпочтительно)
+  const BONUS = {
+    'кино|настолк|карао': {
+      bold:3, halftone:3, collage:3, clipping:3, 'broken-grid':2, 'arch-trio':2, frame:2
+    },
+    'вечеринк|дегустац': {
+      collage:3, frame:3, casual:2, bold:2, 'stacked-split':2, clipping:2, editorial:1
+    },
+    'глина|рисов|украш|кулинар': {
+      scrapbook:3, 'grid-layout':3, product:3, 'arch-trio':2, 'split-elegant':2, hero:2
+    },
+    'бьюти': {
+      'split-elegant':3, casual:2, product:2, clipping:2, scrapbook:2, frame:2
+    },
+    'книжн|эксперт|разговор|встреч': {
+      editorial:3, 'split-elegant':2, frame:2, clipping:2, 'stacked-split':2, product:2
+    },
+    'день рождения|свидан': {
+      casual:3, frame:2, collage:2, clipping:2, scrapbook:2
+    },
+    'макраме|вышив|рукодел': {
+      product:3, 'arch-trio':2, 'split-elegant':2, scrapbook:2
+    }
+  };
+
+  // Находим категорийный бонус
+  let bonus = {};
+  for (const [pattern, b] of Object.entries(BONUS)) {
+    if (new RegExp(pattern).test(f)) { bonus = b; break; }
+  }
+
+  // Строим взвешенный пул
+  let pool = [];
+  for (const [layout, baseW, needsPhoto, needsShort, needsMulti] of ALL) {
+    // Отсекаем по фото
+    if (needsPhoto === 1 && photoCount < 1) continue;
+    if (needsPhoto === 2 && photoCount < 2) continue;
+    // Отсекаем по длине названия
+    if (needsShort && !isTitleMedium) continue;
+    // Отсекаем editorial-layer если название длинное
+    if (layout === 'editorial-layer' && !isTitleShort) continue;
+
+    const w = baseW + (bonus[layout] || 0);
+    // Добавляем в пул с весом — повторяем layout w раз
+    for (let i = 0; i < w; i++) pool.push(layout);
+  }
+
+  if (pool.length < 2) {
+    pool = ['hero', 'editorial', 'frame', 'split', 'bold', 'cutout'];
+  }
+
+  // Псевдослучайный шафл по id события + regenSeed
+  const seed = (e.id || e.date || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) + regenSeed * 37;
   const shuffled = pool.slice().sort((a, b) => {
-    const ha = (a.charCodeAt(0) * 31 + seed) % 100;
-    const hb = (b.charCodeAt(0) * 31 + seed) % 100;
+    const ha = ((a.charCodeAt(0) + a.length) * 31 + seed) % 100;
+    const hb = ((b.charCodeAt(0) + b.length) * 31 + seed) % 100;
     return ha - hb;
   });
 
-  // Возвращаем первые два уникальных
+  // Берём первые 2 УНИКАЛЬНЫХ
   const uniq = [];
   for (const l of shuffled) {
     if (!uniq.includes(l)) uniq.push(l);
     if (uniq.length === 2) break;
   }
-  while (uniq.length < 2) uniq.push('hero'); // safety
+  while (uniq.length < 2) uniq.push('hero');
   return uniq;
 }
 
@@ -3090,6 +3116,20 @@ function renderWorkspace(dayKey) {
     row.querySelectorAll('.poster.editorial .hero-word').forEach(autoFitHeroWord);
     row.querySelectorAll('.poster.frame .frame-title').forEach(el => autoFitElement(el, '--frame-title-size'));
     row.querySelectorAll('.poster.bold .bold-title').forEach(el => autoFitElement(el, '--bold-title-size'));
+    // STACKED — каждое слово подгоняется под ширину колонки
+    row.querySelectorAll('.poster.stacked-split').forEach(poster => {
+      const col = poster.querySelector('.ss-column');
+      if (!col) return;
+      const maxW = col.clientWidth - 36;
+      poster.querySelectorAll('.ss-word').forEach(el => {
+        let size = parseFloat(window.getComputedStyle(el).fontSize);
+        let guard = 20;
+        while (el.scrollWidth > maxW && size > 20 && guard-- > 0) {
+          size -= 3;
+          el.style.setProperty('--ss-word-size', size + 'px');
+        }
+      });
+    });
     row.querySelectorAll('.poster.halftone .ht-title-row').forEach(el => {
       if (el.scrollWidth > el.closest('.poster').clientWidth - 60) {
         let size = parseFloat(window.getComputedStyle(el).fontSize);
@@ -3821,8 +3861,9 @@ async function renderPosterToBlob(dayKey, variantId, format) {
   const frameTitle = node.querySelector('.frame-title');
   const boldTitle = node.querySelector('.bold-title');
   const htTitles = node.querySelectorAll('.ht-title-row');
+  const ssWords = node.querySelectorAll('.ss-word');
 
-  if (heroWord || frameTitle || boldTitle || htTitles.length) {
+  if (heroWord || frameTitle || boldTitle || htTitles.length || ssWords.length) {
     zone.style.left = '0';
     zone.style.visibility = 'hidden';
     if (heroWord) autoFitHeroWord(heroWord);
@@ -3831,11 +3872,20 @@ async function renderPosterToBlob(dayKey, variantId, format) {
     htTitles.forEach(el => {
       let size = parseFloat(window.getComputedStyle(el).fontSize);
       const pw = node.clientWidth - 60;
-      while (el.scrollWidth > pw && size > 24) {
-        size -= 4;
-        el.style.fontSize = size + 'px';
-      }
+      while (el.scrollWidth > pw && size > 24) { size -= 4; el.style.fontSize = size + 'px'; }
     });
+    if (ssWords.length) {
+      const col = node.querySelector('.ss-column');
+      const maxW = col ? col.clientWidth - 36 : node.clientWidth / 2 - 36;
+      ssWords.forEach(el => {
+        let size = parseFloat(window.getComputedStyle(el).fontSize);
+        let guard = 20;
+        while (el.scrollWidth > maxW && size > 20 && guard-- > 0) {
+          size -= 3;
+          el.style.setProperty('--ss-word-size', size + 'px');
+        }
+      });
+    }
     zone.style.left = '-10000px';
     zone.style.visibility = '';
   }
@@ -3935,6 +3985,19 @@ async function downloadAllSelected() {
 /* ============================================================
    УТИЛИТЫ
    ============================================================ */
+// Апгрейд Pinterest thumbnail до полного разрешения (originals)
+function upgradePinterestUrl(url) {
+  if (!url) return '';
+  if (!url.includes('pinimg.com')) return url;
+  return url
+    .replace(/\/\d+x\d+\//, '/originals/')
+    .replace('/236x/', '/originals/')
+    .replace('/474x/', '/originals/')
+    .replace('/564x/', '/originals/')
+    .replace('/736x/', '/originals/')
+    .replace('/1200x/', '/originals/');
+}
+
 function parseDate(s) {
   const [y, m, d] = s.split('-').map(Number);
   return new Date(y, m - 1, d);
