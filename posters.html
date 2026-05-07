@@ -3508,8 +3508,9 @@ function pickLayoutsForEvent(e, photoCount, regenSeed) {
     ['editorial',         2,  0,  false, false],
     ['bold',              2,  0,  false, false],
     ['scrapbook',         2,  1,  true,  false],
-    ['broken-grid',       1,  1,  false, false],
-    ['halftone',          2,  1,  false, false],
+    // BROKEN-GRID и HALFTONE отключены — плохо работают с длинными русскими словами
+    // ['broken-grid', ...] — отключён
+    // ['halftone', ...] — отключён
     ['frame',             3,  1,  false, false],
     ['casual',            2,  1,  false, false],
     ['split-elegant',     2,  1,  false, false],
@@ -3537,7 +3538,7 @@ function pickLayoutsForEvent(e, photoCount, regenSeed) {
   // Бонусные веса по категории события (+3 = сильно предпочтительно)
   const BONUS = {
     'кино|настолк|карао': {
-      bold:3, halftone:3, collage:3, clipping:3, 'broken-grid':2, 'arch-trio':2, frame:2
+      bold:3, collage:3, clipping:3, 'arch-trio':2, frame:2
     },
     'вечеринк|дегустац': {
       collage:3, frame:3, casual:2, bold:2, 'stacked-split':2, clipping:2, editorial:1, 'window-frame':2
@@ -5138,7 +5139,7 @@ function renderPreview(ev) {
 
   const ALL_LAYOUTS = [
     ['hero', accent], ['split', accent], ['grid-layout', accent], ['editorial', accent],
-    ['bold', 'night'], ['scrapbook', accent], ['broken-grid', accent], ['halftone', accent],
+    ['bold', 'night'], ['scrapbook', accent],
     ['frame', accent], ['casual', accent], ['split-elegant', accent], ['editorial-layer', accent],
     ['collage', accent], ['stacked-split', accent], ['cutout', accent],
     ['product', 'coffee'], ['arch-trio', accent], ['clipping', accent],
@@ -5159,12 +5160,15 @@ function renderPreview(ev) {
       <span style="font-size:11px;color:var(--terracotta);font-weight:600;">${escapeHtml(ev.format||'')}</span>
       ${ev.price ? `<span style="font-size:11px;color:var(--soft-dark);">${ev.price} руб</span>` : ''}
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:32px;">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:28px;">
       <label style="font-size:12px;color:var(--muted);">Событие:</label>
-      <select id="pvSel" style="font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:white;color:var(--dark);max-width:340px;">${evOptions}</select>
-      <button class="btn" onclick="renderPreview(state.allEvents.find(e=>e.id===document.getElementById('pvSel').value)||state.allEvents[0])">Обновить</button>
+      <select id="pvSel" style="font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:white;color:var(--dark);max-width:320px;">${evOptions}</select>
+      <span style="font-size:12px;color:var(--muted);">Выбрано: <b id="pvSelCount" style="color:var(--dark);">0</b></span>
+      <button class="btn" id="pvZipBtn" onclick="pvDownloadZip()" disabled style="margin-left:auto;">↓ ZIP выбранных</button>
+      <button class="btn ghost" onclick="pvClearAll()">Снять выбор</button>
     </div>
-    <div id="pvGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:28px 20px;"></div>
+    <div id="pvStatus" style="font-size:12px;color:var(--muted);margin-bottom:16px;min-height:18px;"></div>
+    <div id="pvGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:28px 20px;margin-bottom:80px;"></div>
   `;
 
   document.getElementById('pvSel').onchange = function() {
@@ -5172,61 +5176,205 @@ function renderPreview(ev) {
     if (chosen) renderPreview(chosen);
   };
 
+  // Стейт выбранных в preview
+  if (!window._pvSelected) window._pvSelected = new Map();
+  window._pvDay = day;
+  window._pvEv = ev;
+  window._pvLayouts = ALL_LAYOUTS;
+
   const grid = document.getElementById('pvGrid');
   const SCALE = 0.48;
   const PH = 720, PW = 405;
   const cardH = Math.round(PH * SCALE);
   const cardW = Math.round(PW * SCALE);
 
-  ALL_LAYOUTS.forEach(([layout, ac]) => {
+  ALL_LAYOUTS.forEach(([layout, ac], idx) => {
     const variant = buildVariant('A', layout, ac, tagline, photo, photos, heroWord, ev);
     const posterHtml = renderPoster(day, variant, 'stories');
     const name = layoutDisplayName(layout);
     const acName = accentDisplayName(variant.accent || ac);
+    const isSelected = window._pvSelected.has(layout);
 
     const wrap = document.createElement('div');
-    wrap.style.cssText = `display:flex;flex-direction:column;align-items:center;gap:6px;`;
+    wrap.dataset.layout = layout;
+    wrap.style.cssText = `display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;`;
+
     wrap.innerHTML = `
-      <div style="width:${cardW}px;height:${cardH}px;overflow:hidden;border-radius:10px;box-shadow:0 6px 22px rgba(0,0,0,0.11);flex-shrink:0;">
-        <div style="transform:scale(${SCALE});transform-origin:top left;width:${PW}px;height:${PH}px;">${posterHtml}</div>
+      <div class="pv-card" data-layout="${layout}" style="
+        width:${cardW}px;height:${cardH}px;overflow:hidden;border-radius:10px;
+        box-shadow:0 6px 22px rgba(0,0,0,${isSelected?'0.22':'0.10'});flex-shrink:0;
+        border:${isSelected?'3px solid var(--terracotta)':'3px solid transparent'};
+        transition:border-color .15s,box-shadow .15s;position:relative;
+      ">
+        ${isSelected ? `<div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:20;background:var(--terracotta);color:white;font-size:9px;font-weight:700;letter-spacing:.18em;padding:3px 10px;border-radius:10px;text-transform:uppercase;white-space:nowrap;">✓ Выбран</div>` : ''}
+        <div style="transform:scale(${SCALE});transform-origin:top left;width:${PW}px;height:${PH}px;pointer-events:none;">${posterHtml}</div>
       </div>
-      <div style="text-align:center;">
+      <div style="text-align:center;width:${cardW}px;">
         <div style="font-size:11px;font-weight:700;letter-spacing:.18em;color:var(--dark);text-transform:uppercase;">${name}</div>
         <div style="font-size:10px;color:var(--muted);margin-top:1px;">${acName}</div>
+        <div class="pv-export-btns" style="display:${isSelected?'flex':'none'};gap:6px;justify-content:center;margin-top:6px;">
+          <button onclick="pvExportPNG(event,'${layout}','stories')" style="font-size:11px;padding:5px 10px;background:var(--milk);border:1px solid rgba(61,43,31,.2);border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;">↓ Stories</button>
+          <button onclick="pvExportPNG(event,'${layout}','square')" style="font-size:11px;padding:5px 10px;background:var(--milk);border:1px solid rgba(61,43,31,.2);border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;">↓ Square</button>
+        </div>
       </div>
     `;
+
+    wrap.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      pvToggleSelect(layout, variant, wrap);
+    });
+
     grid.appendChild(wrap);
   });
 
   requestAnimationFrame(() => {
     const autoFits = [
-      ['.poster.editorial .hero-word', autoFitHeroWord, null],
-      ['.poster.frame .frame-title', el => autoFitElement(el,'--frame-title-size'), null],
-      ['.poster.bold .bold-title', el => autoFitElement(el,'--bold-title-size'), null],
-      ['.poster.cutout .co-headline', el => autoFitElement(el,'--co-headline-size'), null],
-      ['.poster.arch-trio .at-title', el => autoFitElement(el,'--at-title-size'), null],
-      ['.poster.split-elegant .se-title', el => autoFitElement(el,'--se-title-size'), null],
-      ['.poster.casual .casual-title', el => autoFitElement(el,'--casual-title-size'), null],
-      ['.poster.product .prod-title', el => autoFitElement(el,'--prod-title-size'), null],
+      ['.poster.editorial .hero-word', autoFitHeroWord],
+      ['.poster.frame .frame-title', el => autoFitElement(el,'--frame-title-size')],
+      ['.poster.bold .bold-title', el => autoFitElement(el,'--bold-title-size')],
+      ['.poster.cutout .co-headline', el => autoFitElement(el,'--co-headline-size')],
+      ['.poster.arch-trio .at-title', el => autoFitElement(el,'--at-title-size')],
+      ['.poster.split-elegant .se-title', el => autoFitElement(el,'--se-title-size')],
+      ['.poster.casual .casual-title', el => autoFitElement(el,'--casual-title-size')],
+      ['.poster.product .prod-title', el => autoFitElement(el,'--prod-title-size')],
     ];
     autoFits.forEach(([sel, fn]) => grid.querySelectorAll(sel).forEach(fn));
     grid.querySelectorAll('.poster.stacked-split').forEach(poster => {
       const col = poster.querySelector('.ss-column');
       const maxW = col ? col.clientWidth - 36 : 150;
       poster.querySelectorAll('.ss-word').forEach(el => {
-        let sz = parseFloat(window.getComputedStyle(el).fontSize), g=20;
+        let sz = parseFloat(window.getComputedStyle(el).fontSize), g = 20;
         while (el.scrollWidth > maxW && sz > 14 && g-- > 0) {
           sz -= 3; el.style.setProperty('--ss-word-size', sz+'px');
         }
       });
     });
-    grid.querySelectorAll('.poster.halftone .ht-title-row').forEach(el => {
-      const pw = (el.closest('.poster')||{clientWidth:405}).clientWidth - 60;
-      let sz = parseFloat(window.getComputedStyle(el).fontSize);
-      while (el.scrollWidth > pw && sz > 16) { sz -= 4; el.style.fontSize = sz+'px'; }
-    });
   });
+
+  pvUpdateCount();
 }
+
+function pvToggleSelect(layout, variant, wrapEl) {
+  if (window._pvSelected.has(layout)) {
+    window._pvSelected.delete(layout);
+  } else {
+    window._pvSelected.set(layout, variant);
+  }
+  // Перерисовать только эту карточку
+  const isNow = window._pvSelected.has(layout);
+  const card = wrapEl.querySelector('.pv-card');
+  if (card) {
+    card.style.border = isNow ? '3px solid var(--terracotta)' : '3px solid transparent';
+    card.style.boxShadow = isNow ? '0 6px 22px rgba(0,0,0,.22)' : '0 6px 22px rgba(0,0,0,.10)';
+    const badge = card.querySelector('div[style*="Выбран"]');
+    if (isNow && !badge) {
+      const b = document.createElement('div');
+      b.style.cssText = 'position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:20;background:var(--terracotta);color:white;font-size:9px;font-weight:700;letter-spacing:.18em;padding:3px 10px;border-radius:10px;text-transform:uppercase;white-space:nowrap;';
+      b.textContent = '✓ Выбран';
+      card.appendChild(b);
+    } else if (!isNow && badge) {
+      badge.remove();
+    }
+  }
+  const btns = wrapEl.querySelector('.pv-export-btns');
+  if (btns) btns.style.display = isNow ? 'flex' : 'none';
+  pvUpdateCount();
+}
+
+function pvUpdateCount() {
+  const n = window._pvSelected ? window._pvSelected.size : 0;
+  const el = document.getElementById('pvSelCount');
+  if (el) el.textContent = n;
+  const btn = document.getElementById('pvZipBtn');
+  if (btn) btn.disabled = n === 0;
+}
+
+function pvClearAll() {
+  if (window._pvSelected) window._pvSelected.clear();
+  document.querySelectorAll('.pv-card').forEach(card => {
+    card.style.border = '3px solid transparent';
+    card.style.boxShadow = '0 6px 22px rgba(0,0,0,.10)';
+    const badge = card.querySelector('div[style*="Выбран"]');
+    if (badge) badge.remove();
+  });
+  document.querySelectorAll('.pv-export-btns').forEach(el => el.style.display = 'none');
+  pvUpdateCount();
+}
+
+async function pvExportPNG(evt, layout, format) {
+  evt.stopPropagation();
+  const btn = evt.target;
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const variant = window._pvSelected.get(layout);
+    if (!variant) return;
+    const blob = await pvRenderBlob(window._pvDay, variant, format);
+    if (!blob) { toast('Ошибка рендера', 'err'); return; }
+    const ev = window._pvEv;
+    const safeTitle = (ev.name||'event').replace(/[^а-яёА-ЯЁa-zA-Z0-9]+/g,'_').slice(0,30);
+    triggerDownload(blob, `${ev.date}_${layout}_${safeTitle}_${format}.png`);
+  } catch(e) {
+    toast('Ошибка: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+async function pvDownloadZip() {
+  if (!window._pvSelected || !window._pvSelected.size) return;
+  if (typeof JSZip === 'undefined') { toast('JSZip не загружен', 'err'); return; }
+  const btn = document.getElementById('pvZipBtn');
+  const status = document.getElementById('pvStatus');
+  btn.disabled = true;
+  const zip = new JSZip();
+  const ev = window._pvEv;
+  const safeTitle = (ev.name||'event').replace(/[^а-яёА-ЯЁa-zA-Z0-9]+/g,'_').slice(0,30);
+  let done = 0;
+  const total = window._pvSelected.size * 2;
+  for (const [layout, variant] of window._pvSelected) {
+    for (const fmt of ['stories','square']) {
+      status.textContent = `Рендерю ${++done}/${total}: ${layoutDisplayName(layout)} ${fmt}…`;
+      try {
+        const blob = await pvRenderBlob(window._pvDay, variant, fmt);
+        if (blob) zip.file(`${ev.date}_${layout}_${safeTitle}_${fmt}.png`, blob);
+      } catch(e) { console.error(layout, fmt, e); }
+    }
+  }
+  status.textContent = 'Упаковываю ZIP…';
+  const zipBlob = await zip.generateAsync({type:'blob'});
+  triggerDownload(zipBlob, `gallery_${ev.date}_${safeTitle}.zip`);
+  status.textContent = `Готово — ${window._pvSelected.size} макетов × 2 формата`;
+  btn.disabled = false;
+}
+
+async function pvRenderBlob(day, variant, format) {
+  const zone = document.getElementById('hiddenRenderZone');
+  zone.innerHTML = renderPoster(day, variant, format);
+  const node = zone.querySelector('.poster');
+  await waitForImages(node);
+  // Авто-подгон текста
+  zone.style.left = '0';
+  zone.style.visibility = 'hidden';
+  [
+    ['.hero-word', autoFitHeroWord],
+    ['.frame-title', el => autoFitElement(el,'--frame-title-size')],
+    ['.bold-title', el => autoFitElement(el,'--bold-title-size')],
+    ['.se-title', el => autoFitElement(el,'--se-title-size')],
+    ['.casual-title', el => autoFitElement(el,'--casual-title-size')],
+    ['.prod-title', el => autoFitElement(el,'--prod-title-size')],
+    ['.co-headline', el => autoFitElement(el,'--co-headline-size')],
+    ['.at-title', el => autoFitElement(el,'--at-title-size')],
+  ].forEach(([sel, fn]) => { const el = node.querySelector(sel); if (el) fn(el); });
+  zone.style.left = '-10000px';
+  zone.style.visibility = '';
+  const canvas = await html2canvas(node, {scale:2, useCORS:true, allowTaint:false, backgroundColor:null, logging:false});
+  zone.innerHTML = '';
+  return new Promise(r => canvas.toBlob(b => r(b), 'image/png', 0.95));
+}
+
 
 // Запуск
 const _urlMode = new URLSearchParams(location.search).get('mode');
