@@ -1087,29 +1087,34 @@ body {
   font-family: 'Caveat', cursive;
   color: var(--accent);
   font-style: italic;
-  max-width: 55%;
 }
 .poster.scrapbook.stories .scrap-tagline { font-size: 22px; margin-top: 4px; }
 .poster.scrapbook.square .scrap-tagline { font-size: 16px; margin-top: 2px; }
+
+/* Flex-ряд: заголовок слева + полароид справа */
+.poster.scrapbook .scrap-main-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+.poster.scrapbook .scrap-text-col {
+  flex: 1;
+  min-width: 0;
+}
 .poster.scrapbook .polaroid {
-  position: absolute;
+  flex-shrink: 0;
+  width: 38%;
   background: white;
-  padding: 8px 8px 14px;
+  padding: 6px 6px 12px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.18);
   transform: rotate(4deg);
-  z-index: 5;
-}
-.poster.scrapbook.stories .polaroid {
-  top: 32%;
-  right: 20px;
-  width: 36%;
-  z-index: 4;
+  position: relative;
 }
 .poster.scrapbook.square .polaroid {
-  top: 30%;
-  right: 16px;
   width: 34%;
-  z-index: 4;
+  padding: 5px 5px 10px;
 }
 .poster.scrapbook .polaroid-img {
   aspect-ratio: 1;
@@ -2721,9 +2726,13 @@ function renderScrapbook(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort,
       <div class="scrap-top" style="${topStyle}"></div>
       <div class="scrap-body">
         <div class="scrap-brand">Пространство «Детали»</div>
-        <div class="scrap-title">${escapeHtml(day.event.title || '—')}</div>
-        ${tg(v, "scrap-tagline", false, "div")}
-        ${polaroidPhoto ? `<div class="polaroid"><div class="polaroid-img" style="${polStyle}"></div></div>` : ''}
+        <div class="scrap-main-row">
+          <div class="scrap-text-col">
+            <div class="scrap-title">${escapeHtml(day.event.title || '—')}</div>
+            ${tg(v, "scrap-tagline", false, "div")}
+          </div>
+          ${polaroidPhoto ? `<div class="polaroid"><div class="polaroid-img" style="${polStyle}"></div></div>` : ''}
+        </div>
         <div class="scrap-date-block">
           ${dayNum} ${monthName}<br>${day.time}
         </div>
