@@ -601,6 +601,88 @@ main {
   border-color: var(--accent-dark);
 }
 
+/* Афиша недели — стиль постера */
+.week-poster {
+  width: 600px;
+  max-width: 100%;
+  margin: 0 auto;
+  background: #fdf9f2;
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  padding: 28px 32px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #2b2b2b;
+  box-sizing: border-box;
+}
+.week-poster .wp-head {
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+.week-poster .wp-head .wp-brand {
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.week-poster .wp-head .wp-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #3a2415;
+}
+.week-poster .wp-intro {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4a3a30;
+  margin-bottom: 20px;
+  font-style: italic;
+  text-align: center;
+  white-space: pre-wrap;
+}
+.week-poster .wp-day {
+  margin-bottom: 16px;
+}
+.week-poster .wp-day-head {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px dashed var(--accent);
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+.week-poster .wp-event {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 14px;
+  line-height: 1.45;
+  margin-bottom: 6px;
+  padding-left: 4px;
+}
+.week-poster .wp-event .wp-time {
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+  min-width: 50px;
+}
+.week-poster .wp-event .wp-info { flex: 1; min-width: 0; }
+.week-poster .wp-event .wp-name { font-weight: 600; color: #2b2b2b; }
+.week-poster .wp-event .wp-meta { font-size: 12px; color: #7a6a5e; margin-top: 1px; }
+.week-poster .wp-foot {
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 12px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
 /* ============== РЕФЕРЕНСЫ И КОММЕНТАРИЙ КОМАНДЕ ============== */
 .refs-block {
   border: 1px solid var(--line);
@@ -785,6 +867,7 @@ main {
     <div class="group">
       <button onclick="window.open('view.html', '_blank')" title="Открыть страницу для клиентов в новой вкладке">🌐 Как клиент</button>
       <button onclick="window.open('team.html', '_blank')" title="Открыть страницу для промо/SMM в новой вкладке">📣 Как промо</button>
+      <button onclick="openWeekPoster()" title="Сделать афишу на неделю — текст для Telegram + картинка для Instagram">🗓 Афиша недели</button>
     </div>
     <div class="sep"></div>
     <div class="group">
@@ -1152,6 +1235,56 @@ main {
       <div class="right">
         <button onclick="aiGenerateFormatIdeas()">🔄 Ещё 5 идей</button>
         <button onclick="closeModal('formatIdeasModal')">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== МОДАЛКА: АФИША НЕДЕЛИ ====== -->
+<div class="modal-bg" id="weekPosterModal">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2>🗓 Афиша недели</h2>
+      <button class="ghost" onclick="closeModal('weekPosterModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="row">
+        <div>
+          <label>Дата начала недели</label>
+          <input type="date" id="wpStartDate" onchange="renderWeekPoster()">
+        </div>
+        <div>
+          <label>Период</label>
+          <div id="wpRangeLabel" style="padding:7px 10px; border:1px solid var(--line); border-radius:6px; background:#fafafa; min-height:34px; font-size:13px;">—</div>
+        </div>
+      </div>
+      <div class="row full">
+        <div>
+          <label>Вступительный текст
+            <button class="ghost" style="float:right; padding: 2px 8px; font-size: 11px;" onclick="aiGenerateWeekIntro()" id="wpAiBtn">
+              <span id="wpAiSpinner" style="display:none"><span class="ai-loader"></span></span>
+              ✨ Сочинить вступ ИИ
+            </button>
+          </label>
+          <textarea id="wpIntro" rows="3" placeholder="Необязательно — короткий текст 1–3 предложения, который попадёт и в копию для Telegram, и на картинку" oninput="renderWeekPoster()"></textarea>
+        </div>
+      </div>
+      <label style="margin-top:8px;">Превью афиши (что и скопируется, и попадёт в PNG):</label>
+      <div id="wpPreviewWrap" style="background:#e9e2d4; padding:16px; border-radius:8px; max-height: 60vh; overflow-y:auto;">
+        <div id="wpPoster" class="week-poster">
+          <div style="text-align:center; padding: 30px; color: var(--muted);">Выберите дату — соберу афишу.</div>
+        </div>
+      </div>
+      <div id="wpEmpty" style="display:none; padding: 12px; background:#fff7e6; border:1px solid #f5c98a; border-radius:6px; margin-top:10px; font-size:12px; color:#7a4d00;">
+        В выбранной неделе пока нет публичных событий (с галочкой «🌐 Клиентам»). Откройте редактор события и поставьте галку, либо выберите другую дату.
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div class="right">
+        <button onclick="closeModal('weekPosterModal')">Закрыть</button>
+        <button onclick="copyWeekPosterText()">📋 Скопировать текст</button>
+        <button class="primary" onclick="downloadWeekPosterImage()" id="wpPngBtn">📷 Скачать PNG</button>
       </div>
     </div>
   </div>
@@ -3331,6 +3464,279 @@ function useFormatIdea(idx) {
   document.getElementById('fmtTemplate').value = idea.template;
   openAddFormat();
   toast('Подставлено — проверьте и сохраните', 'ok');
+}
+
+// ============================================================
+// АФИША НЕДЕЛИ — модалка, превью, копирование, PNG
+// ============================================================
+const RU_WEEKDAYS_FULL = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+const RU_MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const PRIVATE_FORMATS = ['День рождения', 'Свидание'];
+
+function openWeekPoster() {
+  // По умолчанию начинаем с понедельника текущей недели (или с сегодня, если выходной)
+  const today = new Date();
+  const dow = today.getDay(); // 0=вс, 1=пн, ...
+  // Сдвигаем назад до ближайшего понедельника
+  const monday = new Date(today);
+  const back = (dow === 0) ? 6 : (dow - 1);
+  monday.setDate(today.getDate() - back);
+  document.getElementById('wpStartDate').value = ymd(monday);
+  document.getElementById('wpIntro').value = '';
+  document.getElementById('weekPosterModal').classList.add('show');
+  renderWeekPoster();
+}
+
+function _wpEventsInRange(startStr) {
+  if (!startStr) return [];
+  const start = new Date(startStr + 'T00:00:00');
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const startKey = ymd(start);
+  const endKey = ymd(end);
+  return state.events
+    .filter(e => e.date && e.date >= startKey && e.date <= endKey)
+    .filter(e => e.publishedToClients !== false)
+    .filter(e => !PRIVATE_FORMATS.includes(e.format))
+    .filter(e => e.status !== 'cancelled' && e.status !== 'archived')
+    .sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return (a.timeStart || '').localeCompare(b.timeStart || '');
+    });
+}
+
+function _wpFormatRangeLabel(startStr) {
+  const start = new Date(startStr + 'T00:00:00');
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const sDay = start.getDate();
+  const eDay = end.getDate();
+  const sM = RU_MONTHS_GEN[start.getMonth()];
+  const eM = RU_MONTHS_GEN[end.getMonth()];
+  if (start.getMonth() === end.getMonth()) {
+    return `${sDay}–${eDay} ${eM}`;
+  }
+  return `${sDay} ${sM} – ${eDay} ${eM}`;
+}
+
+function _wpFormatDayHeader(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${RU_WEEKDAYS_FULL[d.getDay()]}, ${d.getDate()} ${RU_MONTHS_GEN[d.getMonth()]}`;
+}
+
+function renderWeekPoster() {
+  const startStr = document.getElementById('wpStartDate').value;
+  const rangeLabel = startStr ? _wpFormatRangeLabel(startStr) : '—';
+  document.getElementById('wpRangeLabel').textContent = rangeLabel;
+
+  const events = _wpEventsInRange(startStr);
+  const intro = document.getElementById('wpIntro').value.trim();
+  const empty = document.getElementById('wpEmpty');
+  const poster = document.getElementById('wpPoster');
+
+  if (!startStr) {
+    poster.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--muted);">Выберите дату.</div>';
+    empty.style.display = 'none';
+    return;
+  }
+  if (!events.length) {
+    poster.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Группируем по дням
+  const byDate = {};
+  events.forEach(e => {
+    if (!byDate[e.date]) byDate[e.date] = [];
+    byDate[e.date].push(e);
+  });
+  const dates = Object.keys(byDate).sort();
+
+  poster.innerHTML = `
+    <div class="wp-head">
+      <div class="wp-brand">Студия «Детали»</div>
+      <div class="wp-title">Афиша недели · ${escapeHtml(rangeLabel)}</div>
+    </div>
+    ${intro ? `<div class="wp-intro">${escapeHtml(intro)}</div>` : ''}
+    ${dates.map(d => `
+      <div class="wp-day">
+        <div class="wp-day-head">${escapeHtml(_wpFormatDayHeader(d))}</div>
+        ${byDate[d].map(ev => `
+          <div class="wp-event">
+            <div class="wp-time">${escapeHtml(ev.timeStart || '—')}</div>
+            <div class="wp-info">
+              <div class="wp-name">${escapeHtml(ev.name || ev.format || 'Событие')}</div>
+              <div class="wp-meta">${escapeHtml(ev.format || '')}${ev.price ? ' · ' + ev.price + ' руб' : ''}${ev.limit ? ' · до ' + ev.limit + ' чел' : ''}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `).join('')}
+    <div class="wp-foot">Запись и подробности — на сайте</div>
+  `;
+}
+
+// ============================================================
+// АФИША — ИИ-ВСТУП
+// ============================================================
+async function aiGenerateWeekIntro() {
+  const startStr = document.getElementById('wpStartDate').value;
+  if (!startStr) { toast('Сначала выберите дату', 'err'); return; }
+  const events = _wpEventsInRange(startStr);
+  if (!events.length) { toast('В этой неделе нет событий — нечего анонсировать', 'err'); return; }
+
+  const btn = document.getElementById('wpAiBtn');
+  const spin = document.getElementById('wpAiSpinner');
+  btn.disabled = true;
+  spin.style.display = 'inline-block';
+
+  const rangeLabel = _wpFormatRangeLabel(startStr);
+  const eventsListForPrompt = events.map(e =>
+    `${_wpFormatDayHeader(e.date)}, ${e.timeStart || ''} — ${e.format || ''} «${e.name || ''}»`
+  ).join('\n');
+
+  const system = `Ты копирайтер для студии событий «Детали» — творческого пространства в Могилёве. Пишешь короткие вступления к недельным афишам для Telegram-канала. Стиль: тёплый, личный, по-домашнему, без штампов и канцеляризмов. Без приветствий «Дорогие друзья». Объём: 2–3 предложения, максимум 250 символов. Без эмодзи в начале. Чуть-чуть эмодзи можно в конце для тепла, но не обязательно.`;
+
+  const prompt = `Напиши вступительный текст для афиши недели ${rangeLabel}.
+
+События недели:
+${eventsListForPrompt}
+
+Задача — одной-двумя фразами зацепить читателя, передать настроение недели или выделить что-то особенное. НЕ перечисляй все события (они идут списком ниже). НЕ начинай со «На этой неделе...». Сразу к ощущению или к одной интересной детали.
+
+Верни ТОЛЬКО текст вступления, без кавычек и пояснений.`;
+
+  try {
+    const r = await apiPost('claude', { prompt, system });
+    if (r.ok && r.text) {
+      document.getElementById('wpIntro').value = r.text.trim();
+      renderWeekPoster();
+      toast('Сгенерировано ✨', 'ok');
+    } else {
+      toast('ИИ не ответил: ' + (r.error || ''), 'err');
+    }
+  } catch(e) {
+    toast('Ошибка вызова ИИ', 'err');
+  } finally {
+    btn.disabled = false;
+    spin.style.display = 'none';
+  }
+}
+
+// ============================================================
+// АФИША — КОПИРОВАНИЕ ТЕКСТА
+// ============================================================
+function _wpBuildText() {
+  const startStr = document.getElementById('wpStartDate').value;
+  if (!startStr) return '';
+  const rangeLabel = _wpFormatRangeLabel(startStr);
+  const events = _wpEventsInRange(startStr);
+  const intro = document.getElementById('wpIntro').value.trim();
+  if (!events.length) return '';
+
+  const byDate = {};
+  events.forEach(e => {
+    if (!byDate[e.date]) byDate[e.date] = [];
+    byDate[e.date].push(e);
+  });
+  const dates = Object.keys(byDate).sort();
+
+  let out = `🗓 Афиша недели · ${rangeLabel}\n`;
+  out += `Студия «Детали»\n`;
+  if (intro) out += `\n${intro}\n`;
+  out += '\n';
+  dates.forEach(d => {
+    out += `🟫 ${_wpFormatDayHeader(d)}\n`;
+    byDate[d].forEach(ev => {
+      out += `  🕒 ${ev.timeStart || '—'} — ${ev.name || ev.format || 'Событие'}`;
+      const meta = [];
+      if (ev.format) meta.push(ev.format);
+      if (ev.price) meta.push(ev.price + ' руб');
+      if (ev.limit) meta.push('до ' + ev.limit + ' чел');
+      if (meta.length) out += ` · ${meta.join(' · ')}`;
+      out += '\n';
+    });
+    out += '\n';
+  });
+  out += '✍️ Запись по ссылкам на сайте';
+  return out;
+}
+
+async function copyWeekPosterText() {
+  const text = _wpBuildText();
+  if (!text) { toast('Нечего копировать', 'err'); return; }
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Скопировано в буфер ✓', 'ok');
+  } catch(e) {
+    // Фолбэк через временный textarea
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); toast('Скопировано ✓', 'ok'); }
+    catch(e2) { toast('Не удалось скопировать', 'err'); }
+    finally { document.body.removeChild(ta); }
+  }
+}
+
+// ============================================================
+// АФИША — СКАЧИВАНИЕ PNG (через html2canvas, ленивая загрузка)
+// ============================================================
+let _html2canvasLoadPromise = null;
+function _loadHtml2Canvas() {
+  if (window.html2canvas) return Promise.resolve(window.html2canvas);
+  if (_html2canvasLoadPromise) return _html2canvasLoadPromise;
+  _html2canvasLoadPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = () => resolve(window.html2canvas);
+    s.onerror = () => { _html2canvasLoadPromise = null; reject(new Error('Не удалось загрузить html2canvas')); };
+    document.head.appendChild(s);
+  });
+  return _html2canvasLoadPromise;
+}
+
+async function downloadWeekPosterImage() {
+  const startStr = document.getElementById('wpStartDate').value;
+  if (!startStr) { toast('Сначала выберите дату', 'err'); return; }
+  const events = _wpEventsInRange(startStr);
+  if (!events.length) { toast('В этой неделе нет событий', 'err'); return; }
+
+  const btn = document.getElementById('wpPngBtn');
+  btn.disabled = true;
+  const origText = btn.textContent;
+  btn.textContent = 'Готовлю PNG…';
+
+  try {
+    const h2c = await _loadHtml2Canvas();
+    const node = document.getElementById('wpPoster');
+    const canvas = await h2c(node, {
+      backgroundColor: '#fdf9f2',
+      scale: 2,  // ретина-качество
+      useCORS: true,
+      logging: false
+    });
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const fileName = `afisha-${startStr}.png`;
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      toast('PNG скачан ✓', 'ok');
+    }, 'image/png');
+  } catch(e) {
+    toast('Не удалось сделать PNG: ' + (e.message || e), 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
 }
 
 function openAddTeacher() { document.getElementById('teacherModal').classList.add('show'); }
