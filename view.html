@@ -422,6 +422,48 @@ body.view-mode-table .calendar, body.view-mode-table .list-view { display: none;
   align-self: stretch;
 }
 .banner-image.empty { display: none; } /* если нет референсов — прячем, баннер растягивается */
+.banner-image:not(.empty) { cursor: zoom-in; }
+.banner-image:not(.empty):hover { filter: brightness(1.05); }
+
+/* === Лайтбокс для референса === */
+.lightbox-bg {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  cursor: zoom-out;
+}
+.lightbox-bg.show { display: flex; }
+.lightbox-img {
+  max-width: 92vw;
+  max-height: 92vh;
+  display: block;
+  border-radius: 4px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  background: #1a1a1a;
+}
+.lightbox-close {
+  position: fixed;
+  top: 18px; right: 22px;
+  background: rgba(255,255,255,0.12);
+  color: white;
+  border: 0;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 10000;
+  transition: background .15s;
+}
+.lightbox-close:hover { background: rgba(255,255,255,0.22); }
+@media (max-width: 700px) {
+  .lightbox-bg { padding: 0; }
+  .lightbox-img { max-width: 100vw; max-height: 100vh; border-radius: 0; }
+  .lightbox-close { top: 12px; right: 12px; width: 36px; height: 36px; }
+}
 
 /* Правая колонка — текст шапки */
 .banner-text {
@@ -655,10 +697,17 @@ body.view-mode-table .calendar, body.view-mode-table .list-view { display: none;
   <div class="table-wrap" id="tableView"></div>
 </main>
 
+<!-- Лайтбокс для просмотра референса в полный размер.
+     Открывается кликом по баннер-картинке в модалке события. -->
+<div class="lightbox-bg" id="refLightbox" onclick="if(event.target.id==='refLightbox')closeRefLightbox()">
+  <button class="lightbox-close" onclick="closeRefLightbox()" aria-label="Закрыть">✕</button>
+  <img class="lightbox-img" id="refLbImg" alt="">
+</div>
+
 <div class="modal-bg" id="evModal">
   <div class="modal">
     <div class="modal-banner" id="mBanner">
-      <div class="banner-image empty" id="mBannerImage"></div>
+      <div class="banner-image empty" id="mBannerImage" onclick="onBannerImageClick(event)"></div>
       <div class="banner-text">
         <button class="modal-close" onclick="closeModal()" aria-label="Закрыть">✕</button>
         <div class="format-pill" id="mFormat">—</div>
@@ -1040,11 +1089,53 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
+// === Лайтбокс для референса ===
+// Открывает большую картинку в полный размер. У клиента в данных
+// есть только thumb (data: URL из кэша Apps Script) — без URL оригинала
+// и без note (это сделано в detailsGetPublicEvents_ ради приватности).
+// Поэтому показываем только саму картинку, без подписи и ссылок.
+function onBannerImageClick(event) {
+  const el = event.currentTarget;
+  if (el.classList.contains('empty')) return;  // нет картинки — нечего показывать
+  const bg = el.style.backgroundImage || '';
+  // Достаём URL из 'url("...")' или "url('...')"
+  const match = bg.match(/url\(["']?(.*?)["']?\)/);
+  if (!match) return;
+  const src = match[1].replace(/%27/g, "'");
+  openRefLightbox(src);
+}
+
+function openRefLightbox(src) {
+  if (!src) return;
+  const img = document.getElementById('refLbImg');
+  img.src = src;
+  document.getElementById('refLightbox').classList.add('show');
+}
+
+function closeRefLightbox() {
+  document.getElementById('refLightbox').classList.remove('show');
+  setTimeout(() => {
+    if (!document.getElementById('refLightbox').classList.contains('show')) {
+      document.getElementById('refLbImg').src = '';
+    }
+  }, 250);
+}
+
 document.getElementById('evModal').addEventListener('click', e => {
   if (e.target.id === 'evModal') closeModal();
 });
+// Esc — сначала закрываем лайтбокс (если открыт), потом модалку.
+// Это нужно чтобы клиент не закрывал нечаянно всю карточку события,
+// нажав Esc для выхода из увеличенной картинки.
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal();
+  if (e.key !== 'Escape') return;
+  const lb = document.getElementById('refLightbox');
+  if (lb.classList.contains('show')) {
+    closeRefLightbox();
+    e.stopPropagation();
+    return;
+  }
+  closeModal();
 });
 
 loadEvents();
