@@ -1458,6 +1458,7 @@ main {
       <button onclick="window.open('view.html', '_blank')" title="Открыть страницу для клиентов в новой вкладке">🌐 Как клиент</button>
       <button onclick="window.open('team.html', '_blank')" title="Открыть страницу для промо/SMM в новой вкладке">📣 Как промо</button>
       <button onclick="openWeekPoster()" title="Сделать афишу на неделю — текст для Telegram + картинка для Instagram">🗓 Афиша недели</button>
+      <button onclick="openPostersStudio()" title="Открыть генератор афиш на каждое событие — выбираешь дни, агент собирает 2 варианта на каждый">🎨 Афиши событий</button>
     </div>
     <div class="sep"></div>
     <div class="group">
@@ -4192,6 +4193,56 @@ function useFormatIdea(idx) {
 const RU_WEEKDAYS_FULL = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
 const RU_MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 const PRIVATE_FORMATS = ['День рождения', 'Свидание'];
+
+// ============================================================
+// ОТКРЫТИЕ СТУДИИ АФИШ (posters.html)
+// ============================================================
+// Открывает отдельную страницу-генератор афиш на каждое событие.
+// Передача данных — через localStorage, чтобы posters.html не нужно было
+// заново логиниться и вызывать API.
+function openPostersStudio() {
+  if (!state.events || !state.events.length) {
+    toast('Сначала добавьте события', 'err');
+    return;
+  }
+  try {
+    const payload = {
+      timestamp: new Date().toISOString(),
+      editorName: state.editorName || '',
+      apiUrl: CONFIG.APPS_SCRIPT_URL,
+      project: CONFIG.PROJECT,
+      events: state.events.map(e => ({
+        id: e.id,
+        date: e.date,
+        timeStart: e.timeStart || '',
+        duration: e.duration || null,
+        format: e.format || '',
+        name: e.name || '',
+        teacher: e.teacher || '',
+        price: e.price || null,
+        limit: e.limit || null,
+        description: e.description || '',
+        publishedToClients: e.publishedToClients !== false,
+        publishedToTeam: e.publishedToTeam === true,
+        status: e.status || 'draft',
+        alfaGroupId: e.alfaGroupId || null,
+        formUrl: e.formUrl || '',
+        // Референсы — берём первую картинку из OG-снапшотов как фото для постера
+        references: Array.isArray(e.references) ? e.references.map(r => ({
+          url: r.url || '',
+          thumb: r.thumb || '',
+          domain: r.domain || '',
+          note: r.note || ''
+        })).filter(r => r.url) : []
+      }))
+    };
+    localStorage.setItem('detali_posters_payload', JSON.stringify(payload));
+    window.open('posters.html', '_blank');
+  } catch(e) {
+    console.error('openPostersStudio failed', e);
+    toast('Не удалось передать данные: ' + e.message, 'err');
+  }
+}
 
 function openWeekPoster() {
   // По умолчанию начинаем с понедельника текущей недели (или с сегодня, если выходной)

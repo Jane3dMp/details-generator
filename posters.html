@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Афиши событий · Детали</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,600;1,700&family=Inter:wght@300;400;500;600;700&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+<style>
+/* ============================================================
+   ПАЛИТРА «ДЕТАЛИ»
+   ============================================================ */
+:root {
+  --milk: #F5EFE6;
+  --cream: #FAF6EE;
+  --paper: #faf8f5;
+  --dark: #3D2B1F;
+  --soft-dark: #5C4636;
+  --line: #ece6dd;
+  --muted: #8a8580;
+  --terracotta: #C06D54;
+  --terracotta-deep: #A8543E;
+  --amber: #EF9F27;
+  --amber-deep: #C47F1A;
+  --olive: #6B7A4A;
+  --olive-light: #8FA370;
+  --green: #5b8a4e;
+  --red: #c45a5a;
+
+  --accent: var(--terracotta);
+  --accent-deep: var(--terracotta-deep);
+}
+.accent-terracotta { --accent: var(--terracotta); --accent-deep: var(--terracotta-deep); }
+.accent-amber { --accent: var(--amber); --accent-deep: var(--amber-deep); }
+.accent-olive { --accent: var(--olive); --accent-deep: var(--olive-light); }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--paper);
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: var(--dark);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* ============================================================
+   ШАПКА — общая для обоих экранов
+   ============================================================ */
+.app-header {
+  background: var(--cream);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.app-header .brand-mark {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  font-weight: 600;
+}
+.app-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--dark);
+  flex: 1;
+}
+.app-header .header-actions {
+  display: flex;
+  gap: 8px;
+}
+.btn {
+  padding: 8px 14px;
+  background: white;
+  color: var(--dark);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn:hover { background: var(--milk); }
+.btn.primary {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+.btn.primary:hover { background: var(--terracotta-deep); border-color: var(--terracotta-deep); }
+.btn.primary:disabled { background: #b7a99a; border-color: #b7a99a; cursor: not-allowed; }
+.btn.ghost {
+  background: transparent;
+  border-color: transparent;
+}
+.btn.ghost:hover { background: var(--milk); }
+
+/* Скрытие/показ экранов */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ============================================================
+   ЭКРАН 1: ВЫБОР СОБЫТИЙ
+   ============================================================ */
+.selector-page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px;
+}
+
+.selector-intro {
+  margin-bottom: 24px;
+}
+.selector-intro h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 8px;
+}
+.selector-intro p {
+  color: var(--soft-dark);
+  font-size: 14px;
+}
+
+/* Тулбар фильтров */
+.filters {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 60px;
+  z-index: 10;
+}
+.filters .filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.filters label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.filters input, .filters select {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--dark);
+  background: white;
+}
+.filters .spacer { flex: 1; }
+.filters .selection-status {
+  font-size: 13px;
+  color: var(--soft-dark);
+  font-weight: 500;
+}
+.filters .selection-status .count {
+  color: var(--terracotta);
+  font-weight: 700;
+}
+
+/* Список событий */
+.events-list {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.event-row {
+  display: grid;
+  grid-template-columns: 40px 110px 1fr 200px 130px 90px;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.1s;
+  gap: 12px;
+}
+.event-row:last-child { border-bottom: none; }
+.event-row:hover { background: var(--milk); }
+.event-row.selected { background: rgba(192, 109, 84, 0.08); }
+.event-row.has-photo .event-name::after {
+  content: ' 📷';
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.event-row .checkbox {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--line);
+  border-radius: 4px;
+  background: white;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.event-row.selected .checkbox {
+  background: var(--terracotta);
+  border-color: var(--terracotta);
+}
+.event-row.selected .checkbox::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -52%);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.event-row .date-block {
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark);
+}
+.event-row .date-block .dow {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.event-row .name-block .event-format {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.event-row .name-block .event-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--dark);
+  line-height: 1.2;
+}
+
+.event-row .teacher-cell {
+  font-size: 12px;
+  color: var(--soft-dark);
+}
+
+.event-row .meta-cell {
+  font-size: 12px;
+  color: var(--soft-dark);
+  text-align: right;
+}
+
+.event-row .status-cell {
+  display: flex;
+  justify-content: flex-end;
+}
+.status-pill {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.status-pill.draft { background: #f0ebe2; color: var(--muted); }
+.status-pill.published { background: rgba(91, 138, 78, 0.15); color: var(--green); }
+.status-pill.modified { background: rgba(212, 168, 92, 0.2); color: #8c6a1e; }
+.status-pill.private { background: rgba(192, 109, 84, 0.15); color: var(--terracotta-deep); }
+
+/* Группировка по месяцам */
+.month-divider {
+  background: var(--cream);
+  padding: 10px 16px;
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--soft-dark);
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  letter-spacing: 0.05em;
+}
+.month-divider:first-child { border-top: none; }
+
+/* Empty state */
+.empty-state {
+  padding: 80px 40px;
+  text-align: center;
+  color: var(--muted);
+}
+.empty-state h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  margin-bottom: 8px;
+  color: var(--dark);
+}
+
+/* Bottom bar — sticky действие "перейти к генерации" */
+.bottom-bar {
+  position: sticky;
+  bottom: 16px;
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  z-index: 30;
+}
+.bottom-bar-inner {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  padding: 8px 8px 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+.bottom-bar .info {
+  font-size: 13px;
+  color: var(--soft-dark);
+}
+.bottom-bar .info b { color: var(--dark); font-weight: 600; }
+.bottom-bar .btn-go {
+  padding: 10px 20px;
+  background: var(--terracotta);
+  color: white;
+  border: none;
+  border-radius: 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.bottom-bar .btn-go:hover { background: var(--terracotta-deep); }
+.bottom-bar .btn-go:disabled { background: #b7a99a; cursor: not-allowed; }
+
+/* ============================================================
+   ЭКРАН 2: ГАЛЕРЕЯ ГЕНЕРАЦИИ — ПЕРЕНЕСЕНО ИЗ week-poster-gallery
+   ============================================================ */
+.gallery-wrap {
+  display: flex;
+  min-height: calc(100vh - 60px);
+}
+
+/* Сайдбар со списком дней */
+.gallery-sidebar {
+  width: 320px;
+  background: var(--cream);
+  border-right: 1px solid var(--line);
+  padding: 24px 18px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  position: sticky;
+  top: 60px;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-header {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+.sidebar-header .label {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.sidebar-header .title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--dark);
+}
+.day-list { list-style: none; flex: 1; }
+.day-item {
+  padding: 12px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: background 0.15s;
+  position: relative;
+}
+.day-item:hover { background: rgba(192, 109, 84, 0.08); }
+.day-item.active {
+  background: var(--milk);
+  border-left: 3px solid var(--terracotta);
+  padding-left: 9px;
+}
+.day-item .day-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--soft-dark);
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+.day-item .event-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark);
+  line-height: 1.2;
+}
+.day-item .event-meta {
+  font-size: 11px;
+  color: var(--soft-dark);
+  margin-top: 2px;
+}
+.day-item .check-mark {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--terracotta);
+  color: white;
+  font-size: 11px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.day-item.has-selection .check-mark { display: flex; }
+
+.sidebar-footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+}
+.btn-batch {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--terracotta);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-batch:hover { background: var(--terracotta-deep); }
+.btn-batch:disabled { background: #a89c8a; cursor: not-allowed; }
+.batch-status {
+  font-size: 11px;
+  color: var(--soft-dark);
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* Рабочая область с двумя вариантами */
+.workspace {
+  flex: 1;
+  padding: 32px;
+  overflow-y: auto;
+}
+.workspace-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.workspace-header .day {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--dark);
+}
+.workspace-header .event-info {
+  font-size: 12px;
+  color: var(--soft-dark);
+  margin-top: 4px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.workspace-header .hint {
+  font-size: 12px;
+  color: var(--soft-dark);
+  margin-top: 10px;
+  font-style: italic;
+}
+
+.variants-row {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.variant-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.variant-card .variant-label {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--soft-dark);
+  font-weight: 600;
+}
+.variant-card .poster-frame {
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 6px;
+  border: 3px solid transparent;
+  transition: all 0.2s;
+  position: relative;
+}
+.variant-card .poster-frame:hover {
+  border-color: rgba(192, 109, 84, 0.3);
+  transform: translateY(-2px);
+}
+.variant-card.selected .poster-frame {
+  border-color: var(--terracotta);
+  box-shadow: 0 0 0 3px rgba(192, 109, 84, 0.15);
+}
+.variant-card.selected .poster-frame::before {
+  content: '✓ Выбран';
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--terracotta);
+  color: white;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  padding: 4px 12px;
+  border-radius: 12px;
+  z-index: 10;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.variant-meta {
+  text-align: center;
+  font-size: 11px;
+  color: var(--soft-dark);
+  letter-spacing: 0.1em;
+}
+.variant-meta .layout-name {
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--dark);
+}
+.export-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  visibility: hidden;
+}
+.variant-card.selected .export-buttons { visibility: visible; }
+.btn-export {
+  padding: 7px 12px;
+  background: var(--milk);
+  color: var(--dark);
+  border: 1px solid rgba(61, 43, 31, 0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-export:hover { background: var(--terracotta); color: white; border-color: var(--terracotta); }
+.btn-export:disabled { opacity: 0.5; cursor: wait; }
+
+.hidden-render-zone {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  pointer-events: none;
+}
+
+/* ============================================================
+   ПОСТЕРЫ — БАЗА (стили из week-poster-gallery)
+   ============================================================ */
+.poster {
+  background: var(--milk);
+  color: var(--dark);
+  font-family: 'Inter', sans-serif;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.08);
+}
+.poster::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.24 0 0 0 0 0.17 0 0 0 0 0.12 0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/></svg>");
+  opacity: 0.08;
+  z-index: 1;
+}
+.poster > * { position: relative; z-index: 2; }
+.poster.stories { width: 405px; height: 720px; }
+.poster.square { width: 540px; height: 540px; }
+
+.poster .brand {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.poster.stories .brand { font-size: 9px; }
+.poster.square .brand { font-size: 9px; letter-spacing: 0.3em; }
+
+.poster .title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.04;
+  color: var(--dark);
+}
+.poster .title em { font-style: italic; font-weight: 600; }
+.poster .title .accent-word { color: var(--accent); font-style: italic; }
+.poster .tagline {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--soft-dark);
+  line-height: 1.3;
+}
+.poster .date-large {
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.poster .meta {
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dark);
+  font-weight: 500;
+}
+.poster.stories .meta { font-size: 10px; }
+.poster.square .meta { font-size: 10px; }
+.poster .divider { height: 2px; background: var(--accent); width: 50px; }
+.poster .footer-info {
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--soft-dark);
+  font-weight: 400;
+}
+.poster.stories .footer-info { font-size: 8px; }
+.poster.square .footer-info { font-size: 8px; }
+.poster .stamp {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  transform: rotate(-8deg);
+  opacity: 0.85;
+  padding: 6px;
+  line-height: 1.2;
+}
+.poster.square .stamp { width: 80px; height: 80px; font-size: 8px; }
+
+/* HERO */
+.poster.hero { display: flex; flex-direction: column; }
+.poster.hero .hero-photo {
+  width: 100%;
+  flex: 0 0 58%;
+  background-size: cover;
+  background-position: center;
+  background-color: #d8c8b5;
+  position: relative;
+}
+.poster.hero.square .hero-photo { flex: 0 0 50%; }
+.poster.hero .hero-photo.warm-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(192, 109, 84, 0.12));
+  mix-blend-mode: multiply;
+}
+.poster.hero .hero-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 30px 22px;
+}
+.poster.hero.square .hero-content { padding: 22px 28px 18px; }
+.poster.hero .brand { margin-bottom: 14px; }
+.poster.hero .title { margin-bottom: 14px; }
+.poster.hero.stories .title { font-size: 38px; }
+.poster.hero.square .title { font-size: 32px; margin-bottom: 10px; }
+.poster.hero .tagline { margin-bottom: 18px; max-width: 95%; }
+.poster.hero.stories .tagline { font-size: 15px; }
+.poster.hero.square .tagline { font-size: 14px; margin-bottom: 14px; }
+.poster.hero .divider { margin-bottom: 14px; }
+.poster.hero.square .divider { margin-bottom: 10px; width: 40px; }
+.poster.hero .meta { margin-bottom: 6px; }
+.poster.hero .footer-info { margin-top: auto; padding-top: 14px; }
+
+/* SPLIT */
+.poster.split { display: grid; grid-template-columns: 1fr 1.05fr; }
+.poster.split .split-photo {
+  background-size: cover;
+  background-position: center;
+  background-color: var(--accent-deep);
+  position: relative;
+}
+.poster.split .split-photo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  opacity: 0.15;
+  mix-blend-mode: multiply;
+}
+.poster.split .split-content {
+  background: var(--cream);
+  padding: 28px 22px 20px;
+  display: flex;
+  flex-direction: column;
+}
+.poster.split.square .split-content { padding: 24px 22px 18px; }
+.poster.split .brand { margin-bottom: 16px; line-height: 1.4; }
+.poster.split.square .brand { margin-bottom: 12px; }
+.poster.split .title { margin-bottom: 12px; }
+.poster.split.stories .title { font-size: 26px; }
+.poster.split.square .title { font-size: 22px; margin-bottom: 8px; }
+.poster.split .tagline { margin-bottom: 18px; }
+.poster.split.stories .tagline { font-size: 13px; }
+.poster.split.square .tagline { font-size: 11px; margin-bottom: 12px; }
+.poster.split .date-large { margin-bottom: 4px; margin-top: auto; }
+.poster.split.stories .date-large { font-size: 56px; }
+.poster.split.square .date-large { font-size: 40px; }
+.poster.split .time-line {
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.28em;
+  font-weight: 500;
+  color: var(--dark);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.poster.split.stories .time-line { font-size: 11px; }
+.poster.split.square .time-line { font-size: 10px; margin-bottom: 10px; }
+.poster.split .meta { margin-bottom: 4px; }
+.poster.split.stories .meta { font-size: 9px; }
+.poster.split .footer-info { margin-top: 10px; }
+
+/* GRID */
+.poster.grid-layout { position: relative; }
+.poster.grid-layout .grid-bg {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+.poster.grid-layout .grid-cell {
+  background-size: cover;
+  background-position: center;
+  background-color: var(--accent);
+  position: relative;
+}
+.poster.grid-layout .grid-cell.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', serif;
+  color: var(--milk);
+  font-weight: 600;
+}
+.poster.grid-layout.stories .grid-cell.empty { font-size: 90px; }
+.poster.grid-layout.square .grid-cell.empty { font-size: 70px; }
+.poster.grid-layout .grid-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 78%;
+  background: var(--milk);
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.poster.grid-layout.stories .grid-card { padding: 24px 22px 20px; }
+.poster.grid-layout.square .grid-card { padding: 18px 16px 14px; gap: 6px; }
+.poster.grid-layout .grid-card .title { line-height: 1.05; }
+.poster.grid-layout.stories .grid-card .title { font-size: 26px; }
+.poster.grid-layout.square .grid-card .title { font-size: 22px; }
+.poster.grid-layout.stories .grid-card .tagline { font-size: 13px; }
+.poster.grid-layout.square .grid-card .tagline { font-size: 11px; }
+.poster.grid-layout .grid-card .meta { font-size: 9px; }
+.poster.grid-layout .grid-card .divider { width: 40px; }
+.poster.grid-layout .grid-card .footer-info { margin-top: 6px; font-size: 8px; }
+
+/* EDITORIAL */
+.poster.editorial { display: flex; flex-direction: column; }
+.poster.editorial.stories { padding: 38px 30px 24px; }
+.poster.editorial.square { padding: 28px 24px 18px; }
+.poster.editorial .ed-issue-line {
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--soft-dark);
+  font-weight: 500;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+.poster.editorial.stories .ed-issue-line { font-size: 9px; margin-bottom: 24px; }
+.poster.editorial.square .ed-issue-line { font-size: 8px; margin-bottom: 14px; }
+.poster.editorial .ed-issue-line::before,
+.poster.editorial .ed-issue-line::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--soft-dark);
+  opacity: 0.4;
+  max-width: 60px;
+}
+.poster.editorial .hero-word {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-style: italic;
+  color: var(--accent);
+  line-height: 0.9;
+  text-align: center;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  overflow: visible;
+  padding: 0 4px;
+  font-size: var(--hero-word-size, 110px);
+}
+.poster.editorial.stories .hero-word { --hero-word-size: 110px; margin-bottom: 22px; }
+.poster.editorial.square .hero-word { --hero-word-size: 78px; margin-bottom: 14px; }
+.poster.editorial .ed-photo {
+  width: 80%;
+  margin: 0 auto 22px;
+  background-size: cover;
+  background-position: center;
+  background-color: #d8c8b5;
+}
+.poster.editorial.stories .ed-photo { aspect-ratio: 4/3; margin-bottom: 22px; }
+.poster.editorial.square .ed-photo { aspect-ratio: 4/2; margin-bottom: 12px; }
+.poster.editorial .ed-content { text-align: center; margin-top: auto; }
+.poster.editorial .title { margin-bottom: 8px; }
+.poster.editorial.stories .title { font-size: 22px; }
+.poster.editorial.square .title { font-size: 16px; margin-bottom: 6px; }
+.poster.editorial .tagline { margin-bottom: 12px; }
+.poster.editorial.stories .tagline { font-size: 13px; }
+.poster.editorial.square .tagline { font-size: 11px; margin-bottom: 8px; }
+.poster.editorial .meta { font-size: 9px; margin-bottom: 4px; }
+.poster.editorial .footer-info { margin-top: 10px; }
+
+/* Toast */
+#toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  z-index: 100;
+  display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+#toast.err { background: var(--red); }
+#toast.show { display: block; }
+</style>
+</head>
+
+<body>
+
+<header class="app-header">
+  <span class="brand-mark">Пространство Детали</span>
+  <h1 id="appHeaderTitle">Студия афиш</h1>
+  <div class="header-actions" id="headerActions">
+    <button class="btn ghost" onclick="window.close()">✕ Закрыть</button>
+  </div>
+</header>
+
+<!-- ============================================================
+     ЭКРАН 1: ВЫБОР СОБЫТИЙ
+     ============================================================ -->
+<div class="screen active" id="screenSelector">
+  <div class="selector-page">
+    <div class="selector-intro">
+      <h2>Выберите события для афиш</h2>
+      <p>Поставьте галочки на те события, для которых нужно сгенерировать афиши. Дальше агент предложит по 2 варианта макета для каждого, вы выберете и скачаете PNG.</p>
+    </div>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label>С</label>
+        <input type="date" id="filterFrom" onchange="renderEventsList()">
+      </div>
+      <div class="filter-group">
+        <label>По</label>
+        <input type="date" id="filterTo" onchange="renderEventsList()">
+      </div>
+      <div class="filter-group">
+        <label>Формат</label>
+        <select id="filterFormat" onchange="renderEventsList()">
+          <option value="">Все</option>
+        </select>
+      </div>
+      <button class="btn ghost" onclick="resetFilters()">⟲ Сброс</button>
+      <div class="spacer"></div>
+      <button class="btn ghost" onclick="selectAllVisible()">Выбрать все на экране</button>
+      <button class="btn ghost" onclick="clearSelection()">Снять выделение</button>
+      <div class="selection-status">
+        Выбрано: <span class="count" id="selectionCount">0</span>
+      </div>
+    </div>
+
+    <div class="events-list" id="eventsList"></div>
+
+    <div class="bottom-bar" id="bottomBar" style="display:none">
+      <div class="bottom-bar-inner">
+        <span class="info">Будет сгенерировано <b id="bbCount">0</b> афиш × 2 варианта</span>
+        <button class="btn-go" id="btnGo" onclick="goToGenerator()">→ Сгенерировать афиши</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     ЭКРАН 2: ГЕНЕРАТОР АФИШ (галерея с двумя вариантами на день)
+     ============================================================ -->
+<div class="screen" id="screenGenerator">
+  <div class="gallery-wrap">
+    <aside class="gallery-sidebar">
+      <div class="sidebar-header">
+        <div class="label">Афиши</div>
+        <div class="title">Выбранные события</div>
+      </div>
+      <ul class="day-list" id="dayList"></ul>
+      <div class="sidebar-footer">
+        <button class="btn-batch" id="btnBatch" onclick="downloadAllSelected()" disabled>
+          ↓ Скачать всё выбранное (ZIP)
+        </button>
+        <div class="batch-status" id="batchStatus">Выберите вариант для каждого дня</div>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <div id="workspaceContent">
+        <div class="empty-state">
+          <h3>Выберите день слева</h3>
+          <p>Для каждого события агент подготовил два варианта макета.<br>Кликните по тому, что нравится — он отметится как выбранный.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="hidden-render-zone" id="hiddenRenderZone"></div>
+<div id="toast"></div>
+
+
+<script>
+/* ============================================================
+   КОНСТАНТЫ
+   ============================================================ */
+const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const MONTHS_LONG = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const DOWS = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+
+/* ============================================================
+   СОСТОЯНИЕ
+   ============================================================ */
+const state = {
+  // Все события из админки
+  allEvents: [],
+  // ID выбранных событий (Set)
+  selectedIds: new Set(),
+  // Сгенерированные данные для галереи (после нажатия "Сгенерировать")
+  galleryDays: [],
+  // Какой день сейчас активен в галерее
+  activeDay: null,
+  // Какой вариант выбран для каждого дня (date → "A" | "B")
+  variantSelections: {}
+};
+
+/* ============================================================
+   ИНИЦИАЛИЗАЦИЯ
+   ============================================================ */
+function init() {
+  loadFromStorage();
+  if (!state.allEvents.length) {
+    document.getElementById('eventsList').innerHTML = `
+      <div class="empty-state">
+        <h3>Нет данных</h3>
+        <p>Откройте админку (index.html), нажмите кнопку «🎨 Афиши событий» — данные передадутся сюда автоматически.</p>
+      </div>
+    `;
+    return;
+  }
+  populateFormatFilter();
+  renderEventsList();
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem('detali_posters_payload');
+    if (!raw) return;
+    const payload = JSON.parse(raw);
+    state.allEvents = (payload.events || []).slice().sort((a, b) => {
+      // По дате, потом по времени
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+      return (a.timeStart || '') < (b.timeStart || '') ? -1 : 1;
+    });
+  } catch(e) {
+    console.error('Failed to load payload', e);
+  }
+}
+
+function populateFormatFilter() {
+  const formats = [...new Set(state.allEvents.map(e => e.format).filter(Boolean))].sort();
+  const sel = document.getElementById('filterFormat');
+  sel.innerHTML = '<option value="">Все форматы</option>' +
+    formats.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+}
+
+/* ============================================================
+   РЕНДЕР СПИСКА СОБЫТИЙ (ЭКРАН 1)
+   ============================================================ */
+function renderEventsList() {
+  const fromVal = document.getElementById('filterFrom').value;
+  const toVal = document.getElementById('filterTo').value;
+  const fmtVal = document.getElementById('filterFormat').value;
+
+  let filtered = state.allEvents.filter(e => {
+    if (fromVal && e.date < fromVal) return false;
+    if (toVal && e.date > toVal) return false;
+    if (fmtVal && e.format !== fmtVal) return false;
+    return true;
+  });
+
+  const wrap = document.getElementById('eventsList');
+  if (!filtered.length) {
+    wrap.innerHTML = `
+      <div class="empty-state">
+        <h3>Пусто по фильтрам</h3>
+        <p>Попробуйте сбросить фильтры или поменять диапазон дат.</p>
+      </div>
+    `;
+    updateSelectionUI();
+    return;
+  }
+
+  // Группировка по месяцам для лучшей читаемости
+  const groups = {};
+  filtered.forEach(e => {
+    const d = parseDate(e.date);
+    const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}`;
+    if (!groups[key]) groups[key] = { label: MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear(), events: [] };
+    groups[key].events.push(e);
+  });
+
+  const html = Object.keys(groups).sort().map(key => {
+    const group = groups[key];
+    return `
+      <div class="month-divider">${escapeHtml(group.label)}</div>
+      ${group.events.map(e => renderEventRow(e)).join('')}
+    `;
+  }).join('');
+
+  wrap.innerHTML = html;
+  updateSelectionUI();
+}
+
+function renderEventRow(e) {
+  const d = parseDate(e.date);
+  const dow = DOWS[d.getDay()];
+  const dateStr = `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  const isSelected = state.selectedIds.has(e.id);
+  const hasPhoto = (e.references || []).some(r => r.thumb);
+  const status = e.alfaGroupId ? 'published' : 'draft';
+  const isPrivate = ['День рождения','Свидание'].includes(e.format);
+
+  let statusPill = '';
+  if (isPrivate) statusPill = '<span class="status-pill private">Частное</span>';
+  else if (status === 'published') statusPill = '<span class="status-pill published">В Альфе</span>';
+  else statusPill = '<span class="status-pill draft">Черновик</span>';
+
+  return `
+    <div class="event-row ${isSelected ? 'selected' : ''} ${hasPhoto ? 'has-photo' : ''}"
+         data-id="${escapeHtml(e.id)}"
+         onclick="toggleSelection('${escapeHtml(e.id)}')">
+      <div class="checkbox"></div>
+      <div class="date-block">
+        <span class="dow">${dow} · ${e.timeStart || ''}</span>
+        ${dateStr}
+      </div>
+      <div class="name-block">
+        <div class="event-format">${escapeHtml(e.format || '')}</div>
+        <div class="event-name">${escapeHtml(e.name || '—')}</div>
+      </div>
+      <div class="teacher-cell">${escapeHtml(e.teacher || '')}</div>
+      <div class="meta-cell">
+        ${e.price ? e.price + ' руб' : ''}<br>
+        ${e.limit ? 'до ' + e.limit + ' чел' : ''}
+      </div>
+      <div class="status-cell">${statusPill}</div>
+    </div>
+  `;
+}
+
+function toggleSelection(id) {
+  if (state.selectedIds.has(id)) state.selectedIds.delete(id);
+  else state.selectedIds.add(id);
+  // Перерисовываем именно эту строку
+  const row = document.querySelector(`.event-row[data-id="${CSS.escape(id)}"]`);
+  if (row) row.classList.toggle('selected');
+  updateSelectionUI();
+}
+
+function selectAllVisible() {
+  document.querySelectorAll('.event-row').forEach(row => {
+    const id = row.dataset.id;
+    if (id) state.selectedIds.add(id);
+    row.classList.add('selected');
+  });
+  updateSelectionUI();
+}
+
+function clearSelection() {
+  state.selectedIds.clear();
+  document.querySelectorAll('.event-row.selected').forEach(r => r.classList.remove('selected'));
+  updateSelectionUI();
+}
+
+function resetFilters() {
+  document.getElementById('filterFrom').value = '';
+  document.getElementById('filterTo').value = '';
+  document.getElementById('filterFormat').value = '';
+  renderEventsList();
+}
+
+function updateSelectionUI() {
+  const count = state.selectedIds.size;
+  document.getElementById('selectionCount').textContent = count;
+  document.getElementById('bbCount').textContent = count;
+  const bar = document.getElementById('bottomBar');
+  bar.style.display = count > 0 ? 'flex' : 'none';
+  document.getElementById('btnGo').disabled = count === 0;
+}
+
+/* ============================================================
+   ПЕРЕХОД НА ЭКРАН 2: ГЕНЕРАТОР
+   ============================================================ */
+function goToGenerator() {
+  const selected = state.allEvents.filter(e => state.selectedIds.has(e.id));
+  if (!selected.length) return;
+
+  // Превращаем выбранные события в формат WEEK_DATA для галереи
+  state.galleryDays = selected.map(e => buildDayFromEvent(e));
+  state.variantSelections = {};
+  state.activeDay = state.galleryDays[0]?.date || null;
+
+  // Переключаем экраны
+  document.getElementById('screenSelector').classList.remove('active');
+  document.getElementById('screenGenerator').classList.add('active');
+  document.getElementById('appHeaderTitle').textContent = `Генерация афиш · ${selected.length} событий`;
+  document.getElementById('headerActions').innerHTML = `
+    <button class="btn" onclick="backToSelector()">← К списку</button>
+    <button class="btn ghost" onclick="window.close()">✕ Закрыть</button>
+  `;
+
+  renderDayList();
+  if (state.activeDay) selectDay(state.activeDay);
+}
+
+function backToSelector() {
+  document.getElementById('screenGenerator').classList.remove('active');
+  document.getElementById('screenSelector').classList.add('active');
+  document.getElementById('appHeaderTitle').textContent = 'Студия афиш';
+  document.getElementById('headerActions').innerHTML = `
+    <button class="btn ghost" onclick="window.close()">✕ Закрыть</button>
+  `;
+}
+
+/* ============================================================
+   ПОСТРОЕНИЕ ДНЯ С ДВУМЯ ВАРИАНТАМИ
+   ============================================================
+   Логика выбора макетов и акцентов согласно правилам:
+   - Терракот: МК Глина, МК Рисование, МК Украшения, МК Бьюти, МК Кулинарный
+   - Янтарь: Вечеринка, Дегустация, Караоке, ДР, Киновечер, Свидание
+   - Олива: Книжный клуб, Встреча с экспертом, Разговорник
+   ============================================================ */
+function buildDayFromEvent(e) {
+  const d = parseDate(e.date);
+  const accent = pickAccentByFormat(e.format);
+  const photos = (e.references || []).map(r => r.thumb).filter(Boolean);
+  const photo = photos[0] || null;
+
+  // Tagline — если есть description, можно взять. Иначе — заглушка по формату.
+  const tagline = pickTaglineByFormat(e.format, e.name);
+
+  // Italic part — берём последнее слово в названии (если их 2+)
+  const words = (e.name || '').split(' ').filter(Boolean);
+  const italicPart = words.length >= 2 ? words.slice(-words.length + 1).join(' ') : null;
+
+  // Hero word для editorial — первое слово или ключевое
+  const heroWord = pickHeroWord(e.name, e.format);
+
+  // Два варианта: разные макеты
+  const layouts = pickLayoutsForEvent(e, photos.length);
+
+  return {
+    date: e.date,
+    dayOfWeek: DOWS[d.getDay()],
+    time: e.timeStart || '18:00',
+    event: {
+      id: e.id,
+      format: e.format,
+      title: e.name,
+      price: e.price,
+      italic_part: italicPart
+    },
+    variants: [
+      buildVariant('A', layouts[0], accent, tagline, photo, photos, heroWord, e),
+      buildVariant('B', layouts[1], accent, tagline, photo, photos, heroWord, e)
+    ]
+  };
+}
+
+function pickAccentByFormat(format) {
+  const f = (format || '').toLowerCase();
+  if (/мк|глина|рисов|украш|бьюти|кулинар/.test(f)) return 'terracotta';
+  if (/вечеринк|дегустац|караоке|кино|день рождения|свидан/.test(f)) return 'amber';
+  if (/книжн|эксперт|разговор|встреч/.test(f)) return 'olive';
+  return 'terracotta';
+}
+
+function pickTaglineByFormat(format, name) {
+  const f = (format || '').toLowerCase();
+  if (/глина/.test(f)) return 'лепим, обжигаем, забираем тёплое';
+  if (/рисов/.test(f)) return 'кисти, краски, тишина';
+  if (/украш/.test(f)) return 'бисер, тишина, чай';
+  if (/бьюти|косметол/.test(f)) return 'уход, кисти, тишина';
+  if (/кулинар/.test(f)) return 'готовим, болтаем, едим';
+  if (/кино/.test(f)) return 'фильм, плед, чай, разговоры';
+  if (/книжн/.test(f)) return 'читаем вслух при свечах';
+  if (/караоке/.test(f)) return 'микрофон, смех, голос';
+  if (/настолк/.test(f)) return 'кости, карты, азарт';
+  if (/разговорн/.test(f)) return 'один вечер, один язык';
+  if (/вечеринк/.test(f)) return 'жемчуг, шампанское, веер';
+  if (/дегустац/.test(f)) return 'шесть бокалов, четыре часа, истории';
+  if (/эксперт/.test(f)) return 'рассказ, вопросы вслух';
+  if (/день рождения/.test(f)) return 'свечи, торт, родные';
+  if (/свидан/.test(f)) return 'два бокала, одна тишина';
+  return 'приходите, расскажем';
+}
+
+function pickHeroWord(name, format) {
+  // Приоритет: одно из слов в названии, длиной 4-10 букв, не предлог
+  const words = (name || '').split(/\s+/).filter(Boolean);
+  const stopWords = ['и','с','на','по','для','о','об','от','до','при','без','к'];
+  const candidates = words
+    .filter(w => w.length >= 4 && w.length <= 12)
+    .filter(w => !stopWords.includes(w.toLowerCase()))
+    .map(w => w.replace(/[«»"']/g, ''));
+  if (candidates.length) return candidates[candidates.length - 1].toLowerCase();
+  // Иначе — по формату
+  const f = (format || '').toLowerCase();
+  if (/глина/.test(f)) return 'глина';
+  if (/кино/.test(f)) return 'кино';
+  if (/книжн/.test(f)) return 'книги';
+  if (/вечеринк/.test(f)) return 'вечер';
+  if (/дегустац/.test(f)) return 'вино';
+  if (/караоке/.test(f)) return 'голос';
+  return 'детали';
+}
+
+function pickLayoutsForEvent(e, photoCount) {
+  // Если 2+ фото — один из вариантов точно Grid
+  if (photoCount >= 2) {
+    return ['hero', 'grid-layout'];
+  }
+  // Если есть 1 фото — Hero + Split (киноафишный)
+  if (photoCount === 1) {
+    return ['hero', 'split'];
+  }
+  // Фото нет — Editorial обязателен
+  return ['editorial', 'hero'];
+}
+
+function buildVariant(id, layout, accent, tagline, photo, photos, heroWord, e) {
+  const variant = {
+    id,
+    layout,
+    accent,
+    tagline
+  };
+  if (layout === 'hero') {
+    variant.photo = photo;
+    variant.show_stamp = id === 'A'; // первый со штампом, второй без
+  } else if (layout === 'split') {
+    variant.photo = photo;
+  } else if (layout === 'grid-layout') {
+    variant.photos = photos.slice(0, 4);
+    variant.empty_letter = (e.name || 'Д').charAt(0).toUpperCase();
+  } else if (layout === 'editorial') {
+    variant.hero_word = heroWord;
+    variant.ed_subtitle = `${e.format || ''}${e.name ? ' «' + e.name + '»' : ''}`.trim();
+    variant.photo = photo;
+  }
+  return variant;
+}
+
+/* ============================================================
+   ГАЛЕРЕЯ — ВЫБОР ДНЯ И РЕНДЕР ПОСТЕРОВ
+   (адаптировано из week-poster-gallery.html)
+   ============================================================ */
+function renderDayList() {
+  const list = document.getElementById('dayList');
+  list.innerHTML = state.galleryDays.map(day => {
+    const d = parseDate(day.date);
+    const dayLabel = `${day.dayOfWeek} · ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+    return `
+      <li class="day-item" data-date="${day.date}" onclick="selectDay('${day.date}')">
+        <div class="day-label">${dayLabel}</div>
+        <div class="event-name">${escapeHtml(day.event.title || '—')}</div>
+        <div class="event-meta">${escapeHtml(day.event.format || '')} · ${day.time} · ${day.event.price || '—'} руб</div>
+        <div class="check-mark">✓</div>
+      </li>
+    `;
+  }).join('');
+}
+
+function selectDay(date) {
+  state.activeDay = date;
+  document.querySelectorAll('.day-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.date === date);
+  });
+  renderWorkspace(date);
+}
+
+function selectVariant(date, variantId) {
+  state.variantSelections[date] = variantId;
+  const dayEl = document.querySelector(`.day-item[data-date="${date}"]`);
+  if (dayEl) dayEl.classList.add('has-selection');
+  renderWorkspace(date);
+  updateBatchButton();
+}
+
+function updateBatchButton() {
+  const total = state.galleryDays.length;
+  const selected = Object.keys(state.variantSelections).length;
+  const btn = document.getElementById('btnBatch');
+  const status = document.getElementById('batchStatus');
+  btn.disabled = selected === 0;
+  status.textContent = selected === total
+    ? `Выбрано: ${selected} из ${total} ✓`
+    : `Выбрано: ${selected} из ${total}`;
+}
+
+function renderWorkspace(date) {
+  const day = state.galleryDays.find(d => d.date === date);
+  if (!day) return;
+  const d = parseDate(day.date);
+  const dayLabel = `${day.dayOfWeek} · ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+
+  const ws = document.getElementById('workspaceContent');
+  ws.innerHTML = `
+    <div class="workspace-header">
+      <div class="day">${dayLabel}</div>
+      <div class="event-info">${escapeHtml(day.event.format || '')} · ${day.time} · ${day.event.price || '—'} руб</div>
+      <div class="hint">Кликните по варианту, который выбираете</div>
+    </div>
+    <div class="variants-row" id="variantsRow"></div>
+  `;
+
+  const row = document.getElementById('variantsRow');
+  row.innerHTML = day.variants.map(v => {
+    const isSelected = state.variantSelections[date] === v.id;
+    return `
+      <div class="variant-card ${isSelected ? 'selected' : ''}" data-variant="${v.id}">
+        <div class="variant-label">Вариант ${v.id}</div>
+        <div class="poster-frame" onclick="selectVariant('${date}', '${v.id}')">
+          ${renderPoster(day, v, 'stories')}
+        </div>
+        <div class="variant-meta">
+          <span class="layout-name">${layoutDisplayName(v.layout)}</span> · ${accentDisplayName(v.accent)}
+        </div>
+        <div class="export-buttons">
+          <button class="btn-export" onclick="exportPNG(event, '${date}', '${v.id}', 'stories')">↓ Stories</button>
+          <button class="btn-export" onclick="exportPNG(event, '${date}', '${v.id}', 'square')">↓ Square</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Подгон hero-word в editorial
+  requestAnimationFrame(() => {
+    row.querySelectorAll('.poster.editorial .hero-word').forEach(autoFitHeroWord);
+  });
+}
+
+function autoFitHeroWord(el) {
+  if (!el) return;
+  const poster = el.closest('.poster');
+  if (!poster) return;
+  const posterStyle = window.getComputedStyle(poster);
+  const padLeft = parseFloat(posterStyle.paddingLeft) || 0;
+  const padRight = parseFloat(posterStyle.paddingRight) || 0;
+  const available = poster.clientWidth - padLeft - padRight - 8;
+  let size = parseFloat(window.getComputedStyle(el).fontSize);
+  const minSize = poster.classList.contains('square') ? 36 : 50;
+  let guard = 30;
+  while (el.scrollWidth > available && size > minSize && guard-- > 0) {
+    size -= 4;
+    el.style.setProperty('--hero-word-size', size + 'px');
+  }
+}
+
+function layoutDisplayName(l) {
+  return ({hero:'HERO', split:'SPLIT', 'grid-layout':'GRID', editorial:'EDITORIAL'})[l] || l.toUpperCase();
+}
+function accentDisplayName(a) {
+  return ({terracotta:'терракот', amber:'янтарь', olive:'олива'})[a] || a;
+}
+
+/* ============================================================
+   РЕНДЕР ПОСТЕРА
+   ============================================================ */
+function renderPoster(day, v, format) {
+  const accentClass = `accent-${v.accent}`;
+  const layoutClass = v.layout;
+  const formatClass = format;
+  const d = parseDate(day.date);
+  const monthName = MONTHS[d.getMonth()];
+
+  let titleHtml = escapeHtml(day.event.title || '—');
+  if (day.event.italic_part) {
+    titleHtml = titleHtml.replace(
+      escapeHtml(day.event.italic_part),
+      `<em>${escapeHtml(day.event.italic_part)}</em>`
+    );
+  }
+
+  const dayShort = day.dayOfWeek;
+  const dateMeta = `${dayShort} · ${d.getDate()} ${monthName} · ${day.time}`;
+  const priceStr = day.event.price ? day.event.price + ' руб' : '';
+  const formatMeta = `${day.event.format || ''}${priceStr ? ' · ' + priceStr : ''}`;
+  const dateMetaShort = `${d.getDate()} ${monthName} · ${day.time}`;
+
+  if (layoutClass === 'hero') return renderHero(v, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'split') return renderSplit(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'grid-layout') return renderGrid(v, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass);
+  if (layoutClass === 'editorial') return renderEditorial(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  return '';
+}
+
+function renderHero(v, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const photoStyle = v.photo ? `background-image: url('${v.photo}');` : '';
+  const overlayClass = v.photo ? 'warm-overlay' : '';
+  const stamp = v.show_stamp ? `<div class="stamp" style="top: 20px; right: 18px;">${v.stamp_text || '№ 47<br>' + monthName.toUpperCase() + '<br>2026'}</div>` : '';
+  const meta = formatClass === 'stories' ? dateMeta : dateMetaShort;
+  return `
+    <article class="poster hero ${formatClass} ${accentClass}">
+      <div class="hero-photo ${overlayClass}" style="${photoStyle}"></div>
+      <div class="hero-content">
+        <div class="brand">Пространство · Детали</div>
+        <h1 class="title">${titleHtml}</h1>
+        <p class="tagline">«${escapeHtml(v.tagline)}»</p>
+        <div class="divider"></div>
+        <div class="meta">${meta}</div>
+        <div class="meta" style="opacity: 0.7;">${escapeHtml(formatMeta)}</div>
+        <div class="footer-info">Пожарный 3Б · +375 29 315-15-83</div>
+      </div>
+      ${stamp}
+    </article>
+  `;
+}
+
+function renderSplit(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const photoStyle = v.photo ? `background-image: url('${v.photo}');` : '';
+  const d = parseDate(day.date);
+  const dayNum = String(d.getDate()).padStart(2, '0');
+  const monthNum = '/' + String(d.getMonth() + 1).padStart(2, '0');
+  return `
+    <article class="poster split ${formatClass} ${accentClass}">
+      <div class="split-photo" style="${photoStyle}"></div>
+      <div class="split-content">
+        <div class="brand">Пространство<br>Детали</div>
+        <h1 class="title"><em>${titleHtml}</em></h1>
+        <p class="tagline">«${escapeHtml(v.tagline)}»</p>
+        <div class="date-large">${dayNum}<span style="color: var(--soft-dark); font-size: 0.5em; vertical-align: top;">${monthNum}</span></div>
+        <div class="time-line">${day.dayOfWeek} · ${day.time}</div>
+        <div class="meta">${escapeHtml(formatMeta)}</div>
+        <div class="footer-info">Пожарный 3Б<br>+375 29 315-15-83</div>
+      </div>
+    </article>
+  `;
+}
+
+function renderGrid(v, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass) {
+  const photos = v.photos || [];
+  const cellsHtml = [0,1,2,3].map(i => {
+    if (photos[i]) return `<div class="grid-cell" style="background-image: url('${photos[i]}');"></div>`;
+    return `<div class="grid-cell empty">${escapeHtml(v.empty_letter || 'Д')}</div>`;
+  }).join('');
+  const meta = formatClass === 'stories' ? dateMeta : dateMetaShort;
+  return `
+    <article class="poster grid-layout ${formatClass} ${accentClass}">
+      <div class="grid-bg">${cellsHtml}</div>
+      <div class="grid-card">
+        <div class="brand">Пространство · Детали</div>
+        <h1 class="title">${titleHtml}</h1>
+        <p class="tagline">«${escapeHtml(v.tagline)}»</p>
+        <div class="divider"></div>
+        <div class="meta">${meta}</div>
+        <div class="meta" style="opacity: 0.7;">${escapeHtml(formatMeta)}</div>
+        <div class="footer-info">Пожарный 3Б · +375 29 315-15-83</div>
+      </div>
+    </article>
+  `;
+}
+
+function renderEditorial(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const heroWord = v.hero_word || (day.event.title || '').split(' ')[0];
+  const issueText = `${monthName} · 2026`;
+  const photoBlock = v.photo ? `<div class="ed-photo" style="background-image: url('${v.photo}');"></div>` : '';
+  const subtitleHtml = v.ed_subtitle ? `<h1 class="title">${escapeHtml(v.ed_subtitle)}</h1>` : `<h1 class="title">${titleHtml}</h1>`;
+  const meta = formatClass === 'stories' ? dateMeta : dateMetaShort;
+  return `
+    <article class="poster editorial ${formatClass} ${accentClass}">
+      <div class="ed-issue-line">${issueText}</div>
+      <div class="hero-word">${escapeHtml(heroWord)}</div>
+      ${photoBlock}
+      <div class="ed-content">
+        <div class="brand" style="margin-bottom: 8px;">Пространство · Детали</div>
+        ${subtitleHtml}
+        <p class="tagline">«${escapeHtml(v.tagline)}»</p>
+        <div class="meta">${meta}</div>
+        <div class="meta" style="opacity: 0.7;">${escapeHtml(formatMeta)}</div>
+        <div class="footer-info">Пожарный 3Б · +375 29 315-15-83</div>
+      </div>
+    </article>
+  `;
+}
+
+/* ============================================================
+   PNG-ЭКСПОРТ
+   ============================================================ */
+async function exportPNG(evt, date, variantId, format) {
+  evt.stopPropagation();
+  const btn = evt.target;
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    const blob = await renderPosterToBlob(date, variantId, format);
+    if (!blob) {
+      toast('Не удалось сгенерировать PNG. Возможно, фото с CORS-блокировкой.', 'err');
+      return;
+    }
+    const day = state.galleryDays.find(d => d.date === date);
+    triggerDownload(blob, makeFilename(day, variantId, format));
+  } catch(e) {
+    console.error(e);
+    toast('Ошибка экспорта: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+async function renderPosterToBlob(date, variantId, format) {
+  const day = state.galleryDays.find(d => d.date === date);
+  const variant = day.variants.find(v => v.id === variantId);
+  const zone = document.getElementById('hiddenRenderZone');
+  zone.innerHTML = renderPoster(day, variant, format);
+  const node = zone.querySelector('.poster');
+
+  await waitForImages(node);
+
+  const heroWord = node.querySelector('.hero-word');
+  if (heroWord) {
+    zone.style.left = '0';
+    zone.style.visibility = 'hidden';
+    autoFitHeroWord(heroWord);
+    zone.style.left = '-10000px';
+    zone.style.visibility = '';
+  }
+
+  const canvas = await html2canvas(node, {
+    scale: 2,
+    useCORS: true,
+    allowTaint: false,
+    backgroundColor: null,
+    logging: false
+  });
+
+  zone.innerHTML = '';
+  return new Promise(resolve => {
+    canvas.toBlob(blob => resolve(blob), 'image/png', 0.95);
+  });
+}
+
+function waitForImages(node) {
+  const els = [node, ...node.querySelectorAll('*')];
+  const urls = [];
+  els.forEach(el => {
+    const bg = window.getComputedStyle(el).backgroundImage;
+    const m = bg.match(/url\("?(https?:\/\/[^")]+)"?\)/);
+    if (m) urls.push(m[1]);
+  });
+  return Promise.all(urls.map(url => new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = resolve;
+    img.onerror = resolve;
+    img.src = url;
+    setTimeout(resolve, 8000);
+  })));
+}
+
+function makeFilename(day, variantId, format) {
+  const safeTitle = (day.event.title || 'event')
+    .replace(/[«»"']/g, '')
+    .replace(/[^а-яёА-ЯЁa-zA-Z0-9]+/g, '_')
+    .slice(0, 40);
+  return `${day.date}_${format}_${safeTitle}_${variantId}.png`;
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function downloadAllSelected() {
+  const btn = document.getElementById('btnBatch');
+  const status = document.getElementById('batchStatus');
+  btn.disabled = true;
+
+  const dates = Object.keys(state.variantSelections);
+  if (!dates.length) return;
+
+  if (typeof JSZip === 'undefined') {
+    toast('JSZip не загрузился. Скачайте PNG по одному.', 'err');
+    btn.disabled = false;
+    return;
+  }
+
+  const zip = new JSZip();
+  let done = 0;
+  const total = dates.length * 2;
+
+  for (const date of dates) {
+    const variantId = state.variantSelections[date];
+    const day = state.galleryDays.find(d => d.date === date);
+    for (const fmt of ['stories', 'square']) {
+      status.textContent = `Рендерю ${++done}/${total}: ${day.event.title} (${fmt})…`;
+      try {
+        const blob = await renderPosterToBlob(date, variantId, fmt);
+        if (blob) zip.file(makeFilename(day, variantId, fmt), blob);
+      } catch(e) {
+        console.error('Render failed', date, variantId, fmt, e);
+      }
+    }
+  }
+
+  status.textContent = 'Собираю ZIP…';
+  const zipBlob = await zip.generateAsync({type: 'blob'});
+  const firstDate = state.galleryDays[0]?.date || 'afishi';
+  triggerDownload(zipBlob, `afishi_${firstDate}.zip`);
+  status.textContent = `Готово: ${dates.length} афиш × 2 формата`;
+  btn.disabled = false;
+}
+
+/* ============================================================
+   УТИЛИТЫ
+   ============================================================ */
+function parseDate(s) {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + (type === 'err' ? 'err' : '');
+  setTimeout(() => t.className = '', 3000);
+}
+
+// Запуск
+init();
+</script>
+
+</body>
+</html>
