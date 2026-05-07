@@ -20,6 +20,14 @@
   --yellow: #d4a85c;
   --blue: #5b7a9a;
   --shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.04);
+
+  /* ФИР-СТИЛЬ ДЕТАЛИ — палитра для постеров событий */
+  --brand-terracotta: #C06D54;
+  --brand-amber: #EF9F27;
+  --brand-milk: #F5EFE6;
+  --brand-dark: #3D2B1F;
+  --brand-olive: #6B7A4A;
+  --brand-olive-light: #8FA370;
 }
 * { box-sizing: border-box; }
 body {
@@ -745,6 +753,236 @@ main {
 .week-poster.fmt-stories .wp-foot { font-size: 11px; }
 .week-poster.fmt-square .wp-foot { font-size: 10px; padding-top: 8px; margin-top: 10px; }
 
+/* ============================================================
+   АФИША ОДНОГО СОБЫТИЯ — фир-стиль «Детали»
+   ============================================================ */
+
+/* Переключатель акцентного цвета */
+.ep-accent-toggle {
+  display: flex;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px;
+  background: #fafafa;
+  width: fit-content;
+}
+.ep-accent-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s;
+}
+.ep-accent-btn[data-accent="terracotta"] { background: var(--brand-terracotta); }
+.ep-accent-btn[data-accent="amber"] { background: var(--brand-amber); }
+.ep-accent-btn[data-accent="olive"] { background: var(--brand-olive); }
+.ep-accent-btn:hover { transform: scale(1.1); }
+.ep-accent-btn.active { border-color: var(--brand-dark); transform: scale(1.1); }
+
+/* Выбор референса */
+.ep-ref-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px;
+  background: #fafafa;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.ep-ref-thumb {
+  width: 70px;
+  height: 70px;
+  background-size: cover;
+  background-position: center;
+  background-color: #e8e3d8;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.ep-ref-thumb.active { border-color: var(--brand-terracotta); transform: scale(1.05); }
+.ep-ref-thumb.no-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: var(--muted);
+}
+.ep-ref-none {
+  width: 70px; height: 70px;
+  border: 2px dashed var(--line);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--muted);
+  cursor: pointer;
+  text-align: center;
+  padding: 4px;
+}
+.ep-ref-none.active { border-color: var(--brand-terracotta); border-style: solid; color: var(--brand-terracotta); }
+
+/* Сам постер */
+.event-poster {
+  --ep-scale: 1;
+  --ep-accent: var(--brand-terracotta);
+  margin: 0 auto;
+  background: var(--brand-milk);
+  border: 2px solid var(--brand-dark);
+  border-radius: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--brand-dark);
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.event-poster.fmt-stories {
+  width: 540px;
+  height: 960px;
+}
+.event-poster.fmt-square {
+  width: 540px;
+  height: 540px;
+}
+.event-poster.accent-terracotta { --ep-accent: var(--brand-terracotta); }
+.event-poster.accent-amber { --ep-accent: var(--brand-amber); }
+.event-poster.accent-olive { --ep-accent: var(--brand-olive); }
+
+/* Зона референса (фото) */
+.event-poster .ep-hero {
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  background-color: #d8cfbf;
+  flex-shrink: 0;
+  position: relative;
+}
+.event-poster.fmt-stories .ep-hero { height: 540px; }
+.event-poster.fmt-square .ep-hero { height: 220px; }
+
+/* Декоративная плашка вместо фото если референса нет */
+.event-poster .ep-hero-deco {
+  width: 100%;
+  background: var(--ep-accent);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.event-poster.fmt-stories .ep-hero-deco { height: 540px; }
+.event-poster.fmt-square .ep-hero-deco { height: 220px; }
+.event-poster .ep-hero-deco::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 40%, rgba(255,255,255,0.12), transparent 60%);
+}
+.event-poster .ep-hero-deco-mark {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  color: var(--brand-milk);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  padding: 0 24px;
+  line-height: 1;
+}
+.event-poster.fmt-stories .ep-hero-deco-mark { font-size: 140px; }
+.event-poster.fmt-square .ep-hero-deco-mark { font-size: 80px; }
+
+/* Контент-зона */
+.event-poster .ep-content {
+  flex: 1;
+  padding: 22px 26px 18px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.event-poster.fmt-square .ep-content { padding: 16px 20px 14px; }
+
+.event-poster .ep-brand {
+  font-size: calc(11px * var(--ep-scale));
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ep-accent);
+  font-weight: 600;
+  margin-bottom: calc(10px * var(--ep-scale));
+}
+.event-poster.fmt-square .ep-brand { font-size: calc(9px * var(--ep-scale)); margin-bottom: calc(6px * var(--ep-scale)); }
+
+.event-poster .ep-name {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--brand-dark);
+  margin-bottom: calc(14px * var(--ep-scale));
+}
+.event-poster.fmt-stories .ep-name { font-size: calc(38px * var(--ep-scale)); }
+.event-poster.fmt-square .ep-name { font-size: calc(24px * var(--ep-scale)); margin-bottom: calc(8px * var(--ep-scale)); }
+
+.event-poster .ep-tagline {
+  font-style: italic;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #5a4838;
+  line-height: 1.3;
+  margin-bottom: calc(18px * var(--ep-scale));
+}
+.event-poster.fmt-stories .ep-tagline { font-size: calc(18px * var(--ep-scale)); }
+.event-poster.fmt-square .ep-tagline { font-size: calc(13px * var(--ep-scale)); margin-bottom: calc(10px * var(--ep-scale)); }
+
+.event-poster .ep-divider {
+  width: 60px;
+  height: 3px;
+  background: var(--ep-accent);
+  margin-bottom: calc(14px * var(--ep-scale));
+  flex-shrink: 0;
+}
+.event-poster.fmt-square .ep-divider { width: 40px; height: 2px; margin-bottom: calc(8px * var(--ep-scale)); }
+
+.event-poster .ep-when {
+  font-size: calc(15px * var(--ep-scale));
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--brand-dark);
+  text-transform: uppercase;
+  margin-bottom: calc(4px * var(--ep-scale));
+}
+.event-poster.fmt-square .ep-when { font-size: calc(11px * var(--ep-scale)); }
+
+.event-poster .ep-format {
+  font-size: calc(13px * var(--ep-scale));
+  color: #6a5848;
+  margin-bottom: calc(14px * var(--ep-scale));
+}
+.event-poster.fmt-square .ep-format { font-size: calc(10px * var(--ep-scale)); margin-bottom: calc(8px * var(--ep-scale)); }
+
+.event-poster .ep-spacer { flex: 1; min-height: 0; }
+
+.event-poster .ep-foot {
+  border-top: 1px solid rgba(61, 43, 31, 0.15);
+  padding-top: calc(10px * var(--ep-scale));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: calc(10px * var(--ep-scale));
+  color: #6a5848;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.event-poster.fmt-square .ep-foot { font-size: calc(9px * var(--ep-scale)); padding-top: calc(6px * var(--ep-scale)); }
+.event-poster .ep-foot .ep-foot-left { font-weight: 600; }
+.event-poster .ep-foot .ep-foot-right { text-align: right; }
+
 /* ============== РЕФЕРЕНСЫ И КОММЕНТАРИЙ КОМАНДЕ ============== */
 .refs-block {
   border: 1px solid var(--line);
@@ -1192,6 +1430,7 @@ main {
       <button class="danger" onclick="deleteCurrentEvent()" id="evDeleteBtn" style="display:none">🗑 Удалить</button>
       <div class="right">
         <button onclick="closeModal('eventModal')">Отмена</button>
+        <button class="ghost" onclick="openEventPoster()">🖼 Афиша события</button>
         <button class="ghost" onclick="saveAsTemplate()">💾 В шаблоны</button>
         <button class="primary" onclick="saveEvent()">Сохранить</button>
       </div>
@@ -1356,6 +1595,71 @@ main {
         <button onclick="closeModal('weekPosterModal')">Закрыть</button>
         <button onclick="copyWeekPosterText()">📋 Скопировать текст</button>
         <button class="primary" onclick="downloadWeekPosterImage()" id="wpPngBtn">📷 Скачать PNG</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== МОДАЛКА: АФИША ОДНОГО СОБЫТИЯ ====== -->
+<div class="modal-bg" id="eventPosterModal">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2>🖼 Афиша события</h2>
+      <button class="ghost" onclick="closeModal('eventPosterModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Панель управления -->
+      <div class="row">
+        <div>
+          <label>Формат картинки</label>
+          <div class="wp-fmt-toggle">
+            <button type="button" class="wp-fmt-btn active" data-fmt="stories" onclick="setEventPosterFormat('stories')">📱 Сторис · 9:16</button>
+            <button type="button" class="wp-fmt-btn" data-fmt="square" onclick="setEventPosterFormat('square')">⬛ Квадрат · 1:1</button>
+          </div>
+        </div>
+        <div>
+          <label>Акцентный цвет</label>
+          <div class="ep-accent-toggle">
+            <button type="button" class="ep-accent-btn" data-accent="terracotta" onclick="setEventPosterAccent('terracotta')" title="Терракот"></button>
+            <button type="button" class="ep-accent-btn" data-accent="amber" onclick="setEventPosterAccent('amber')" title="Янтарный"></button>
+            <button type="button" class="ep-accent-btn" data-accent="olive" onclick="setEventPosterAccent('olive')" title="Оливковый"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Выбор референса (если их несколько) -->
+      <div class="row full" id="epRefPickerRow" style="display:none;">
+        <div>
+          <label>Какой референс на постер?</label>
+          <div id="epRefPicker" class="ep-ref-picker"></div>
+        </div>
+      </div>
+
+      <!-- Подпись -->
+      <div class="row full">
+        <div>
+          <label>Подпись на постере (3–7 слов)
+            <button class="ghost" style="float:right; padding: 2px 8px; font-size: 11px;" onclick="aiGenerateEventPosterCopy()" id="epAiBtn">
+              <span id="epAiSpinner" style="display:none"><span class="ai-loader"></span></span>
+              ✨ Сгенерировать ИИ
+            </button>
+          </label>
+          <input type="text" id="epTagline" maxlength="80" placeholder="Например: лепим, обжигаем, забираем тёплое" oninput="renderEventPoster()">
+        </div>
+      </div>
+
+      <label style="margin-top:8px;">Превью:</label>
+      <div id="epPreviewWrap" style="background:#e9e2d4; padding:16px; border-radius:8px; max-height: 60vh; overflow-y:auto;">
+        <div id="epPoster" class="event-poster fmt-stories accent-terracotta">
+          <div style="text-align:center; padding: 30px; color: var(--muted);">Загружаю…</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div class="right">
+        <button onclick="closeModal('eventPosterModal')">Закрыть</button>
+        <button class="primary" onclick="downloadEventPosterImage()" id="epPngBtn">📷 Скачать PNG</button>
       </div>
     </div>
   </div>
@@ -3673,7 +3977,7 @@ function renderWeekPoster() {
         </div>
       `).join('')}
     </div>
-    <div class="wp-foot">Пожарный 3Б · +375 29 315-15-83 · Запись на сайте</div>
+    <div class="wp-foot">Пожарный 3Б · +375 29 315-15-83</div>
   `;
 
   // Если контент не влезает — уменьшаем шрифт пошагово
@@ -3843,6 +4147,314 @@ async function downloadWeekPosterImage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       const fileName = `afisha-${startStr}-${_wpFormat}.png`;
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      toast('PNG скачан ✓', 'ok');
+    }, 'image/png');
+  } catch(e) {
+    toast('Не удалось сделать PNG: ' + (e.message || e), 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+// ============================================================
+// АФИША ОДНОГО СОБЫТИЯ — модалка, превью, ИИ, скачивание PNG
+// ============================================================
+const _epState = {
+  format: 'stories',           // 'stories' | 'square'
+  accent: 'terracotta',        // 'terracotta' | 'amber' | 'olive'
+  refIdx: -1,                  // -1 = без референса, иначе индекс в editingRefs
+  // Снимок данных события на момент открытия (читаем из формы)
+  snapshot: null
+};
+
+const RU_DOW_SHORT = ['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
+const RU_MONTHS_SHORT = ['ЯНВ','ФЕВ','МАР','АПР','МАЯ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
+
+function _epReadFormData() {
+  // Читаем актуальное состояние редактора события (не сохранение БД)
+  const dateStr = document.getElementById('evDate').value || '';
+  const dt = dateStr ? new Date(dateStr + 'T00:00:00') : null;
+  return {
+    name: (document.getElementById('evName').value || '').trim(),
+    format: document.getElementById('evFormat').value || '',
+    description: (document.getElementById('evDescr').value || '').trim(),
+    timeStart: document.getElementById('evTime').value || '',
+    duration: parseFloat(document.getElementById('evDuration').value) || 0,
+    price: parseFloat(document.getElementById('evPrice').value) || null,
+    date: dateStr,
+    dateObj: dt,
+    references: (state.editingRefs || []).slice()
+  };
+}
+
+function openEventPoster() {
+  const snap = _epReadFormData();
+  if (!snap.name && !snap.format) {
+    toast('Сначала заполните формат и название', 'err');
+    return;
+  }
+  _epState.snapshot = snap;
+  _epState.format = 'stories';
+  _epState.accent = 'terracotta';
+  // Если есть референсы — берём первый по умолчанию, иначе -1
+  _epState.refIdx = snap.references.length ? 0 : -1;
+
+  // Подсветка дефолтных кнопок
+  document.querySelectorAll('#eventPosterModal .wp-fmt-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.fmt === 'stories');
+  });
+  document.querySelectorAll('.ep-accent-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.accent === 'terracotta');
+  });
+
+  // Поле подписи — пусто, чтобы пользователь сгенерил или ввёл сам
+  document.getElementById('epTagline').value = '';
+
+  // Рендерим селектор референсов (если есть)
+  _epRenderRefPicker();
+
+  document.getElementById('eventPosterModal').classList.add('show');
+  renderEventPoster();
+
+  // Если описание/название содержательное — сразу запускаем ИИ
+  // (необязательно: пользователь может сам нажать кнопку. Не запускаем авто, чтобы
+  //  не тратить токены при простом превью без подписи.)
+}
+
+function _epRenderRefPicker() {
+  const row = document.getElementById('epRefPickerRow');
+  const picker = document.getElementById('epRefPicker');
+  const refs = _epState.snapshot?.references || [];
+  if (!refs.length) {
+    row.style.display = 'none';
+    return;
+  }
+  row.style.display = '';
+  let html = '';
+  refs.forEach((r, i) => {
+    const cls = (i === _epState.refIdx) ? 'ep-ref-thumb active' : 'ep-ref-thumb';
+    if (r.thumb) {
+      html += `<div class="${cls}" style="background-image:url('${escapeAttr(r.thumb)}')" onclick="setEventPosterRef(${i})" title="${escapeAttr(r.url)}"></div>`;
+    } else {
+      html += `<div class="${cls} no-thumb" onclick="setEventPosterRef(${i})" title="${escapeAttr(r.url)}">🔗</div>`;
+    }
+  });
+  // Опция «без фото»
+  const noneCls = (_epState.refIdx === -1) ? 'ep-ref-none active' : 'ep-ref-none';
+  html += `<div class="${noneCls}" onclick="setEventPosterRef(-1)">Без<br>фото</div>`;
+  picker.innerHTML = html;
+}
+
+function setEventPosterRef(idx) {
+  _epState.refIdx = idx;
+  _epRenderRefPicker();
+  renderEventPoster();
+}
+
+function setEventPosterFormat(fmt) {
+  if (fmt !== 'stories' && fmt !== 'square') return;
+  _epState.format = fmt;
+  document.querySelectorAll('#eventPosterModal .wp-fmt-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.fmt === fmt);
+  });
+  renderEventPoster();
+}
+
+function setEventPosterAccent(color) {
+  if (!['terracotta','amber','olive'].includes(color)) return;
+  _epState.accent = color;
+  document.querySelectorAll('.ep-accent-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.accent === color);
+  });
+  renderEventPoster();
+}
+
+function _epFormatWhen(snap) {
+  if (!snap.dateObj) return (snap.timeStart || '').toUpperCase();
+  const d = snap.dateObj;
+  const dow = RU_DOW_SHORT[d.getDay()];
+  const day = d.getDate();
+  const mon = RU_MONTHS_SHORT[d.getMonth()];
+  const time = snap.timeStart || '';
+  return `${dow} · ${day} ${mon}${time ? ' · ' + time : ''}`;
+}
+
+function _epFormatFmtLine(snap) {
+  const parts = [];
+  if (snap.format) parts.push(snap.format);
+  if (snap.duration) parts.push(snap.duration + ' ч');
+  if (snap.price) parts.push(snap.price + ' руб');
+  return parts.join(' · ');
+}
+
+// «Декоративный» знак на плашке без фото — первая буква названия
+function _epDecoMark(snap) {
+  const name = snap.name || snap.format || '';
+  return name.charAt(0).toUpperCase() || '✻';
+}
+
+function renderEventPoster() {
+  const snap = _epState.snapshot;
+  const poster = document.getElementById('epPoster');
+  if (!snap) return;
+
+  poster.className = `event-poster fmt-${_epState.format} accent-${_epState.accent}`;
+
+  // Hero — фото или декоративная плашка
+  const ref = (_epState.refIdx >= 0) ? snap.references[_epState.refIdx] : null;
+  const heroHtml = (ref && ref.thumb)
+    ? `<div class="ep-hero" style="background-image:url('${escapeAttr(ref.thumb)}')"></div>`
+    : `<div class="ep-hero-deco"><div class="ep-hero-deco-mark">${escapeHtml(_epDecoMark(snap))}</div></div>`;
+
+  const tagline = (document.getElementById('epTagline').value || '').trim();
+  const whenLine = _epFormatWhen(snap);
+  const fmtLine = _epFormatFmtLine(snap);
+
+  poster.innerHTML = `
+    ${heroHtml}
+    <div class="ep-content">
+      <div class="ep-brand">Пространство «Детали»</div>
+      <div class="ep-name">${escapeHtml(snap.name || snap.format || 'Событие')}</div>
+      ${tagline ? `<div class="ep-tagline">«${escapeHtml(tagline)}»</div>` : ''}
+      <div class="ep-divider"></div>
+      <div class="ep-when">${escapeHtml(whenLine)}</div>
+      ${fmtLine ? `<div class="ep-format">${escapeHtml(fmtLine)}</div>` : ''}
+      <div class="ep-spacer"></div>
+      <div class="ep-foot">
+        <div class="ep-foot-left">Пожарный 3Б</div>
+        <div class="ep-foot-right">+375 29 315-15-83</div>
+      </div>
+    </div>
+  `;
+  _epFitContent();
+}
+
+function _epFitContent() {
+  const poster = document.getElementById('epPoster');
+  const content = poster.querySelector('.ep-content');
+  if (!content) return;
+  poster.style.setProperty('--ep-scale', '1');
+  let scale = 1.0;
+  for (let i = 0; i < 12; i++) {
+    if (content.scrollHeight <= content.clientHeight) break;
+    scale -= 0.05;
+    if (scale < 0.6) { scale = 0.6; poster.style.setProperty('--ep-scale', String(scale)); break; }
+    poster.style.setProperty('--ep-scale', String(scale));
+  }
+}
+
+// ============================================================
+// АФИША СОБЫТИЯ — ИИ
+// ============================================================
+async function aiGenerateEventPosterCopy() {
+  const snap = _epState.snapshot;
+  if (!snap || (!snap.name && !snap.format)) {
+    toast('Нужно название или формат события', 'err');
+    return;
+  }
+
+  const btn = document.getElementById('epAiBtn');
+  const spin = document.getElementById('epAiSpinner');
+  btn.disabled = true;
+  spin.style.display = 'inline-block';
+
+  const system = `Ты подбираешь акцентный цвет и сочиняешь короткие подписи к постерам событий пространства «Детали» в Могилёве.
+
+Палитра акцентов (выбери ОДИН, по смыслу события):
+- terracotta — для тёплого, творческого, рукодельного (МК глина/рисование/украшения, рукоделие, бьюти-уход)
+- amber — для живого, праздничного, социального (вечеринки, дегустации, киновечер, ДР, караоке)
+- olive — для спокойного, осмысленного, разговорного (книжный клуб, эксперты, лекции, медитативные форматы)
+
+Подпись: 3–7 слов, в стиле Деталей. Конкретные глаголы и предметы. Без пафоса («незабываемый вечер»), без штампов («окунитесь в мир»), без эмодзи, без приветствий, без призывов («приходите»). Маленькая буква в начале допустима.
+
+Хорошие примеры:
+— «лепим, обжигаем, забираем тёплое»
+— «вино, болтовня, картины»
+— «читаем вслух Шекспира при свечах»
+— «фильм, пледы, попкорн, разговоры»
+— «рассказ косметолога, вопросы вслух»
+
+Плохие примеры (так НЕ надо):
+— «Незабываемый вечер творчества!»
+— «Окунитесь в мир глины»
+— «Подарите себе праздник»`;
+
+  const prompt = `Событие:
+- Формат: ${snap.format || '—'}
+- Название: ${snap.name || '—'}
+- Описание (если есть): ${snap.description || '—'}
+- Длительность: ${snap.duration || '—'} ч
+- Цена: ${snap.price || '—'} руб
+
+Верни СТРОГО валидный JSON, без обёрток \`\`\`json и без комментариев:
+{"accent":"terracotta"|"amber"|"olive","tagline":"подпись 3-7 слов"}`;
+
+  try {
+    const r = await apiPost('claude', { prompt, system });
+    if (!r.ok || !r.text) {
+      toast('ИИ не ответил: ' + (r.error || ''), 'err');
+      return;
+    }
+    const txt = r.text.trim();
+    const jsonMatch = txt.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      toast('ИИ вернул неожиданный формат', 'err');
+      return;
+    }
+    let data;
+    try { data = JSON.parse(jsonMatch[0]); }
+    catch(e) { toast('Не получилось разобрать ответ ИИ', 'err'); return; }
+
+    if (data.accent && ['terracotta','amber','olive'].includes(data.accent)) {
+      setEventPosterAccent(data.accent);
+    }
+    if (data.tagline && typeof data.tagline === 'string') {
+      document.getElementById('epTagline').value = data.tagline.trim().replace(/^["«„]|["»“]$/g, '');
+      renderEventPoster();
+    }
+    toast('Сгенерировано ✨', 'ok');
+  } catch(e) {
+    toast('Ошибка вызова ИИ', 'err');
+  } finally {
+    btn.disabled = false;
+    spin.style.display = 'none';
+  }
+}
+
+// ============================================================
+// АФИША СОБЫТИЯ — скачивание PNG
+// ============================================================
+async function downloadEventPosterImage() {
+  const snap = _epState.snapshot;
+  if (!snap) return;
+
+  const btn = document.getElementById('epPngBtn');
+  btn.disabled = true;
+  const origText = btn.textContent;
+  btn.textContent = 'Готовлю PNG…';
+
+  try {
+    const h2c = await _loadHtml2Canvas();
+    const node = document.getElementById('epPoster');
+    const canvas = await h2c(node, {
+      backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--brand-milk').trim() || '#F5EFE6',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    });
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      // Имя файла: дата_формат_название.png — sanitize название
+      const safeName = (snap.name || snap.format || 'event').replace(/[^а-яА-Яa-zA-Z0-9_-]+/g, '_').slice(0, 40);
+      const fileName = `${snap.date || 'event'}_${_epState.format}_${safeName}.png`;
       a.href = url;
       a.download = fileName;
       document.body.appendChild(a);
