@@ -1095,7 +1095,7 @@ body {
 .poster.scrapbook .scrap-main-row {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 16px;
   flex: 1;
   min-height: 0;
 }
@@ -1105,16 +1105,17 @@ body {
 }
 .poster.scrapbook .polaroid {
   flex-shrink: 0;
-  width: 38%;
+  width: 28%;
   background: white;
-  padding: 6px 6px 12px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+  padding: 5px 5px 10px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
   transform: rotate(4deg);
   position: relative;
+  margin-top: 8px;
 }
 .poster.scrapbook.square .polaroid {
-  width: 34%;
-  padding: 5px 5px 10px;
+  width: 26%;
+  padding: 4px 4px 8px;
 }
 .poster.scrapbook .polaroid-img {
   aspect-ratio: 1;
@@ -1315,9 +1316,11 @@ body {
   line-height: 0.92;
   letter-spacing: -0.03em;
   text-transform: uppercase;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
-.poster.halftone.stories .ht-title-row { font-size: 80px; }
-.poster.halftone.square .ht-title-row { font-size: 52px; }
+.poster.halftone.stories .ht-title-row { font-size: 56px; }
+.poster.halftone.square .ht-title-row { font-size: 38px; }
 .poster.halftone .ht-photo {
   position: absolute;
   bottom: 18%;
@@ -1448,9 +1451,10 @@ body {
   letter-spacing: 0.02em;
   color: white;
   line-height: 1.05;
+  font-size: var(--frame-title-size);
 }
-.poster.frame.stories .frame-title { font-size: 38px; }
-.poster.frame.square .frame-title { font-size: 26px; }
+.poster.frame.stories .frame-title { --frame-title-size: 38px; }
+.poster.frame.square .frame-title { --frame-title-size: 26px; }
 .poster.frame .frame-title em {
   font-style: italic;
   font-weight: 600;
@@ -2434,9 +2438,20 @@ function renderWorkspace(date) {
     `;
   }).join('');
 
-  // Подгон hero-word в editorial
+  // Подгон крупного текста во всех макетах
   requestAnimationFrame(() => {
     row.querySelectorAll('.poster.editorial .hero-word').forEach(autoFitHeroWord);
+    row.querySelectorAll('.poster.frame .frame-title').forEach(el => autoFitElement(el, '--frame-title-size'));
+    row.querySelectorAll('.poster.bold .bold-title').forEach(el => autoFitElement(el, '--bold-title-size'));
+    row.querySelectorAll('.poster.halftone .ht-title-row').forEach(el => {
+      if (el.scrollWidth > el.closest('.poster').clientWidth - 60) {
+        let size = parseFloat(window.getComputedStyle(el).fontSize);
+        while (el.scrollWidth > el.closest('.poster').clientWidth - 60 && size > 30) {
+          size -= 4;
+          el.style.fontSize = size + 'px';
+        }
+      }
+    });
   });
 }
 
@@ -2503,6 +2518,12 @@ function regenerateVariants(date) {
 
 function autoFitHeroWord(el) {
   if (!el) return;
+  autoFitElement(el, '--hero-word-size');
+}
+
+// Универсальный подгон текстового элемента под ширину постера
+function autoFitElement(el, cssVar) {
+  if (!el) return;
   const poster = el.closest('.poster');
   if (!poster) return;
   const posterStyle = window.getComputedStyle(poster);
@@ -2510,11 +2531,20 @@ function autoFitHeroWord(el) {
   const padRight = parseFloat(posterStyle.paddingRight) || 0;
   const available = poster.clientWidth - padLeft - padRight - 8;
   let size = parseFloat(window.getComputedStyle(el).fontSize);
-  const minSize = poster.classList.contains('square') ? 36 : 50;
-  let guard = 30;
+  const minSize = poster.classList.contains('square') ? 16 : 20;
+  let guard = 40;
   while (el.scrollWidth > available && size > minSize && guard-- > 0) {
-    size -= 4;
-    el.style.setProperty('--hero-word-size', size + 'px');
+    size -= 2;
+    el.style.setProperty(cssVar, size + 'px');
+  }
+  // Авто-подгон по высоте — если контент выше контейнера frame-bottom
+  const parent = el.parentElement;
+  if (parent && parent.scrollHeight > parent.clientHeight + 10) {
+    guard = 20;
+    while (parent.scrollHeight > parent.clientHeight + 5 && size > minSize && guard-- > 0) {
+      size -= 2;
+      el.style.setProperty(cssVar, size + 'px');
+    }
   }
 }
 
@@ -2952,10 +2982,24 @@ async function renderPosterToBlob(date, variantId, format) {
   await waitForImages(node);
 
   const heroWord = node.querySelector('.hero-word');
-  if (heroWord) {
+  const frameTitle = node.querySelector('.frame-title');
+  const boldTitle = node.querySelector('.bold-title');
+  const htTitles = node.querySelectorAll('.ht-title-row');
+
+  if (heroWord || frameTitle || boldTitle || htTitles.length) {
     zone.style.left = '0';
     zone.style.visibility = 'hidden';
-    autoFitHeroWord(heroWord);
+    if (heroWord) autoFitHeroWord(heroWord);
+    if (frameTitle) autoFitElement(frameTitle, '--frame-title-size');
+    if (boldTitle) autoFitElement(boldTitle, '--bold-title-size');
+    htTitles.forEach(el => {
+      let size = parseFloat(window.getComputedStyle(el).fontSize);
+      const pw = node.clientWidth - 60;
+      while (el.scrollWidth > pw && size > 24) {
+        size -= 4;
+        el.style.fontSize = size + 'px';
+      }
+    });
     zone.style.left = '-10000px';
     zone.style.visibility = '';
   }
