@@ -601,27 +601,64 @@ main {
   border-color: var(--accent-dark);
 }
 
+/* Афиша недели — переключатель форматов */
+.wp-fmt-toggle {
+  display: flex;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 3px;
+  background: #fafafa;
+  width: fit-content;
+}
+.wp-fmt-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.15s;
+}
+.wp-fmt-btn:hover { background: white; color: var(--accent); }
+.wp-fmt-btn.active {
+  background: var(--accent);
+  color: white;
+}
+
 /* Афиша недели — стиль постера */
 .week-poster {
-  width: 600px;
-  max-width: 100%;
   margin: 0 auto;
   background: #fdf9f2;
   border: 2px solid var(--accent);
   border-radius: 12px;
-  padding: 28px 32px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #2b2b2b;
   box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
+.week-poster.fmt-stories {
+  width: 540px;
+  height: 960px;
+  padding: 36px 32px;
+}
+.week-poster.fmt-square {
+  width: 540px;
+  height: 540px;
+  padding: 22px 26px;
+}
+
 .week-poster .wp-head {
   text-align: center;
   border-bottom: 1px solid var(--line);
   padding-bottom: 14px;
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 .week-poster .wp-head .wp-brand {
-  font-size: 13px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--accent);
@@ -629,59 +666,83 @@ main {
   margin-bottom: 4px;
 }
 .week-poster .wp-head .wp-title {
-  font-size: 22px;
   font-weight: 700;
   color: #3a2415;
 }
+.week-poster.fmt-stories .wp-brand { font-size: 13px; }
+.week-poster.fmt-stories .wp-title { font-size: 22px; }
+.week-poster.fmt-square .wp-brand { font-size: 11px; }
+.week-poster.fmt-square .wp-title { font-size: 17px; }
+.week-poster.fmt-square .wp-head { padding-bottom: 10px; margin-bottom: 12px; }
+
 .week-poster .wp-intro {
-  font-size: 14px;
   line-height: 1.5;
   color: #4a3a30;
-  margin-bottom: 20px;
   font-style: italic;
   text-align: center;
   white-space: pre-wrap;
+  flex-shrink: 0;
 }
-.week-poster .wp-day {
-  margin-bottom: 16px;
+.week-poster.fmt-stories .wp-intro { font-size: 14px; margin-bottom: 20px; }
+.week-poster.fmt-square .wp-intro { font-size: 12px; margin-bottom: 12px; }
+
+.week-poster .wp-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
+
+.week-poster .wp-day { margin-bottom: 14px; }
+.week-poster.fmt-square .wp-day { margin-bottom: 10px; }
+
 .week-poster .wp-day-head {
-  font-size: 13px;
   font-weight: 600;
   color: var(--accent-dark);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px dashed var(--accent);
   padding-bottom: 4px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
+.week-poster.fmt-stories .wp-day-head { font-size: 13px; }
+.week-poster.fmt-square .wp-day-head { font-size: 11px; padding-bottom: 3px; margin-bottom: 5px; }
+
 .week-poster .wp-event {
   display: flex;
   gap: 10px;
   align-items: baseline;
-  font-size: 14px;
-  line-height: 1.45;
-  margin-bottom: 6px;
+  line-height: 1.4;
+  margin-bottom: 5px;
   padding-left: 4px;
 }
+.week-poster.fmt-stories .wp-event { font-size: 14px; }
+.week-poster.fmt-square .wp-event { font-size: 12px; gap: 8px; margin-bottom: 4px; }
+
 .week-poster .wp-event .wp-time {
   font-weight: 700;
   color: var(--accent);
   flex-shrink: 0;
   min-width: 50px;
 }
+.week-poster.fmt-square .wp-event .wp-time { min-width: 44px; }
+
 .week-poster .wp-event .wp-info { flex: 1; min-width: 0; }
 .week-poster .wp-event .wp-name { font-weight: 600; color: #2b2b2b; }
-.week-poster .wp-event .wp-meta { font-size: 12px; color: #7a6a5e; margin-top: 1px; }
+.week-poster .wp-event .wp-meta { color: #7a6a5e; margin-top: 1px; }
+.week-poster.fmt-stories .wp-event .wp-meta { font-size: 12px; }
+.week-poster.fmt-square .wp-event .wp-meta { font-size: 11px; }
+
 .week-poster .wp-foot {
   border-top: 1px solid var(--line);
-  margin-top: 20px;
+  margin-top: 16px;
   padding-top: 12px;
   text-align: center;
-  font-size: 11px;
   color: var(--muted);
   letter-spacing: 0.05em;
+  flex-shrink: 0;
 }
+.week-poster.fmt-stories .wp-foot { font-size: 11px; }
+.week-poster.fmt-square .wp-foot { font-size: 10px; padding-top: 8px; margin-top: 10px; }
 
 /* ============== РЕФЕРЕНСЫ И КОММЕНТАРИЙ КОМАНДЕ ============== */
 .refs-block {
@@ -1256,6 +1317,15 @@ main {
         <div>
           <label>Период</label>
           <div id="wpRangeLabel" style="padding:7px 10px; border:1px solid var(--line); border-radius:6px; background:#fafafa; min-height:34px; font-size:13px;">—</div>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Формат картинки</label>
+          <div class="wp-fmt-toggle">
+            <button type="button" class="wp-fmt-btn active" data-fmt="stories" onclick="setWeekPosterFormat('stories')">📱 Сторис · 9:16</button>
+            <button type="button" class="wp-fmt-btn" data-fmt="square" onclick="setWeekPosterFormat('square')">⬛ Квадрат · 1:1</button>
+          </div>
         </div>
       </div>
       <div class="row full">
@@ -3483,6 +3553,11 @@ function openWeekPoster() {
   monday.setDate(today.getDate() - back);
   document.getElementById('wpStartDate').value = ymd(monday);
   document.getElementById('wpIntro').value = '';
+  // Сбрасываем формат на дефолт (сторис) и подсвечиваем нужную кнопку
+  _wpFormat = 'stories';
+  document.querySelectorAll('.wp-fmt-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.fmt === 'stories');
+  });
   document.getElementById('weekPosterModal').classList.add('show');
   renderWeekPoster();
 }
@@ -3524,6 +3599,19 @@ function _wpFormatDayHeader(dateStr) {
   return `${RU_WEEKDAYS_FULL[d.getDay()]}, ${d.getDate()} ${RU_MONTHS_GEN[d.getMonth()]}`;
 }
 
+// Текущий формат картинки: 'stories' (9:16) | 'square' (1:1)
+let _wpFormat = 'stories';
+
+function setWeekPosterFormat(fmt) {
+  if (fmt !== 'stories' && fmt !== 'square') return;
+  _wpFormat = fmt;
+  // Обновляем активную кнопку
+  document.querySelectorAll('.wp-fmt-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.fmt === fmt);
+  });
+  renderWeekPoster();
+}
+
 function renderWeekPoster() {
   const startStr = document.getElementById('wpStartDate').value;
   const rangeLabel = startStr ? _wpFormatRangeLabel(startStr) : '—';
@@ -3533,6 +3621,9 @@ function renderWeekPoster() {
   const intro = document.getElementById('wpIntro').value.trim();
   const empty = document.getElementById('wpEmpty');
   const poster = document.getElementById('wpPoster');
+
+  // Применяем класс формата
+  poster.className = 'week-poster fmt-' + _wpFormat;
 
   if (!startStr) {
     poster.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--muted);">Выберите дату.</div>';
@@ -3556,25 +3647,32 @@ function renderWeekPoster() {
 
   poster.innerHTML = `
     <div class="wp-head">
-      <div class="wp-brand">Студия «Детали»</div>
+      <div class="wp-brand">Пространство «Детали»</div>
       <div class="wp-title">Афиша недели · ${escapeHtml(rangeLabel)}</div>
     </div>
     ${intro ? `<div class="wp-intro">${escapeHtml(intro)}</div>` : ''}
-    ${dates.map(d => `
-      <div class="wp-day">
-        <div class="wp-day-head">${escapeHtml(_wpFormatDayHeader(d))}</div>
-        ${byDate[d].map(ev => `
-          <div class="wp-event">
-            <div class="wp-time">${escapeHtml(ev.timeStart || '—')}</div>
-            <div class="wp-info">
-              <div class="wp-name">${escapeHtml(ev.name || ev.format || 'Событие')}</div>
-              <div class="wp-meta">${escapeHtml(ev.format || '')}${ev.price ? ' · ' + ev.price + ' руб' : ''}${ev.limit ? ' · до ' + ev.limit + ' чел' : ''}</div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `).join('')}
-    <div class="wp-foot">Запись и подробности — на сайте</div>
+    <div class="wp-body">
+      ${dates.map(d => `
+        <div class="wp-day">
+          <div class="wp-day-head">${escapeHtml(_wpFormatDayHeader(d))}</div>
+          ${byDate[d].map(ev => {
+            const meta = [];
+            if (ev.format) meta.push(ev.format);
+            if (ev.price) meta.push(ev.price + ' руб');
+            return `
+              <div class="wp-event">
+                <div class="wp-time">${escapeHtml(ev.timeStart || '—')}</div>
+                <div class="wp-info">
+                  <div class="wp-name">${escapeHtml(ev.name || ev.format || 'Событие')}</div>
+                  ${meta.length ? `<div class="wp-meta">${escapeHtml(meta.join(' · '))}</div>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `).join('')}
+    </div>
+    <div class="wp-foot">Пожарный 3Б · Запись на сайте</div>
   `;
 }
 
@@ -3644,7 +3742,7 @@ function _wpBuildText() {
   const dates = Object.keys(byDate).sort();
 
   let out = `🗓 Афиша недели · ${rangeLabel}\n`;
-  out += `Студия «Детали»\n`;
+  out += `Пространство «Детали» · Пожарный 3Б\n`;
   if (intro) out += `\n${intro}\n`;
   out += '\n';
   dates.forEach(d => {
@@ -3654,7 +3752,6 @@ function _wpBuildText() {
       const meta = [];
       if (ev.format) meta.push(ev.format);
       if (ev.price) meta.push(ev.price + ' руб');
-      if (ev.limit) meta.push('до ' + ev.limit + ' чел');
       if (meta.length) out += ` · ${meta.join(' · ')}`;
       out += '\n';
     });
@@ -3722,7 +3819,7 @@ async function downloadWeekPosterImage() {
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const fileName = `afisha-${startStr}.png`;
+      const fileName = `afisha-${startStr}-${_wpFormat}.png`;
       a.href = url;
       a.download = fileName;
       document.body.appendChild(a);
