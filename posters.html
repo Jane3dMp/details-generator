@@ -521,6 +521,33 @@ body {
   margin-top: 10px;
   font-style: italic;
 }
+.workspace-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 14px;
+}
+.btn-regen {
+  font-size: 12px;
+  padding: 7px 14px;
+}
+.toggle-no-tagline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--soft-dark);
+  cursor: pointer;
+  user-select: none;
+  background: white;
+  border: 1px solid var(--line);
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+.toggle-no-tagline:hover { background: var(--milk); }
+.toggle-no-tagline input { margin: 0; cursor: pointer; }
 
 .variants-row {
   display: flex;
@@ -1028,11 +1055,12 @@ body {
 }
 .poster.scrapbook .scrap-body {
   padding: 24px 24px 18px;
+  padding-right: 48%;  /* оставляем место под полароид справа */
   position: relative;
   display: flex;
   flex-direction: column;
 }
-.poster.scrapbook.square .scrap-body { padding: 18px 20px 14px; }
+.poster.scrapbook.square .scrap-body { padding: 18px 20px 14px; padding-right: 44%; }
 .poster.scrapbook .scrap-brand {
   font-family: 'Inter', sans-serif;
   font-size: 10px;
@@ -1049,16 +1077,18 @@ body {
   color: var(--dark);
   line-height: 0.95;
   letter-spacing: -0.01em;
+  word-break: normal;
+  hyphens: none;
 }
-.poster.scrapbook.stories .scrap-title { font-size: 64px; }
-.poster.scrapbook.square .scrap-title { font-size: 42px; }
+.poster.scrapbook.stories .scrap-title { font-size: 48px; }
+.poster.scrapbook.square .scrap-title { font-size: 32px; }
 .poster.scrapbook .scrap-tagline {
   font-family: 'Caveat', cursive;
   color: var(--accent);
   font-style: italic;
 }
-.poster.scrapbook.stories .scrap-tagline { font-size: 28px; margin-top: 4px; }
-.poster.scrapbook.square .scrap-tagline { font-size: 20px; margin-top: 2px; }
+.poster.scrapbook.stories .scrap-tagline { font-size: 22px; margin-top: 4px; }
+.poster.scrapbook.square .scrap-tagline { font-size: 16px; margin-top: 2px; }
 .poster.scrapbook .polaroid {
   position: absolute;
   background: white;
@@ -1068,14 +1098,16 @@ body {
   z-index: 5;
 }
 .poster.scrapbook.stories .polaroid {
-  bottom: 32%;
-  right: 24px;
-  width: 42%;
+  top: 26%;
+  right: 20px;
+  width: 40%;
+  z-index: 4;
 }
 .poster.scrapbook.square .polaroid {
-  bottom: 22%;
-  right: 18px;
+  top: 30%;
+  right: 16px;
   width: 38%;
+  z-index: 4;
 }
 .poster.scrapbook .polaroid-img {
   aspect-ratio: 1;
@@ -1098,19 +1130,26 @@ body {
 .poster.scrapbook .polaroid::after { bottom: -6px; right: 12px; transform: rotate(8deg); }
 .poster.scrapbook .scrap-date-block {
   margin-top: auto;
+  margin-right: -48%;  /* компенсируем padding-right scrap-body, идём на полную ширину */
   font-family: 'Caveat', cursive;
   color: var(--dark);
+  position: relative;
+  z-index: 5;
 }
-.poster.scrapbook.stories .scrap-date-block { font-size: 36px; line-height: 1.1; }
-.poster.scrapbook.square .scrap-date-block { font-size: 24px; }
+.poster.scrapbook.square .scrap-date-block { margin-right: -44%; }
+.poster.scrapbook.stories .scrap-date-block { font-size: 32px; line-height: 1.1; }
+.poster.scrapbook.square .scrap-date-block { font-size: 22px; }
 .poster.scrapbook .scrap-meta {
   font-family: 'Inter', sans-serif;
   font-size: 11px;
   color: var(--soft-dark);
   margin-top: 12px;
+  margin-right: -48%;
   letter-spacing: 0.04em;
+  position: relative;
+  z-index: 5;
 }
-.poster.scrapbook.square .scrap-meta { font-size: 9px; margin-top: 8px; }
+.poster.scrapbook.square .scrap-meta { font-size: 9px; margin-top: 8px; margin-right: -44%; }
 .poster.scrapbook .scrap-footer {
   font-family: 'Inter', sans-serif;
   font-size: 9px;
@@ -1118,7 +1157,11 @@ body {
   text-transform: uppercase;
   color: var(--muted);
   margin-top: 6px;
+  margin-right: -48%;
+  position: relative;
+  z-index: 5;
 }
+.poster.scrapbook.square .scrap-footer { margin-right: -44%; }
 
 /* ============================================================
    МАКЕТ G: BROKEN-GRID — сетка фото с текстом между ячеек
@@ -1395,24 +1438,29 @@ body {
 .poster.frame .frame-title {
   font-family: 'Playfair Display', serif;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: white;
+  line-height: 1.05;
 }
-.poster.frame.stories .frame-title { font-size: 56px; line-height: 1; }
-.poster.frame.square .frame-title { font-size: 38px; line-height: 1; }
+.poster.frame.stories .frame-title { font-size: 38px; }
+.poster.frame.square .frame-title { font-size: 26px; }
 .poster.frame .frame-title em {
   font-style: italic;
-  font-weight: 400;
-  font-size: 0.55em;
-  text-transform: lowercase;
-  letter-spacing: 0.1em;
-  display: inline-block;
-  margin: 0 0.3em;
-  vertical-align: middle;
-  border-bottom: 1px solid rgba(255,255,255,0.6);
-  padding: 0 0.4em;
+  font-weight: 600;
 }
+.poster.frame .frame-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-style: italic;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.8);
+  margin-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.4);
+  padding-top: 6px;
+  display: inline-block;
+}
+.poster.frame.stories .frame-subtitle { font-size: 14px; }
+.poster.frame.square .frame-subtitle { font-size: 11px; }
 .poster.frame .frame-tagline {
   font-family: 'Inter', sans-serif;
   letter-spacing: 0.32em;
@@ -2079,29 +2127,31 @@ function backToSelector() {
    - Янтарь: Вечеринка, Дегустация, Караоке, ДР, Киновечер, Свидание
    - Олива: Книжный клуб, Встреча с экспертом, Разговорник
    ============================================================ */
-function buildDayFromEvent(e) {
+function buildDayFromEvent(e, regenSeed) {
+  regenSeed = regenSeed || 0;
   const d = parseDate(e.date);
   const accent = pickAccentByFormat(e.format);
   const photos = (e.references || []).map(r => r.thumb).filter(Boolean);
   const photo = photos[0] || null;
 
-  // Tagline — если есть description, можно взять. Иначе — заглушка по формату.
+  // Tagline
   const tagline = pickTaglineByFormat(e.format, e.name);
 
-  // Italic part — берём последнее слово в названии (если их 2+)
+  // Italic part
   const words = (e.name || '').split(' ').filter(Boolean);
   const italicPart = words.length >= 2 ? words.slice(-words.length + 1).join(' ') : null;
 
-  // Hero word для editorial — первое слово или ключевое
+  // Hero word
   const heroWord = pickHeroWord(e.name, e.format);
 
-  // Два варианта: разные макеты
-  const layouts = pickLayoutsForEvent(e, photos.length);
+  // Два варианта: разные макеты с учётом regen-сида
+  const layouts = pickLayoutsForEvent(e, photos.length, regenSeed);
 
   return {
     date: e.date,
     dayOfWeek: DOWS[d.getDay()],
     time: e.timeStart || '18:00',
+    no_tagline: false,
     event: {
       id: e.id,
       format: e.format,
@@ -2164,9 +2214,8 @@ function pickHeroWord(name, format) {
   return 'детали';
 }
 
-function pickLayoutsForEvent(e, photoCount) {
-  // Расширенная логика: 12 макетов на выбор.
-  // Подбираем 2 РАЗНЫХ макета, учитывая формат события и наличие фото.
+function pickLayoutsForEvent(e, photoCount, regenSeed) {
+  regenSeed = regenSeed || 0;
   const f = (e.format || '').toLowerCase();
 
   // Категория события → пул подходящих макетов
@@ -2213,8 +2262,8 @@ function pickLayoutsForEvent(e, photoCount) {
         : ['editorial', 'editorial-layer'];
   }
 
-  // Берём 2 разных макета. Чтобы добавить вариативности — рандомизируем pool через id события.
-  const seed = (e.id || e.date || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  // Берём 2 разных макета. Псевдослучайный шафл с учётом id события + regenSeed.
+  const seed = (e.id || e.date || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) + regenSeed * 17;
   const shuffled = pool.slice().sort((a, b) => {
     const ha = (a.charCodeAt(0) * 31 + seed) % 100;
     const hb = (b.charCodeAt(0) * 31 + seed) % 100;
@@ -2339,6 +2388,7 @@ function renderWorkspace(date) {
   if (!day) return;
   const d = parseDate(day.date);
   const dayLabel = `${day.dayOfWeek} · ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  const noTagState = !!day.no_tagline;
 
   const ws = document.getElementById('workspaceContent');
   ws.innerHTML = `
@@ -2346,6 +2396,13 @@ function renderWorkspace(date) {
       <div class="day">${dayLabel}</div>
       <div class="event-info">${escapeHtml(day.event.format || '')} · ${day.time} · ${day.event.price || '—'} руб</div>
       <div class="hint">Кликните по варианту, который выбираете</div>
+      <div class="workspace-actions">
+        <button class="btn ghost btn-regen" onclick="regenerateVariants('${date}')">🔄 Другие варианты</button>
+        <label class="toggle-no-tagline">
+          <input type="checkbox" ${noTagState ? 'checked' : ''} onchange="toggleNoTagline('${date}', this.checked)">
+          <span>Без подписи</span>
+        </label>
+      </div>
     </div>
     <div class="variants-row" id="variantsRow"></div>
   `;
@@ -2374,6 +2431,67 @@ function renderWorkspace(date) {
   requestAnimationFrame(() => {
     row.querySelectorAll('.poster.editorial .hero-word').forEach(autoFitHeroWord);
   });
+}
+
+// Переключатель «Без подписи» — пересобирает варианты с/без tagline
+function toggleNoTagline(date, checked) {
+  const day = state.galleryDays.find(d => d.date === date);
+  if (!day) return;
+  day.no_tagline = checked;
+  // Применяем флаг ко всем вариантам
+  day.variants.forEach(v => v.no_tagline = checked);
+  renderWorkspace(date);
+}
+
+// Перегенерация — выбираем другие 2 макета (избегая текущих)
+function regenerateVariants(date) {
+  const day = state.galleryDays.find(d => d.date === date);
+  if (!day) return;
+
+  // Запоминаем текущие, чтобы не повторить
+  const currentLayouts = day.variants.map(v => v.layout);
+
+  // Найдём оригинальное событие чтобы пересобрать день
+  const origEvent = state.allEvents.find(e => e.id === day.event.id);
+  if (!origEvent) {
+    toast('Не нашёл оригинальное событие', 'err');
+    return;
+  }
+
+  // Увеличиваем счётчик регенераций для этого события — на нём сидит сид
+  if (!state.regenCounters) state.regenCounters = {};
+  state.regenCounters[date] = (state.regenCounters[date] || 0) + 1;
+
+  // Пересобираем день с новым сидом
+  const newDay = buildDayFromEvent(origEvent, state.regenCounters[date]);
+
+  // Если новые варианты совпали с предыдущими — крутим ещё раз
+  let safety = 0;
+  while (safety < 5 && newDay.variants.every((v, i) => v.layout === currentLayouts[i])) {
+    state.regenCounters[date]++;
+    const retry = buildDayFromEvent(origEvent, state.regenCounters[date]);
+    newDay.variants = retry.variants;
+    safety++;
+  }
+
+  // Сохраняем флаг "без подписи" если он был включён
+  if (day.no_tagline) {
+    newDay.no_tagline = true;
+    newDay.variants.forEach(v => v.no_tagline = true);
+  }
+
+  // Заменяем день в state
+  const idx = state.galleryDays.findIndex(d => d.date === date);
+  state.galleryDays[idx] = newDay;
+
+  // Сбрасываем выбор варианта для этого дня (новые варианты — новый выбор)
+  delete state.variantSelections[date];
+  const dayEl = document.querySelector(`.day-item[data-date="${date}"]`);
+  if (dayEl) dayEl.classList.remove('has-selection');
+
+  renderWorkspace(date);
+  updateBatchButton();
+  toast('Сгенерированы новые варианты', 'ok');
 }
 
 function autoFitHeroWord(el) {
@@ -2459,6 +2577,15 @@ function renderPoster(day, v, format) {
   return '';
 }
 
+// Helper: возвращает HTML с tagline или пустую строку, если флаг no_tagline стоит.
+// wrapClass — CSS-класс обёртки (tagline / scrap-tagline / casual-tagline и т.д.)
+// Tag — html-тег (по умолчанию p)
+function tg(v, wrapClass, withQuotes = true, tagName = 'p') {
+  if (v.no_tagline || !v.tagline) return '';
+  const text = withQuotes ? `«${escapeHtml(v.tagline)}»` : escapeHtml(v.tagline);
+  return `<${tagName} class="${wrapClass}">${text}</${tagName}>`;
+}
+
 function renderHero(v, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
   const photoStyle = v.photo ? `background-image: url('${v.photo}');` : '';
   const overlayClass = v.photo ? 'warm-overlay' : '';
@@ -2470,7 +2597,7 @@ function renderHero(v, titleHtml, dateMeta, formatMeta, dateMetaShort, accentCla
       <div class="hero-content">
         <div class="brand">Пространство · Детали</div>
         <h1 class="title">${titleHtml}</h1>
-        <p class="tagline">«${escapeHtml(v.tagline)}»</p>
+        ${tg(v, 'tagline')}
         <div class="divider"></div>
         <div class="meta">${meta}</div>
         <div class="meta" style="opacity: 0.7;">${escapeHtml(formatMeta)}</div>
@@ -2492,7 +2619,7 @@ function renderSplit(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, acc
       <div class="split-content">
         <div class="brand">Пространство<br>Детали</div>
         <h1 class="title"><em>${titleHtml}</em></h1>
-        <p class="tagline">«${escapeHtml(v.tagline)}»</p>
+        ${tg(v, "tagline")}
         <div class="date-large">${dayNum}<span style="color: var(--soft-dark); font-size: 0.5em; vertical-align: top;">${monthNum}</span></div>
         <div class="time-line">${day.dayOfWeek} · ${day.time}</div>
         <div class="meta">${escapeHtml(formatMeta)}</div>
@@ -2515,7 +2642,7 @@ function renderGrid(v, titleHtml, dateMeta, formatMeta, dateMetaShort, accentCla
       <div class="grid-card">
         <div class="brand">Пространство · Детали</div>
         <h1 class="title">${titleHtml}</h1>
-        <p class="tagline">«${escapeHtml(v.tagline)}»</p>
+        ${tg(v, "tagline")}
         <div class="divider"></div>
         <div class="meta">${meta}</div>
         <div class="meta" style="opacity: 0.7;">${escapeHtml(formatMeta)}</div>
@@ -2539,7 +2666,7 @@ function renderEditorial(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort,
       <div class="ed-content">
         <div class="brand" style="margin-bottom: 8px;">Пространство · Детали</div>
         ${subtitleHtml}
-        <p class="tagline">«${escapeHtml(v.tagline)}»</p>
+        ${tg(v, "tagline")}
         <div class="meta">${meta}</div>
         <div class="meta" style="opacity: 0.7;">${escapeHtml(formatMeta)}</div>
         <div class="footer-info">Пожарный 3Б · +375 29 315-15-83</div>
@@ -2593,7 +2720,7 @@ function renderScrapbook(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort,
       <div class="scrap-body">
         <div class="scrap-brand">Пространство «Детали»</div>
         <div class="scrap-title">${escapeHtml(day.event.title || '—')}</div>
-        <div class="scrap-tagline">${escapeHtml(v.tagline)}</div>
+        ${tg(v, "scrap-tagline", false, "div")}
         ${polaroidPhoto ? `<div class="polaroid"><div class="polaroid-img" style="${polStyle}"></div></div>` : ''}
         <div class="scrap-date-block">
           ${dayNum} ${monthName}<br>${day.time}
@@ -2640,7 +2767,7 @@ function renderBrokenGrid(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort
         <div class="info-time">Начало в ${day.time}</div>
       </div>
       <div class="word-bottom">${escapeHtml(wordBottom)}</div>
-      <div class="bg-tagline">«${escapeHtml(v.tagline)}»<br>Пожарный 3Б</div>
+      <div class="bg-tagline">${v.no_tagline || !v.tagline ? "Пожарный 3Б" : "«" + escapeHtml(v.tagline) + "»<br>Пожарный 3Б"}</div>
     </article>
   `;
 }
@@ -2679,10 +2806,8 @@ function renderFrame(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, acc
   const dayNum = String(d.getDate()).padStart(2, '0');
   const monthNum = String(d.getMonth() + 1).padStart(2, '0');
   const photoStyle = v.photo ? `background-image: url('${v.photo}');` : '';
-
-  // Заголовок: вычленяем главное слово и "обёртку"
-  const mainWord = (v.hero_word || (day.event.title || '').split(' ')[0] || day.event.format || 'Вечер').toUpperCase();
-  const subtype = (v.subtype || day.event.format || '').toLowerCase();
+  const taglineHtml = (v.no_tagline || !v.tagline) ? '' :
+    `<div class="frame-tagline">${escapeHtml(v.tagline)}</div>`;
 
   return `
     <article class="poster frame ${formatClass} ${accentClass}">
@@ -2697,8 +2822,9 @@ function renderFrame(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, acc
           <div class="frame-time">${day.time}</div>
         </div>
         <div class="frame-bottom">
-          <div class="frame-title">${escapeHtml(mainWord.slice(0,3))}<em>${escapeHtml(subtype)}</em>${escapeHtml(mainWord.slice(3))}</div>
-          <div class="frame-tagline">${escapeHtml(v.tagline)}</div>
+          <div class="frame-title">${titleHtml}</div>
+          <div class="frame-subtitle">${escapeHtml(day.event.format || '')}</div>
+          ${taglineHtml}
           <div class="frame-meta">Пространство · Детали · Пожарный 3Б</div>
         </div>
       </div>
@@ -2715,7 +2841,7 @@ function renderCasual(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, ac
       <div class="casual-photo" style="${photoStyle}"></div>
       <div class="casual-content">
         <div class="casual-title">${escapeHtml(day.event.title || '')}</div>
-        <div class="casual-tagline">${escapeHtml(v.tagline)}</div>
+        ${tg(v, "casual-tagline", false, "div")}
       </div>
       <div class="casual-bottom">
         <div class="casual-date">${day.dayOfWeek}, ${d.getDate()} ${monthName}<br>${day.time}</div>
@@ -2735,7 +2861,7 @@ function renderSplitElegant(v, day, titleHtml, dateMeta, formatMeta, dateMetaSho
       <div class="se-content">
         <div class="se-circle"></div>
         <div class="se-title">${titleHtml}</div>
-        <div class="se-tagline">${escapeHtml(v.tagline)}</div>
+        ${tg(v, "se-tagline", false, "div")}
         <div class="se-bottom">
           <div class="se-date">${d.getDate()} ${monthName} · ${day.time}</div>
           <div class="se-meta">${escapeHtml(formatMeta)}</div>
@@ -2764,7 +2890,7 @@ function renderEditorialLayer(v, day, titleHtml, dateMeta, formatMeta, dateMetaS
           <span>${monthName.slice(0,3).toUpperCase()} · ${d.getFullYear()}</span>
         </div>
         <div class="el-square-mark"></div>
-        <div class="el-tagline-overlay">«${escapeHtml(v.tagline)}»</div>
+        ${v.no_tagline || !v.tagline ? "" : `<div class="el-tagline-overlay">«${escapeHtml(v.tagline)}»</div>`}
       </div>
       <div class="el-content">
         <div class="el-date-tag">${dayNum}.${monthNum}</div>
