@@ -191,6 +191,12 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
   margin-bottom: 2px;
 }
 .events-table .col-name { font-weight: 600; }
+.events-table .col-seats {
+  font-size: 11px;
+  color: #6b7a4a;
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
 .events-table .col-status {
   font-size: 11px;
   text-align: right;
@@ -225,6 +231,16 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
 }
 .event-pill:hover { background: white; box-shadow: 0 0 0 1px var(--accent); }
 .event-pill.draft     { opacity: 0.78; border-left-style: dashed; }
+.event-pill .seats {
+  margin-left: auto;
+  padding-left: 6px;
+  font-size: 10px;
+  color: #6b7a4a;
+  font-weight: 500;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+.event-pill { display: flex; align-items: baseline; }
 .event-pill.modified  { background: #fde6ec; box-shadow: inset 0 0 0 2px #d6557a; }
 .event-pill .time { color: var(--muted); margin-right: 4px; font-weight: 500; }
 .event-pill .name { font-weight: 500; }
@@ -357,6 +373,76 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* === Лайтбокс для референсов === */
+.lightbox-bg {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.86);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  cursor: zoom-out;
+}
+.lightbox-bg.show { display: flex; }
+.lightbox-inner {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: default;
+}
+.lightbox-img {
+  max-width: 90vw;
+  max-height: 80vh;
+  display: block;
+  border-radius: 4px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  background: #1a1a1a;
+}
+.lightbox-meta {
+  margin-top: 14px;
+  text-align: center;
+  color: white;
+  max-width: 90vw;
+}
+.lightbox-note {
+  font-size: 14px;
+  margin-bottom: 6px;
+  line-height: 1.4;
+  opacity: 0.92;
+}
+.lightbox-link {
+  display: inline-block;
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,0.3);
+  padding-bottom: 1px;
+}
+.lightbox-link:hover { color: white; border-bottom-color: white; }
+.lightbox-close {
+  position: fixed;
+  top: 18px; right: 22px;
+  background: rgba(255,255,255,0.12);
+  color: white;
+  border: 0;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 10000;
+  transition: background .15s;
+}
+.lightbox-close:hover { background: rgba(255,255,255,0.22); }
+@media (max-width: 700px) {
+  .lightbox-bg { padding: 0; }
+  .lightbox-img { max-width: 100vw; border-radius: 0; }
+  .lightbox-close { top: 10px; right: 10px; width: 34px; height: 34px; font-size: 16px; }
+}
 .modal-foot {
   padding: 12px 22px; border-top: 1px solid var(--line);
   background: var(--bg); display: flex; justify-content: flex-end; gap: 8px;
@@ -446,6 +532,19 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
   </main>
 </div>
 
+<!-- Лайтбокс для референсов: открывает картинку в полный размер,
+     с подписью (note) и ссылкой «открыть оригинал» внизу. Клик по фону или Esc — закрывает. -->
+<div class="lightbox-bg" id="refLightbox" onclick="if(event.target.id==='refLightbox')closeRefLightbox()">
+  <button class="lightbox-close" onclick="closeRefLightbox()" aria-label="Закрыть">✕</button>
+  <div class="lightbox-inner">
+    <img class="lightbox-img" id="refLbImg" alt="">
+    <div class="lightbox-meta">
+      <div class="lightbox-note" id="refLbNote"></div>
+      <a class="lightbox-link" id="refLbLink" href="#" target="_blank" rel="noopener">Открыть на сайте ↗</a>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="evModal">
   <div class="modal">
     <div class="modal-banner" id="mBanner">
@@ -487,7 +586,10 @@ const _isMobile = (typeof window !== 'undefined' && window.matchMedia &&
                    window.matchMedia('(max-width: 700px)').matches);
 const state = { curMonth: new Date(), curWeekStart: null,
                 viewMode: _isMobile ? 'table' : 'month',
-                events: [], currentEvent: null };
+                events: [], currentEvent: null,
+                // Счётчики записей из Альфы по alfaGroupId. null = ещё не загружены,
+                // {12: 5, 34: 11, 56: null} = загружены, null значит не удалось получить
+                bookingCounts: null };
 
 // === Login ===
 function tryLogin() {
@@ -552,10 +654,139 @@ async function loadEvents() {
       state.curMonth = new Date(y, m - 1, 1);
     }
     renderCalendar();
+    // Параллельно — подгружаем количество записанных по каждой группе Альфы.
+    // Не блокирует первый рендер: страница уже видна, через 1-2 сек цифры подтянутся.
+    loadBookingCounts();
   } catch(e) {
     document.getElementById('daysGrid').innerHTML = '<div class="empty"><div class="big">😕</div>Не удалось связаться с сервером</div>';
   }
 }
+
+// Подтягивает количество записанных в каждую группу Альфы для отображения
+// «Осталось X из Y мест». Работает в фоне после первого рендера.
+async function loadBookingCounts() {
+  // Собираем уникальные alfaGroupId из НЕ архивных событий
+  const groupIds = [...new Set(
+    state.events
+      .filter(e => e.alfaGroupId && e.status !== 'archived')
+      .map(e => e.alfaGroupId)
+  )];
+  if (groupIds.length === 0) {
+    state.bookingCounts = {};
+    return;
+  }
+  try {
+    const url = new URL(APPS_SCRIPT_URL);
+    url.searchParams.set('action', 'bookingCounts');
+    url.searchParams.set('project', PROJECT);
+    url.searchParams.set('groupIds', groupIds.join(','));
+    const r = await fetch(url.toString()).then(x => x.json());
+    if (!r.ok) {
+      // Не критично — просто не покажем остатки. Логируем для отладки.
+      console.warn('bookingCounts failed:', r.error);
+      state.bookingCounts = {};
+      return;
+    }
+    state.bookingCounts = r.counts || {};
+    // Перерисовываем то что сейчас на экране — теперь с цифрами
+    renderCalendar();
+    // Если открыта модалка — обновим и её
+    if (state.currentEvent) {
+      const ev = state.events.find(e => e.id === state.currentEvent.id);
+      if (ev) refreshModalSeats(ev);
+    }
+  } catch(e) {
+    console.warn('bookingCounts exception:', e);
+    state.bookingCounts = {};
+  }
+}
+
+// Возвращает HTML-строку «Осталось X мест из Y» — или пустую если данных нет
+function seatsRemainingText(ev) {
+  if (!ev || !ev.alfaGroupId || !ev.limit) return '';
+  if (!state.bookingCounts) return '';
+  const booked = state.bookingCounts[ev.alfaGroupId];
+  if (booked == null) return '';
+  const remaining = Math.max(0, ev.limit - booked);
+  return `Осталось ${remaining} мест из ${ev.limit}`;
+}
+
+// Короткий вариант для плашек: «5/12»
+function seatsCompactText(ev) {
+  if (!ev || !ev.alfaGroupId || !ev.limit) return '';
+  if (!state.bookingCounts) return '';
+  const booked = state.bookingCounts[ev.alfaGroupId];
+  if (booked == null) return '';
+  const remaining = Math.max(0, ev.limit - booked);
+  return `${remaining}/${ev.limit}`;
+}
+
+// Обновляет блок «Лимит / Свободно» в открытой модалке
+function refreshModalSeats(ev) {
+  const row = document.getElementById('mLimitRow');
+  if (!row) return;
+  const seats = seatsRemainingText(ev);
+  const lbl = row.querySelector('.lbl');
+  const val = row.querySelector('.val');
+  if (!lbl || !val) return;
+  if (seats) {
+    lbl.textContent = 'Свободно';
+    val.textContent = seats;
+  }
+  // Если данных нет — оставляем как было (Лимит: до N чел)
+}
+
+// === Лайтбокс для референсов ===
+// Открывает большое превью картинки с подписью и ссылкой на оригинал.
+// idx — индекс в отфильтрованном списке references, eventId нужен чтобы
+// найти событие в state и достать данные референса.
+function openRefLightbox(idx, eventId) {
+  const ev = state.events.find(e => e.id === eventId);
+  if (!ev) return;
+  const refs = (ev.references || []).filter(r => r && r.url);
+  const ref = refs[idx];
+  if (!ref) return;
+  const img = document.getElementById('refLbImg');
+  const note = document.getElementById('refLbNote');
+  const link = document.getElementById('refLbLink');
+
+  // Картинка: thumb (превью) или сам URL если это прямая картинка
+  const url = String(ref.url);
+  const thumb = String(ref.thumb || '');
+  const isDirectImage = /\.(jpe?g|png|webp|gif)(\?.*)?$/i.test(url);
+  // Стратегия: показываем самое крупное что можем достать.
+  //  – Если url ведёт прямо на картинку — показываем url (полное разрешение)
+  //  – Иначе показываем thumb (это уже data: URL картинки превью из кэша)
+  img.src = isDirectImage ? url : (thumb || url);
+  img.alt = ref.note || '';
+
+  note.textContent = ref.note || '';
+  note.style.display = ref.note ? 'block' : 'none';
+  link.href = url;
+  link.textContent = (ref.domain || 'оригинал') + ' ↗';
+
+  document.getElementById('refLightbox').classList.add('show');
+}
+
+function closeRefLightbox() {
+  document.getElementById('refLightbox').classList.remove('show');
+  // Чтобы при следующем открытии не был старый src и не дёргалось
+  setTimeout(() => {
+    const img = document.getElementById('refLbImg');
+    if (img && !document.getElementById('refLightbox').classList.contains('show')) img.src = '';
+  }, 250);
+}
+
+// Esc — закрыть лайтбокс (и не задевать модалку события)
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const lb = document.getElementById('refLightbox');
+    if (lb && lb.classList.contains('show')) {
+      closeRefLightbox();
+      e.stopPropagation();
+    }
+  }
+});
 
 function renderCalendar() {
   const cal = document.querySelector('.calendar');
@@ -622,9 +853,11 @@ function renderWeek() {
     dayEvents.sort((a, b) => (a.timeStart || '99').localeCompare(b.timeStart || '99'));
     const eventsHtml = dayEvents.map(ev => {
       const st = ev.status || 'draft';
+      const seats = seatsCompactText(ev);
+      const seatsHtml = seats ? `<span class="seats" title="свободно/всего">${seats}</span>` : '';
       return `
         <div class="event-pill ${categoryClass(ev.format)} ${st}" onclick="openEvent('${ev.id}')">
-          <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">${escapeHtml([ev.format, ev.name].filter(Boolean).join(' · ') || '?')}</span>
+          <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">${escapeHtml([ev.format, ev.name].filter(Boolean).join(' · ') || '?')}</span>${seatsHtml}
         </div>
       `;
     }).join('');
@@ -665,9 +898,11 @@ function renderMonth() {
     dayEvents.sort((a, b) => (a.timeStart || '99').localeCompare(b.timeStart || '99'));
     const eventsHtml = dayEvents.map(ev => {
       const st = ev.status || 'draft';
+      const seats = seatsCompactText(ev);
+      const seatsHtml = seats ? `<span class="seats" title="свободно/всего">${seats}</span>` : '';
       return `
         <div class="event-pill ${categoryClass(ev.format)} ${st}" onclick="openEvent('${ev.id}')">
-          <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">${escapeHtml([ev.format, ev.name].filter(Boolean).join(' · ') || '?')}</span>
+          <span class="time">${escapeHtml(ev.timeStart || '')}</span><span class="name">${escapeHtml([ev.format, ev.name].filter(Boolean).join(' · ') || '?')}</span>${seatsHtml}
         </div>
       `;
     }).join('');
@@ -721,6 +956,10 @@ function renderTable() {
     const thumbHtml = refs.length > 0
       ? `<div class="thumb" style="background-image: url('${refs[0].thumb.replace(/'/g, "%27")}')"></div>`
       : `<div class="thumb empty"></div>`;
+    const seatsLine = seatsRemainingText(ev);
+    const seatsRowHtml = seatsLine
+      ? `<div class="col-seats">${escapeHtml(seatsLine)}</div>`
+      : '';
 
     return `
       <tr class="${cls.join(' ')}" onclick="openEvent('${ev.id}')">
@@ -730,6 +969,7 @@ function renderTable() {
         <td>
           <div class="col-format">${escapeHtml(ev.format || '')}</div>
           <div class="col-name">${escapeHtml(ev.name || '')}</div>
+          ${seatsRowHtml}
         </td>
         <td>${escapeHtml(ev.teacher || '')}</td>
         <td class="col-price">${priceHtml}</td>
@@ -804,7 +1044,16 @@ function openEvent(id) {
   if (ev.duration) details.push(`<div class="detail-row"><div class="lbl">Длительность</div><div class="val">${ev.duration} ч</div></div>`);
   if (ev.teacher) details.push(`<div class="detail-row"><div class="lbl">Ведущий</div><div class="val">${escapeHtml(ev.teacher)}</div></div>`);
   if (ev.price) details.push(`<div class="detail-row"><div class="lbl">Цена</div><div class="val">${ev.price} руб</div></div>`);
-  if (ev.limit) details.push(`<div class="detail-row"><div class="lbl">Лимит</div><div class="val">до ${ev.limit} чел</div></div>`);
+  if (ev.limit) {
+    // Если уже есть данные о записях — сразу показываем «Осталось N из M», иначе «до M чел».
+    // Дополнительно при подгрузке данных эта строка обновится через refreshModalSeats(ev).
+    const seats = seatsRemainingText(ev);
+    if (seats) {
+      details.push(`<div class="detail-row" id="mLimitRow"><div class="lbl">Свободно</div><div class="val">${escapeHtml(seats)}</div></div>`);
+    } else {
+      details.push(`<div class="detail-row" id="mLimitRow"><div class="lbl">Лимит</div><div class="val">до ${ev.limit} чел</div></div>`);
+    }
+  }
   if (ev.alfaGroupId) details.push(`<div class="detail-row"><div class="lbl">ID в Альфе</div><div class="val">${ev.alfaGroupId}</div></div>`);
   document.getElementById('mDetails').innerHTML = details.join('');
 
@@ -845,13 +1094,13 @@ function openEvent(id) {
         ? `background-image: url('${escapeHtml(thumb)}')`
         : `background-image: url('${escapeHtml(fallback)}'); background-size: 48px 48px;`;
       return `
-        <a class="team-ref-card" href="${escapeHtml(url)}" target="_blank" rel="noopener" title="${escapeHtml(url)}">
+        <div class="team-ref-card" onclick="openRefLightbox(${refs.indexOf(r)}, '${ev.id}')" title="${escapeHtml(url)}">
           <div class="thumb" style="${thumbStyle}"></div>
           <div class="meta">
             <div class="domain">${escapeHtml(domain || 'ссылка')}</div>
             ${note ? `<div class="note">${escapeHtml(note)}</div>` : ''}
           </div>
-        </a>
+        </div>
       `;
     }).join('');
     refsBlock.style.display = 'block';
