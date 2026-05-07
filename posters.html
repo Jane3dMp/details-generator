@@ -3053,6 +3053,147 @@ body {
 }
 #toast.err { background: var(--red); }
 #toast.show { display: block; }
+
+/* ============================================================
+   МОДАЛ РЕДАКТИРОВАНИЯ ПОСТЕРА
+   ============================================================ */
+#editModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(30,20,14,0.72);
+  align-items: center;
+  justify-content: center;
+}
+#editModal.open { display: flex; }
+#editModal .em-dialog {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  max-height: 96vh;
+}
+#editModal .em-poster-wrap {
+  width: 405px;
+  height: 720px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+  position: relative;
+}
+/* Подсветка редактируемых элементов */
+#editModal .em-poster-wrap [contenteditable] {
+  outline: none;
+  cursor: text;
+  position: relative;
+}
+#editModal .em-poster-wrap [contenteditable]:hover {
+  outline: 2px dashed rgba(255,255,255,0.5);
+  outline-offset: 2px;
+}
+#editModal .em-poster-wrap [contenteditable]:focus {
+  outline: 2px solid rgba(255,255,255,0.9);
+  outline-offset: 2px;
+}
+/* Подсказка при ховере на тёмных фонах */
+#editModal .em-poster-wrap .poster.bold [contenteditable]:hover,
+#editModal .em-poster-wrap .poster.collage [contenteditable]:hover,
+#editModal .em-poster-wrap .poster.quote-card [contenteditable]:hover,
+#editModal .em-poster-wrap .poster.band [contenteditable]:hover {
+  outline-color: rgba(255,255,255,0.6);
+}
+#editModal .em-poster-wrap .poster:not(.bold):not(.collage):not(.quote-card) [contenteditable]:hover {
+  outline-color: rgba(61,43,31,0.4);
+}
+#editModal .em-poster-wrap .poster:not(.bold):not(.collage):not(.quote-card) [contenteditable]:focus {
+  outline-color: rgba(61,43,31,0.9);
+}
+/* Hint-оверлей при первом открытии */
+#editModal .em-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 0; right: 0;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.75);
+  background: rgba(0,0,0,0.38);
+  padding: 6px 0;
+  pointer-events: none;
+  transition: opacity .4s;
+}
+#editModal .em-sidebar {
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+#editModal .em-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 4px;
+}
+#editModal .em-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 12px;
+  letter-spacing: 0.04em;
+}
+#editModal .em-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  letter-spacing: 0.04em;
+}
+#editModal .em-btn-primary {
+  background: var(--terracotta);
+  color: white;
+}
+#editModal .em-btn-secondary {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.85);
+}
+#editModal .em-btn-ghost {
+  background: transparent;
+  color: rgba(255,255,255,0.45);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+#editModal .em-format-row {
+  display: flex;
+  gap: 6px;
+}
+#editModal .em-format-row .em-btn {
+  flex: 1;
+  text-align: center;
+  padding: 8px 6px;
+}
+#editModal .em-sep {
+  height: 1px;
+  background: rgba(255,255,255,0.12);
+  margin: 4px 0;
+}
+#editModal .em-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 2px;
+}
+
 </style>
 </head>
 
@@ -3143,6 +3284,31 @@ body {
 
 <div class="hidden-render-zone" id="hiddenRenderZone"></div>
 <div id="toast"></div>
+
+<!-- Модал редактирования постера -->
+<div id="editModal">
+  <div class="em-dialog">
+    <div class="em-poster-wrap" id="emPosterWrap">
+      <div class="em-hint" id="emHint">Кликни на любой текст чтобы редактировать</div>
+    </div>
+    <div class="em-sidebar">
+      <div class="em-title" id="emLayoutName">HERO</div>
+      <div class="em-subtitle">Кликай на текст — редактируй прямо на постере</div>
+      <div class="em-sep"></div>
+      <div class="em-label">Скачать</div>
+      <div class="em-format-row">
+        <button class="em-btn em-btn-primary" onclick="emExport('stories')">↓ Stories</button>
+        <button class="em-btn em-btn-primary" onclick="emExport('square')">↓ Square</button>
+      </div>
+      <div class="em-sep"></div>
+      <button class="em-btn em-btn-secondary" onclick="emSaveAndClose()">✓ Сохранить и закрыть</button>
+      <button class="em-btn em-btn-ghost" onclick="emClose()">Закрыть без сохранения</button>
+      <div class="em-sep"></div>
+      <div class="em-label">Выбрать этот шаблон</div>
+      <button class="em-btn em-btn-secondary" id="emSelectBtn" onclick="emToggleSelect()">☐ Выбрать</button>
+    </div>
+  </div>
+</div>
 
 
 <script>
@@ -3811,11 +3977,12 @@ function renderWorkspace(dayKey) {
     return `
       <div class="variant-card ${isSelected ? 'selected' : ''}" data-variant="${v.id}">
         <div class="variant-label">Вариант ${v.id}</div>
-        <div class="poster-frame" onclick="selectVariant('${dayKey}', '${v.id}')">
+        <div class="poster-frame" onclick="selectVariant('${dayKey}', '${v.id}')" ondblclick="openEditModalFromGenerator('${dayKey}', '${v.id}', event)" title="Клик — выбрать. Двойной клик — редактировать текст">
           ${renderPoster(day, v, 'stories')}
         </div>
         <div class="variant-meta">
           <span class="layout-name">${layoutDisplayName(v.layout)}</span> · ${accentDisplayName(v.accent)}
+          <button class="btn-export" onclick="openEditModalFromGenerator('${dayKey}', '${v.id}', event)" style="margin-left:6px;font-size:10px;padding:2px 7px;" title="Редактировать текст">✏️</button>
         </div>
         <div class="export-buttons">
           <button class="btn-export" title="Загрузить своё фото" onclick="triggerPhotoUpload('${dayKey}', '${v.id}')">📎 Фото</button>
@@ -5024,6 +5191,35 @@ async function downloadAllSelected() {
    УТИЛИТЫ
    ============================================================ */
 // Апгрейд Pinterest thumbnail до полного разрешения (originals)
+// Открыть модал редактирования из основного генератора
+function openEditModalFromGenerator(dayKey, variantId, evt) {
+  if (evt) evt.stopPropagation();
+  const day = state.galleryDays.find(d => d.dayKey === dayKey);
+  if (!day) return;
+  const variant = day.variants.find(v => v.id === variantId);
+  if (!variant) return;
+  const cardEl = document.querySelector(`.variant-card[data-variant="${variantId}"]`);
+  openEditModal({
+    layout: variant.layout,
+    variant,
+    day,
+    sourceWrap: cardEl,
+    context: 'generator',
+    onSave: (editedHtml, savedLayout, savedVariant) => {
+      // Обновляем постер прямо в карточке генератора
+      const frame = cardEl ? cardEl.querySelector('.poster-frame') : null;
+      if (frame) {
+        frame.innerHTML = editedHtml;
+        // Восстанавливаем onclick
+        frame.onclick = () => selectVariant(dayKey, variantId);
+        frame.ondblclick = (e) => openEditModalFromGenerator(dayKey, variantId, e);
+      }
+      // Автоматически выбираем вариант
+      selectVariant(dayKey, variantId);
+    }
+  });
+}
+
 // ============================================================
 // ЗАГРУЗКА СВОЕГО ФОТО
 // ============================================================
@@ -5149,6 +5345,15 @@ function renderPreview(ev) {
     ['corners', accent], ['band', accent], ['minimal-grid', accent]
   ];
 
+  // Инициализируем edits — сбрасываем при смене события
+  window._pvEdits = {
+    title:   ev.name   || '',
+    tagline: pickTaglineByFormat(ev.format, ev.name),
+    date:    ev.date   || '',
+    time:    ev.timeStart || '18:00',
+    price:   ev.price  ? String(ev.price) : ''
+  };
+
   const evOptions = state.allEvents.map(e =>
     `<option value="${escapeHtml(e.id)}"${e.id===ev.id?' selected':''}>${escapeHtml(e.name||'—')} · ${e.date}</option>`
   ).join('');
@@ -5160,13 +5365,52 @@ function renderPreview(ev) {
       <span style="font-size:11px;color:var(--terracotta);font-weight:600;">${escapeHtml(ev.format||'')}</span>
       ${ev.price ? `<span style="font-size:11px;color:var(--soft-dark);">${ev.price} руб</span>` : ''}
     </div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:28px;">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
       <label style="font-size:12px;color:var(--muted);">Событие:</label>
       <select id="pvSel" style="font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:white;color:var(--dark);max-width:320px;">${evOptions}</select>
       <span style="font-size:12px;color:var(--muted);">Выбрано: <b id="pvSelCount" style="color:var(--dark);">0</b></span>
       <button class="btn" id="pvZipBtn" onclick="pvDownloadZip()" disabled style="margin-left:auto;">↓ ZIP выбранных</button>
       <button class="btn ghost" onclick="pvClearAll()">Снять выбор</button>
     </div>
+
+    <!-- Панель редактирования текста -->
+    <div id="pvEditPanel" style="
+      background:white;border:1px solid var(--line);border-radius:10px;
+      padding:14px 18px;margin-bottom:20px;
+      display:grid;grid-template-columns:1fr 1fr 100px 80px 80px;gap:10px;align-items:end;
+    ">
+      <div>
+        <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Название</div>
+        <input id="pvEditTitle" value="${escapeHtml(window._pvEdits.title)}"
+          style="width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:5px;font-family:'Inter',sans-serif;color:var(--dark);"
+          oninput="pvApplyEdit('title',this.value)">
+      </div>
+      <div>
+        <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Подпись (tagline)</div>
+        <input id="pvEditTagline" value="${escapeHtml(window._pvEdits.tagline)}"
+          style="width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:5px;font-family:'Inter',sans-serif;color:var(--dark);"
+          oninput="pvApplyEdit('tagline',this.value)">
+      </div>
+      <div>
+        <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Дата</div>
+        <input id="pvEditDate" type="date" value="${window._pvEdits.date}"
+          style="width:100%;font-size:13px;padding:7px 8px;border:1px solid var(--line);border-radius:5px;font-family:'Inter',sans-serif;color:var(--dark);"
+          oninput="pvApplyEdit('date',this.value)">
+      </div>
+      <div>
+        <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Время</div>
+        <input id="pvEditTime" value="${escapeHtml(window._pvEdits.time)}"
+          style="width:100%;font-size:13px;padding:7px 8px;border:1px solid var(--line);border-radius:5px;font-family:'Inter',sans-serif;color:var(--dark);"
+          placeholder="18:00" oninput="pvApplyEdit('time',this.value)">
+      </div>
+      <div>
+        <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Цена, руб</div>
+        <input id="pvEditPrice" value="${escapeHtml(window._pvEdits.price)}"
+          style="width:100%;font-size:13px;padding:7px 8px;border:1px solid var(--line);border-radius:5px;font-family:'Inter',sans-serif;color:var(--dark);"
+          placeholder="65" oninput="pvApplyEdit('price',this.value)">
+      </div>
+    </div>
+
     <div id="pvStatus" style="font-size:12px;color:var(--muted);margin-bottom:16px;min-height:18px;"></div>
     <div id="pvGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:28px 20px;margin-bottom:80px;"></div>
   `;
@@ -5207,7 +5451,7 @@ function renderPreview(ev) {
         transition:border-color .15s,box-shadow .15s;position:relative;
       ">
         ${isSelected ? `<div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:20;background:var(--terracotta);color:white;font-size:9px;font-weight:700;letter-spacing:.18em;padding:3px 10px;border-radius:10px;text-transform:uppercase;white-space:nowrap;">✓ Выбран</div>` : ''}
-        <div style="transform:scale(${SCALE});transform-origin:top left;width:${PW}px;height:${PH}px;pointer-events:none;">${posterHtml}</div>
+        <div data-poster style="transform:scale(${SCALE});transform-origin:top left;width:${PW}px;height:${PH}px;pointer-events:none;">${posterHtml}</div>
       </div>
       <div style="text-align:center;width:${cardW}px;">
         <div style="font-size:11px;font-weight:700;letter-spacing:.18em;color:var(--dark);text-transform:uppercase;">${name}</div>
@@ -5221,7 +5465,22 @@ function renderPreview(ev) {
 
     wrap.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') return;
-      pvToggleSelect(layout, variant, wrap);
+      openEditModal({
+        layout,
+        variant,
+        day,
+        sourceWrap: wrap,
+        context: 'preview',
+        onSave: (editedHtml, savedLayout, savedVariant) => {
+          // Обновляем превью карточки отредактированным HTML
+          const posterWrap = wrap.querySelector('[data-poster]');
+          if (posterWrap) posterWrap.innerHTML = editedHtml;
+          // Помечаем как выбранный автоматически при сохранении
+          if (!window._pvSelected) window._pvSelected = new Map();
+          window._pvSelected.set(savedLayout, savedVariant);
+          pvToggleSelect(savedLayout, savedVariant, wrap);
+        }
+      });
     });
 
     grid.appendChild(wrap);
@@ -5279,6 +5538,70 @@ function pvToggleSelect(layout, variant, wrapEl) {
   const btns = wrapEl.querySelector('.pv-export-btns');
   if (btns) btns.style.display = isNow ? 'flex' : 'none';
   pvUpdateCount();
+}
+
+// Применяет правку текста и перерисовывает все карточки
+function pvApplyEdit(field, value) {
+  if (!window._pvEdits) return;
+  window._pvEdits[field] = value;
+  pvRebuildAllCards();
+}
+
+// Пересобирает day из текущих edits и перерисовывает все карточки в галерее
+function pvRebuildAllCards() {
+  const ev = window._pvEv;
+  const edits = window._pvEdits;
+  if (!ev || !edits) return;
+
+  // Строим модифицированный объект события
+  const modEv = Object.assign({}, ev, {
+    name:      edits.title  || ev.name,
+    date:      edits.date   || ev.date,
+    timeStart: edits.time   || ev.timeStart,
+    price:     edits.price  ? parseFloat(edits.price) : ev.price
+  });
+
+  const photos = (ev.references||[]).map(r => upgradePinterestUrl(r.thumb||r.url||'')).filter(Boolean);
+  const photo = photos[0] || null;
+  const heroWord = pickHeroWord(modEv.name, modEv.format);
+  const tagline = edits.tagline || pickTaglineByFormat(modEv.format, modEv.name);
+  const accent = pickAccentByFormat(modEv.format);
+
+  // Пересобираем day
+  const day = buildDayFromEvent(modEv, 0);
+  // Переопределяем tagline в вариантах (он фиксируется при buildDayFromEvent)
+  window._pvDay = day;
+
+  const SCALE = 0.48, PH = 720, PW = 405;
+  const layouts = window._pvLayouts || [];
+
+  layouts.forEach(([layout, ac]) => {
+    const wrap = document.querySelector(`#pvGrid [data-layout="${layout}"]`);
+    if (!wrap) return;
+    const variant = buildVariant('A', layout, ac, tagline, photo, photos, heroWord, modEv);
+    // Сохраняем variant в _pvSelected если был выбран
+    if (window._pvSelected && window._pvSelected.has(layout)) {
+      window._pvSelected.set(layout, variant);
+    }
+    const posterHtml = renderPoster(day, variant, 'stories');
+    const posterWrap = wrap.querySelector('[data-poster]');
+    if (posterWrap) {
+      posterWrap.innerHTML = posterHtml;
+      // Авто-подгон для этой карточки
+      requestAnimationFrame(() => {
+        [
+          ['.hero-word', autoFitHeroWord],
+          ['.frame-title', el => autoFitElement(el,'--frame-title-size')],
+          ['.bold-title', el => autoFitElement(el,'--bold-title-size')],
+          ['.se-title', el => autoFitElement(el,'--se-title-size')],
+          ['.casual-title', el => autoFitElement(el,'--casual-title-size')],
+          ['.prod-title', el => autoFitElement(el,'--prod-title-size')],
+          ['.co-headline', el => autoFitElement(el,'--co-headline-size')],
+          ['.at-title', el => autoFitElement(el,'--at-title-size')],
+        ].forEach(([sel, fn]) => { const el = posterWrap.querySelector(sel); if (el) fn(el); });
+      });
+    }
+  });
 }
 
 function pvUpdateCount() {
@@ -5351,8 +5674,10 @@ async function pvDownloadZip() {
 }
 
 async function pvRenderBlob(day, variant, format) {
+  // Используем актуальный day из стейта (мог измениться через редактор)
+  const actualDay = window._pvDay || day;
   const zone = document.getElementById('hiddenRenderZone');
-  zone.innerHTML = renderPoster(day, variant, format);
+  zone.innerHTML = renderPoster(actualDay, variant, format);
   const node = zone.querySelector('.poster');
   await waitForImages(node);
   // Авто-подгон текста
@@ -5375,6 +5700,270 @@ async function pvRenderBlob(day, variant, format) {
   return new Promise(r => canvas.toBlob(b => r(b), 'image/png', 0.95));
 }
 
+
+/* ============================================================
+   УНИВЕРСАЛЬНЫЙ МОДАЛ РЕДАКТИРОВАНИЯ ПОСТЕРА
+   Работает и в галерее (?mode=preview) и в основном генераторе
+   ============================================================ */
+
+// Текущее состояние модала
+const _em = {
+  layout: null,      // код макета
+  variant: null,     // объект варианта
+  day: null,         // объект дня
+  sourceWrap: null,  // DOM-элемент карточки в галерее/генераторе
+  onSave: null,      // callback при сохранении
+  context: null,     // 'preview' | 'generator'
+};
+
+// Текстовые элементы которые делаем редактируемыми
+const EDITABLE_SELECTORS = [
+  // Заголовки
+  '.hero-word', '.hero-title', '.split-title', '.frame-title',
+  '.bold-title', '.casual-title', '.se-title', '.editorial-title',
+  '.co-headline', '.at-title', '.ss-word', '.cl-mega-word',
+  '.str-head-title', '.ov-title', '.stmp-title', '.diag-title',
+  '.sb-title', '.cn-title', '.band-title', '.mg-title',
+  '.tkt-title', '.wf-inner-title',
+  // Tagline / подписи
+  '.hero-tagline', '.split-tagline', '.frame-tagline', '.casual-tagline',
+  '.se-tagline', '.ed-tagline', '.co-tagline', '.collage-tagline',
+  '.ss-tagline', '.at-tagline', '.cl-sub', '.str-tagline',
+  '.ov-tagline', '.diag-tagline', '.sb-tagline', '.band-tagline',
+  '.mg-tagline', '.tkt-tagline', '.scrap-tagline', '.scrap-title',
+  '.qc-text', '.qc-title', '.corners-title',
+  // Дата / мета
+  '.hero-date', '.split-date', '.hero-meta', '.split-meta',
+  '.frame-meta', '.bold-meta', '.ed-meta', '.at-date-row',
+  '.tkt-date', '.tkt-meta', '.tkt-price', '.wf-date', '.wf-time',
+  '.str-date', '.str-meta', '.ov-date', '.stmp-date', '.stmp-time',
+  '.diag-dow', '.sb-date', '.sb-sub', '.mg-fact-value',
+  '.band-date', '.cn-date', '.cn-time', '.qc-sub',
+  // Бренд / адрес
+  '.hero-brand', '.split-brand', '.tkt-addr', '.str-foot',
+  '.stmp-footer', '.mg-footer', '.tl-footer', '.cn-addr',
+  '.ov-addr', '.sb-col-price', '.qc-addr', '.wf-brand',
+].join(',');
+
+// Открыть модал
+function openEditModal({ layout, variant, day, sourceWrap, onSave, context }) {
+  Object.assign(_em, { layout, variant, day, sourceWrap, onSave, context });
+
+  const modal = document.getElementById('editModal');
+  const wrap = document.getElementById('emPosterWrap');
+  const nameEl = document.getElementById('emLayoutName');
+
+  nameEl.textContent = layoutDisplayName(layout);
+  modal.classList.add('open');
+
+  // Рендерим постер в модале
+  wrap.innerHTML = `<div class="em-hint" id="emHint">Кликни на любой текст чтобы редактировать</div>`;
+  const posterHtml = renderPoster(day, variant, 'stories');
+  wrap.insertAdjacentHTML('afterbegin', posterHtml);
+
+  const poster = wrap.querySelector('.poster');
+  if (!poster) return;
+
+  // Запускаем авто-подгон
+  requestAnimationFrame(() => {
+    [
+      ['.hero-word', autoFitHeroWord],
+      ['.frame-title', el => autoFitElement(el,'--frame-title-size')],
+      ['.bold-title', el => autoFitElement(el,'--bold-title-size')],
+      ['.se-title', el => autoFitElement(el,'--se-title-size')],
+      ['.casual-title', el => autoFitElement(el,'--casual-title-size')],
+      ['.prod-title', el => autoFitElement(el,'--prod-title-size')],
+      ['.co-headline', el => autoFitElement(el,'--co-headline-size')],
+      ['.at-title', el => autoFitElement(el,'--at-title-size')],
+    ].forEach(([sel, fn]) => { const el = poster.querySelector(sel); if (el) fn(el); });
+
+    // Делаем все текстовые элементы редактируемыми
+    emMakeEditable(poster);
+  });
+
+  // Скрываем hint после первого клика
+  wrap.addEventListener('click', () => {
+    const hint = document.getElementById('emHint');
+    if (hint) hint.style.opacity = '0';
+  }, { once: true });
+
+  // Кнопка выбора
+  emUpdateSelectBtn();
+
+  // Закрытие по клику на оверлей
+  modal.addEventListener('mousedown', emOverlayClose);
+}
+
+function emMakeEditable(poster) {
+  // Находим все текстовые узлы по селекторам
+  poster.querySelectorAll(EDITABLE_SELECTORS).forEach(el => {
+    // Не делаем редактируемыми контейнеры с другими блочными детьми
+    const hasBlockChildren = [...el.children].some(c =>
+      window.getComputedStyle(c).display !== 'inline' &&
+      window.getComputedStyle(c).display !== 'inline-block'
+    );
+    if (hasBlockChildren) return;
+
+    el.contentEditable = 'true';
+    el.spellcheck = false;
+
+    // Запрещаем перенос строк (Enter = blur)
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+      if (e.key === 'Escape') { el.blur(); }
+    });
+
+    // При потере фокуса — запускаем авто-подгон если нужно
+    el.addEventListener('blur', () => {
+      const autoFitMap = {
+        'frame-title': '--frame-title-size',
+        'bold-title': '--bold-title-size',
+        'se-title': '--se-title-size',
+        'casual-title': '--casual-title-size',
+        'prod-title': '--prod-title-size',
+        'co-headline': '--co-headline-size',
+        'at-title': '--at-title-size',
+      };
+      for (const [cls, varName] of Object.entries(autoFitMap)) {
+        if (el.classList.contains(cls)) { autoFitElement(el, varName); break; }
+      }
+      if (el.classList.contains('hero-word')) autoFitHeroWord(el);
+    });
+  });
+}
+
+function emOverlayClose(e) {
+  if (e.target === document.getElementById('editModal')) {
+    emSaveAndClose();
+  }
+}
+
+function emClose() {
+  const modal = document.getElementById('editModal');
+  modal.classList.remove('open');
+  modal.removeEventListener('mousedown', emOverlayClose);
+  document.getElementById('emPosterWrap').innerHTML = '';
+}
+
+function emSaveAndClose() {
+  // Читаем отредактированный постер и обновляем карточку
+  const poster = document.querySelector('#emPosterWrap .poster');
+  if (poster && _em.onSave) {
+    _em.onSave(poster.outerHTML, _em.layout, _em.variant);
+  }
+  emClose();
+}
+
+async function emExport(format) {
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  try {
+    const poster = document.querySelector('#emPosterWrap .poster');
+    if (!poster) return;
+
+    // Клонируем постер для экспорта в нужном формате
+    const zone = document.getElementById('hiddenRenderZone');
+    if (format === 'square') {
+      // Перерендерим в square-формате с текущими правками
+      const editedText = emCollectEdits(poster);
+      zone.innerHTML = renderPoster(_em.day, _em.variant, 'square');
+      const sq = zone.querySelector('.poster');
+      emApplyEditsToNode(sq, editedText);
+      await waitForImages(sq);
+      zone.style.left = '0'; zone.style.visibility = 'hidden';
+      [
+        ['.frame-title','--frame-title-size'],['.bold-title','--bold-title-size'],
+        ['.se-title','--se-title-size'],['.casual-title','--casual-title-size'],
+        ['.prod-title','--prod-title-size'],['.co-headline','--co-headline-size'],
+        ['.at-title','--at-title-size'],
+      ].forEach(([s,v]) => { const e = sq.querySelector(s); if(e) autoFitElement(e,v); });
+      zone.style.left = '-10000px'; zone.style.visibility = '';
+      const canvas = await html2canvas(sq, {scale:2,useCORS:true,allowTaint:false,backgroundColor:null,logging:false});
+      zone.innerHTML = '';
+      const blob = await new Promise(r => canvas.toBlob(b => r(b),'image/png',0.95));
+      triggerDownload(blob, `${_em.day.date}_${_em.layout}_edited_square.png`);
+    } else {
+      // Stories — копируем текущий видимый постер
+      zone.innerHTML = poster.outerHTML;
+      const node = zone.querySelector('.poster');
+      // Убираем contenteditable для чистого рендера
+      node.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
+      await waitForImages(node);
+      zone.style.left = '0'; zone.style.visibility = 'hidden';
+      const canvas = await html2canvas(node, {scale:2,useCORS:true,allowTaint:false,backgroundColor:null,logging:false});
+      zone.innerHTML = '';
+      zone.style.left = '-10000px'; zone.style.visibility = '';
+      const blob = await new Promise(r => canvas.toBlob(b => r(b),'image/png',0.95));
+      triggerDownload(blob, `${_em.day.date}_${_em.layout}_edited_stories.png`);
+    }
+    toast('PNG скачан', 'ok');
+  } catch(e) {
+    toast('Ошибка: ' + e.message, 'err');
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+// Собрать карту «селектор → текст» из отредактированного постера
+function emCollectEdits(poster) {
+  const map = new Map();
+  poster.querySelectorAll(EDITABLE_SELECTORS).forEach(el => {
+    if (!el.contentEditable || el.contentEditable === 'false') return;
+    // Ключ — индекс среди элементов с тем же классом
+    const cls = [...el.classList].find(c => EDITABLE_SELECTORS.includes('.'+c));
+    if (!cls) return;
+    const siblings = [...poster.querySelectorAll('.'+cls)];
+    const idx = siblings.indexOf(el);
+    map.set(cls + ':' + idx, el.textContent);
+  });
+  return map;
+}
+
+// Применить карту правок к другому DOM-узлу
+function emApplyEditsToNode(node, editsMap) {
+  editsMap.forEach((text, key) => {
+    const [cls, idxStr] = key.split(':');
+    const idx = parseInt(idxStr, 10);
+    const els = node.querySelectorAll('.'+cls);
+    if (els[idx]) els[idx].textContent = text;
+  });
+}
+
+function emToggleSelect() {
+  if (_em.context === 'preview') {
+    const layout = _em.layout;
+    if (window._pvSelected && window._pvSelected.has(layout)) {
+      window._pvSelected.delete(layout);
+    } else {
+      if (!window._pvSelected) window._pvSelected = new Map();
+      window._pvSelected.set(layout, _em.variant);
+    }
+    pvUpdateCount();
+  } else if (_em.context === 'generator') {
+    if (_em.day && _em.variant) {
+      state.variantSelections[_em.day.dayKey] = _em.variant.id;
+    }
+  }
+  emUpdateSelectBtn();
+}
+
+function emUpdateSelectBtn() {
+  const btn = document.getElementById('emSelectBtn');
+  if (!btn) return;
+  let isSelected = false;
+  if (_em.context === 'preview' && window._pvSelected) {
+    isSelected = window._pvSelected.has(_em.layout);
+  } else if (_em.context === 'generator' && _em.day && _em.variant) {
+    isSelected = state.variantSelections[_em.day.dayKey] === _em.variant.id;
+  }
+  btn.textContent = isSelected ? '✓ Выбран' : '☐ Выбрать';
+  btn.style.background = isSelected ? 'rgba(192,109,84,0.3)' : 'rgba(255,255,255,0.12)';
+}
 
 // Запуск
 const _urlMode = new URLSearchParams(location.search).get('mode');
