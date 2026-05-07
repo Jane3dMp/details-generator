@@ -1539,9 +1539,12 @@ body {
   color: white;
   letter-spacing: -0.02em;
   text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  word-break: normal;
+  overflow-wrap: normal;
+  font-size: var(--casual-title-size);
 }
-.poster.casual.stories .casual-title { font-size: 56px; line-height: 1; }
-.poster.casual.square .casual-title { font-size: 36px; line-height: 1; }
+.poster.casual.stories .casual-title { --casual-title-size: 48px; line-height: 1; }
+.poster.casual.square .casual-title { --casual-title-size: 30px; line-height: 1; }
 .poster.casual .casual-tagline {
   font-family: 'Caveat', cursive;
   color: var(--accent);
@@ -1604,10 +1607,11 @@ body {
 .poster.split-elegant.square .se-content { padding: 24px 20px 18px; }
 .poster.split-elegant .se-circle {
   position: absolute;
-  top: 24px;
-  left: -36px;
-  width: 72px;
-  height: 72px;
+  top: 12px;
+  right: 10px;
+  left: auto;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background: var(--accent);
   opacity: 0.45;
@@ -1617,10 +1621,11 @@ body {
   z-index: 5;
 }
 .poster.split-elegant.square .se-circle {
-  width: 50px;
-  height: 50px;
-  top: 18px;
-  left: -25px;
+  width: 44px;
+  height: 44px;
+  top: 10px;
+  right: 8px;
+  left: auto;
 }
 .poster.split-elegant .se-circle::after {
   content: '✦';
@@ -1636,9 +1641,12 @@ body {
   color: var(--dark);
   line-height: 1.05;
   margin-top: auto;
+  word-break: normal;
+  overflow-wrap: normal;
+  font-size: var(--se-title-size);
 }
-.poster.split-elegant.stories .se-title { font-size: 50px; }
-.poster.split-elegant.square .se-title { font-size: 32px; }
+.poster.split-elegant.stories .se-title { --se-title-size: 44px; }
+.poster.split-elegant.square .se-title { --se-title-size: 28px; }
 .poster.split-elegant .se-tagline {
   font-family: 'Inter', sans-serif;
   font-weight: 500;
@@ -2128,10 +2136,12 @@ body {
   text-transform: uppercase;
   text-align: center;
   margin-bottom: 10px;
-  word-break: break-word;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  font-size: var(--prod-title-size);
 }
-.poster.product.stories .prod-title { font-size: 38px; }
-.poster.product.square .prod-title { font-size: 26px; }
+.poster.product.stories .prod-title { --prod-title-size: 32px; }
+.poster.product.square .prod-title { --prod-title-size: 22px; }
 .poster.product .prod-frame {
   border: 1px solid var(--line);
   padding: 8px;
@@ -2299,11 +2309,14 @@ body {
   background-size: cover;
   background-position: center top;
   background-color: var(--accent);
+  position: relative;
 }
 .poster.arch-trio .at-arch.empty {
   background: var(--accent);
-  opacity: 0.4;
 }
+.poster.arch-trio .at-arch.empty:nth-child(1) { opacity: 0.55; }
+.poster.arch-trio .at-arch.empty:nth-child(2) { opacity: 0.35; }
+.poster.arch-trio .at-arch.empty:nth-child(3) { opacity: 0.18; }
 .poster.arch-trio .at-footer {
   margin-top: 10px;
   font-family: 'Inter', sans-serif;
@@ -3170,6 +3183,9 @@ function renderWorkspace(dayKey) {
     row.querySelectorAll('.poster.bold .bold-title').forEach(el => autoFitElement(el, '--bold-title-size'));
     row.querySelectorAll('.poster.cutout .co-headline').forEach(el => autoFitElement(el, '--co-headline-size'));
     row.querySelectorAll('.poster.arch-trio .at-title').forEach(el => autoFitElement(el, '--at-title-size'));
+    row.querySelectorAll('.poster.split-elegant .se-title').forEach(el => autoFitElement(el, '--se-title-size'));
+    row.querySelectorAll('.poster.casual .casual-title').forEach(el => autoFitElement(el, '--casual-title-size'));
+    row.querySelectorAll('.poster.product .prod-title').forEach(el => autoFitElement(el, '--prod-title-size'));
     row.querySelectorAll('.poster.collage .collage-title').forEach(el => {
       const poster = el.closest('.poster');
       if (!poster) return;
@@ -3933,13 +3949,26 @@ async function renderPosterToBlob(dayKey, variantId, format) {
   const boldTitle = node.querySelector('.bold-title');
   const htTitles = node.querySelectorAll('.ht-title-row');
   const ssWords = node.querySelectorAll('.ss-word');
+  const seTitle = node.querySelector('.se-title');
+  const casualTitle = node.querySelector('.casual-title');
+  const prodTitle = node.querySelector('.prod-title');
+  const coHeadline = node.querySelector('.co-headline');
+  const atTitle = node.querySelector('.at-title');
 
-  if (heroWord || frameTitle || boldTitle || htTitles.length || ssWords.length) {
+  const needsFit = heroWord || frameTitle || boldTitle || htTitles.length || ssWords.length
+    || seTitle || casualTitle || prodTitle || coHeadline || atTitle;
+
+  if (needsFit) {
     zone.style.left = '0';
     zone.style.visibility = 'hidden';
-    if (heroWord) autoFitHeroWord(heroWord);
-    if (frameTitle) autoFitElement(frameTitle, '--frame-title-size');
-    if (boldTitle) autoFitElement(boldTitle, '--bold-title-size');
+    if (heroWord)    autoFitHeroWord(heroWord);
+    if (frameTitle)  autoFitElement(frameTitle, '--frame-title-size');
+    if (boldTitle)   autoFitElement(boldTitle,  '--bold-title-size');
+    if (seTitle)     autoFitElement(seTitle,    '--se-title-size');
+    if (casualTitle) autoFitElement(casualTitle,'--casual-title-size');
+    if (prodTitle)   autoFitElement(prodTitle,  '--prod-title-size');
+    if (coHeadline)  autoFitElement(coHeadline, '--co-headline-size');
+    if (atTitle)     autoFitElement(atTitle,    '--at-title-size');
     htTitles.forEach(el => {
       let size = parseFloat(window.getComputedStyle(el).fontSize);
       const pw = node.clientWidth - 60;
