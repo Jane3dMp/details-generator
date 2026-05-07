@@ -806,6 +806,23 @@ main {
   transition: all 0.15s;
 }
 .ep-ref-thumb.active { border-color: var(--brand-terracotta); transform: scale(1.05); }
+/* Значок номера для multi-select (Grid layout) */
+.ep-ref-thumb .ep-ref-num {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  background: var(--brand-terracotta);
+  color: white;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
 .ep-ref-thumb.no-thumb {
   display: flex;
   align-items: center;
@@ -1033,6 +1050,156 @@ main {
   object-fit: cover;
   object-position: center;
 }
+
+/* ============================================================
+   LAYOUT: SPLIT — фото на акцентной панели + молочная инфо-колонка
+   Стори: фото сверху на терракоте, инфо снизу
+   Квадрат: фото слева на терракоте, инфо справа
+   ============================================================ */
+.event-poster.layout-split {
+  display: grid;
+  flex-direction: initial;
+}
+.event-poster.layout-split.fmt-stories {
+  grid-template-rows: 480px 480px;
+  grid-template-columns: 1fr;
+}
+.event-poster.layout-split.fmt-square {
+  grid-template-rows: 1fr;
+  grid-template-columns: 240px 1fr;
+}
+.event-poster.layout-split .ep-split-photo {
+  background: var(--ep-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 24px;
+}
+.event-poster.layout-split.fmt-square .ep-split-photo { padding: 16px; }
+.event-poster.layout-split .ep-split-photo .ep-hero-img {
+  border-radius: 50% / 30%;  /* овал — как на скрине с тарелкой */
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: white;
+}
+.event-poster.layout-split.fmt-square .ep-split-photo .ep-hero-img { border-radius: 50%; }
+.event-poster.layout-split .ep-content {
+  background: var(--brand-milk);
+  padding: 30px 28px 22px;
+}
+.event-poster.layout-split.fmt-square .ep-content { padding: 18px 18px 14px; }
+.event-poster.layout-split .ep-main {
+  align-items: flex-start;
+  text-align: left;
+}
+.event-poster.layout-split .ep-divider { align-self: flex-start; }
+.event-poster.layout-split .ep-foot { text-align: left; }
+/* Большая дата терракотом по референсу с тарелкой */
+.event-poster.layout-split .ep-date-big {
+  font-family: Georgia, 'Times New Roman', serif;
+  color: var(--ep-accent);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  margin-top: calc(4px * var(--ep-scale));
+}
+.event-poster.layout-split.fmt-stories .ep-date-big { font-size: calc(36px * var(--ep-scale)); }
+.event-poster.layout-split.fmt-square .ep-date-big { font-size: calc(22px * var(--ep-scale)); }
+/* Инфо-блоки «время» и «стоимость» как на скрине */
+.event-poster.layout-split .ep-info-blocks {
+  display: flex;
+  gap: calc(20px * var(--ep-scale));
+  margin-top: calc(6px * var(--ep-scale));
+}
+.event-poster.layout-split .ep-info-blocks > div { display: flex; flex-direction: column; gap: 2px; }
+.event-poster.layout-split .ep-info-label {
+  font-size: calc(10px * var(--ep-scale));
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a7868;
+}
+.event-poster.layout-split.fmt-square .ep-info-label { font-size: calc(8px * var(--ep-scale)); }
+.event-poster.layout-split .ep-info-value {
+  font-weight: 700;
+  color: var(--brand-dark);
+  font-size: calc(18px * var(--ep-scale));
+}
+.event-poster.layout-split.fmt-square .ep-info-value { font-size: calc(13px * var(--ep-scale)); }
+
+/* ============================================================
+   LAYOUT: GRID 2×2 — четыре фото квадратом, в центре наложенная плашка
+   ============================================================ */
+.event-poster.layout-grid {
+  position: relative;
+  display: block;
+}
+.event-poster.layout-grid .ep-grid-photos {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 0;
+}
+.event-poster.layout-grid .ep-grid-cell {
+  background: #d8cfbf no-repeat center / cover;
+  position: relative;
+}
+.event-poster.layout-grid .ep-grid-cell-empty {
+  background: var(--ep-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand-milk);
+  font-family: Georgia, serif;
+  font-style: italic;
+  opacity: 0.7;
+}
+.event-poster.layout-grid.fmt-stories .ep-grid-cell-empty { font-size: 60px; }
+.event-poster.layout-grid.fmt-square .ep-grid-cell-empty { font-size: 38px; }
+/* Центральная плашка с информацией */
+.event-poster.layout-grid .ep-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  pointer-events: none;
+}
+.event-poster.layout-grid .ep-content-inner {
+  background: var(--brand-milk);
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 6px 24px rgba(61, 43, 31, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.event-poster.layout-grid.fmt-stories .ep-content-inner {
+  width: 78%;
+  padding: 24px 24px 18px;
+  gap: calc(10px * var(--ep-scale));
+}
+.event-poster.layout-grid.fmt-square .ep-content-inner {
+  width: 78%;
+  padding: 16px 18px 14px;
+  gap: calc(6px * var(--ep-scale));
+}
+.event-poster.layout-grid .ep-foot {
+  border-top: 1px solid rgba(61,43,31,0.12);
+  padding-top: calc(8px * var(--ep-scale));
+  margin-top: calc(8px * var(--ep-scale));
+  text-align: center;
+  font-size: calc(10px * var(--ep-scale));
+  color: #6a5848;
+  letter-spacing: 0.04em;
+  width: 100%;
+}
+.event-poster.layout-grid.fmt-square .ep-foot { font-size: calc(8px * var(--ep-scale)); }
 
 /* Плитка «+ Свой URL» в селекторе референсов */
 .ep-ref-add {
@@ -1732,6 +1899,17 @@ main {
     </div>
     <div class="modal-body">
       <!-- Панель управления -->
+      <div class="row full">
+        <div>
+          <label>Композиция</label>
+          <div class="wp-fmt-toggle">
+            <button type="button" class="wp-fmt-btn active ep-layout-btn" data-layout="hero" onclick="setEventPosterLayout('hero')">🖼 Hero · 1 фото сверху</button>
+            <button type="button" class="wp-fmt-btn ep-layout-btn" data-layout="split" onclick="setEventPosterLayout('split')">⊟ Split · фото + панель</button>
+            <button type="button" class="wp-fmt-btn ep-layout-btn" data-layout="grid" onclick="setEventPosterLayout('grid')">⊞ Grid 2×2 · до 4 фото</button>
+          </div>
+        </div>
+      </div>
+
       <div class="row">
         <div>
           <label>Формат картинки</label>
@@ -1753,7 +1931,7 @@ main {
       <!-- Выбор референса (если их несколько) -->
       <div class="row full" id="epRefPickerRow" style="display:none;">
         <div>
-          <label>Какой референс на постер?</label>
+          <label id="epRefPickerLabel">Какой референс на постер?</label>
           <div id="epRefPicker" class="ep-ref-picker"></div>
           <input type="file" id="epFileInput" accept="image/*" hidden onchange="_epOnFileSelected(event)">
         </div>
@@ -4297,9 +4475,11 @@ async function downloadWeekPosterImage() {
 // АФИША ОДНОГО СОБЫТИЯ — модалка, превью, ИИ, скачивание PNG
 // ============================================================
 const _epState = {
+  layout: 'hero',              // 'hero' | 'split' | 'grid'
   format: 'stories',           // 'stories' | 'square'
   accent: 'terracotta',        // 'terracotta' | 'amber' | 'olive'
   refIdx: -1,                  // -1 = без референса, иначе индекс в combined refs (snapshot.references + customRefs)
+  refIdxs: [],                 // массив индексов для multi-select (Grid layout, до 4)
   customRefs: [],              // вставленные через «+ Свой URL» прямые ссылки на картинки
   lastVariants: [],            // последние 3 варианта от ИИ
   activeVariantIdx: -1,        // какой из вариантов сейчас выбран (-1 = ни один)
@@ -4355,6 +4535,7 @@ function openEventPoster() {
     return;
   }
   _epState.snapshot = snap;
+  _epState.layout = 'hero';
   _epState.format = 'stories';
   _epState.accent = 'terracotta';
   _epState.customRefs = [];
@@ -4362,7 +4543,13 @@ function openEventPoster() {
   _epState.activeVariantIdx = -1;
   // Если есть референсы — берём первый по умолчанию, иначе -1
   _epState.refIdx = snap.references.length ? 0 : -1;
+  // Для Grid — первые 4 (или сколько есть) по умолчанию
+  _epState.refIdxs = snap.references.slice(0, 4).map((_, i) => i);
 
+  // Сбрасываем подсветку всех переключателей
+  document.querySelectorAll('.ep-layout-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.layout === 'hero');
+  });
   // Сбрасываем блок вариантов
   document.getElementById('epVariantsWrap').style.display = 'none';
   document.getElementById('epVariants').innerHTML = '';
@@ -4388,26 +4575,80 @@ function openEventPoster() {
 function _epRenderRefPicker() {
   const row = document.getElementById('epRefPickerRow');
   const picker = document.getElementById('epRefPicker');
+  const label = document.getElementById('epRefPickerLabel');
   const refs = _epAllRefs();
-  // Селектор показываем всегда — в нём минимум есть «+ Свой URL» и «Без фото»
+  const isGrid = _epState.layout === 'grid';
+
   row.style.display = '';
+  if (label) {
+    label.textContent = isGrid
+      ? `Выберите до 4 фото для коллажа (${_epState.refIdxs.length}/4)`
+      : 'Какой референс на постер?';
+  }
+
   let html = '';
   refs.forEach((r, i) => {
-    const cls = (i === _epState.refIdx) ? 'ep-ref-thumb active' : 'ep-ref-thumb';
-    if (r.thumb) {
-      html += `<div class="${cls}" style="background-image:url('${escapeAttr(r.thumb)}')" onclick="setEventPosterRef(${i})" title="${escapeAttr(r.url || '')}"></div>`;
+    let cls = 'ep-ref-thumb';
+    let badge = '';
+    if (isGrid) {
+      const pos = _epState.refIdxs.indexOf(i);
+      if (pos >= 0) {
+        cls += ' active';
+        badge = `<span class="ep-ref-num">${pos + 1}</span>`;
+      }
     } else {
-      html += `<div class="${cls} no-thumb" onclick="setEventPosterRef(${i})" title="${escapeAttr(r.url || '')}">🔗</div>`;
+      if (i === _epState.refIdx) cls += ' active';
+    }
+    const onClick = isGrid ? `toggleEventPosterRef(${i})` : `setEventPosterRef(${i})`;
+    if (r.thumb) {
+      html += `<div class="${cls}" style="background-image:url('${escapeAttr(r.thumb)}')" onclick="${onClick}" title="${escapeAttr(r.url || '')}">${badge}</div>`;
+    } else {
+      html += `<div class="${cls} no-thumb" onclick="${onClick}" title="${escapeAttr(r.url || '')}">${badge}🔗</div>`;
     }
   });
-  // Опция «без фото»
-  const noneCls = (_epState.refIdx === -1) ? 'ep-ref-none active' : 'ep-ref-none';
-  html += `<div class="${noneCls}" onclick="setEventPosterRef(-1)">Без<br>фото</div>`;
+  // Опция «без фото» — только для hero/split
+  if (!isGrid) {
+    const noneCls = (_epState.refIdx === -1) ? 'ep-ref-none active' : 'ep-ref-none';
+    html += `<div class="${noneCls}" onclick="setEventPosterRef(-1)">Без<br>фото</div>`;
+  }
   // Плитка «+ Свой URL»
-  html += `<div class="ep-ref-add" onclick="addEventPosterCustomUrl()" title="Вставить прямую ссылку на картинку (Pinterest, любая JPG/PNG)">📌<br>+ URL</div>`;
-  // Плитка «📤 Файл» — загрузка картинки с диска (лучшее качество)
+  html += `<div class="ep-ref-add" onclick="addEventPosterCustomUrl()" title="Вставить прямую ссылку на картинку">📌<br>+ URL</div>`;
+  // Плитка «📤 Файл»
   html += `<div class="ep-ref-add" onclick="document.getElementById('epFileInput').click()" title="Загрузить картинку с диска — гарантированно полное разрешение">📤<br>Файл</div>`;
   picker.innerHTML = html;
+}
+
+// Toggle для Grid (multi-select до 4)
+function toggleEventPosterRef(idx) {
+  const i = _epState.refIdxs.indexOf(idx);
+  if (i >= 0) {
+    _epState.refIdxs.splice(i, 1);
+  } else {
+    if (_epState.refIdxs.length >= 4) {
+      // Пинаем самый старый
+      _epState.refIdxs.shift();
+    }
+    _epState.refIdxs.push(idx);
+  }
+  _epRenderRefPicker();
+  renderEventPoster();
+  if (_epState.lastVariants && _epState.lastVariants.length) _epRenderVariants(_epState.lastVariants);
+}
+
+function setEventPosterLayout(layout) {
+  if (!['hero','split','grid'].includes(layout)) return;
+  _epState.layout = layout;
+  document.querySelectorAll('.ep-layout-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.layout === layout);
+  });
+  // При переходе в Grid: если refIdxs пуст — заполнить из refIdx
+  if (layout === 'grid' && _epState.refIdxs.length === 0) {
+    const all = _epAllRefs();
+    _epState.refIdxs = all.slice(0, 4).map((_, i) => i);
+  }
+  _epRenderRefPicker();
+  renderEventPoster();
+  if (_epState.lastVariants && _epState.lastVariants.length) _epRenderVariants(_epState.lastVariants);
 }
 
 function _epOnFileSelected(event) {
@@ -4530,29 +4771,38 @@ function renderEventPoster(targetEl) {
   const poster = targetEl || document.getElementById('epPoster');
   if (!snap) return;
 
-  poster.className = `event-poster fmt-${_epState.format} accent-${_epState.accent}`;
+  poster.className = `event-poster layout-${_epState.layout} fmt-${_epState.format} accent-${_epState.accent}`;
 
-  // Hero — фото или декоративная плашка
+  if (_epState.layout === 'split') {
+    poster.innerHTML = _epRenderSplitLayout(snap);
+  } else if (_epState.layout === 'grid') {
+    poster.innerHTML = _epRenderGridLayout(snap);
+  } else {
+    poster.innerHTML = _epRenderHeroLayout(snap);
+  }
+
+  // Авто-уменьшение шрифта только для основного превью (не для мини-вариантов)
+  if (!targetEl) _epFitContent();
+}
+
+// ====== HERO LAYOUT ======
+function _epRenderHeroLayout(snap) {
   const allRefs = _epAllRefs();
   const ref = (_epState.refIdx >= 0 && _epState.refIdx < allRefs.length) ? allRefs[_epState.refIdx] : null;
   let heroHtml;
   if (ref && ref.thumb) {
-    const upgraded = _epUpgradeImageUrl(ref.thumb);
-    const fallback = ref.thumb;
-    heroHtml = `<div class="ep-hero"><img class="ep-hero-img" crossorigin="anonymous" src="${escapeAttr(upgraded)}" data-fallback="${escapeAttr(fallback)}" onerror="this.onerror=null; if(this.src!==this.dataset.fallback) this.src=this.dataset.fallback;"></div>`;
+    heroHtml = `<div class="ep-hero">${_epImgTag(ref.thumb)}</div>`;
   } else {
     heroHtml = `<div class="ep-hero-deco"><div class="ep-hero-deco-mark">${escapeHtml(_epDecoMark(snap))}</div></div>`;
   }
-
   const tagline = (document.getElementById('epTagline').value || '').trim();
   const whenLine = _epFormatWhen(snap);
-  // Длительность·цена (формат теперь сверху отдельной строкой)
   const metaParts = [];
   if (snap.duration) metaParts.push(snap.duration + ' ч');
   if (snap.price) metaParts.push(snap.price + ' руб');
   const metaLine = metaParts.join(' · ');
 
-  poster.innerHTML = `
+  return `
     ${heroHtml}
     <div class="ep-content">
       <div class="ep-main">
@@ -4569,18 +4819,111 @@ function renderEventPoster(targetEl) {
       <div class="ep-foot">Пожарный 3Б · +375 29 315-15-83</div>
     </div>
   `;
-  // Авто-уменьшение шрифта только для основного превью (не для мини-вариантов)
-  if (!targetEl) _epFitContent();
+}
+
+// ====== SPLIT LAYOUT ======
+// Фото на акцентной панели + молочная инфо-колонка с большой датой
+function _epRenderSplitLayout(snap) {
+  const allRefs = _epAllRefs();
+  const ref = (_epState.refIdx >= 0 && _epState.refIdx < allRefs.length) ? allRefs[_epState.refIdx] : null;
+  const photoHtml = ref && ref.thumb
+    ? _epImgTag(ref.thumb)
+    : `<div class="ep-hero-deco-mark" style="font-size:120px; color: var(--brand-milk);">${escapeHtml(_epDecoMark(snap))}</div>`;
+  const tagline = (document.getElementById('epTagline').value || '').trim();
+  const dateBig = _epFormatDateBig(snap);
+  const time = snap.timeStart || '';
+  const price = snap.price ? snap.price + ' руб' : '';
+  const duration = snap.duration ? snap.duration + ' ч' : '';
+
+  return `
+    <div class="ep-split-photo">${photoHtml}</div>
+    <div class="ep-content">
+      <div class="ep-main">
+        <div class="ep-brand">Пространство «Детали»</div>
+        ${snap.format ? `<div class="ep-format-line">${_epRenderInline(snap.format)}</div>` : ''}
+        ${snap.name ? `<div class="ep-name">${_epRenderInline(snap.name)}</div>` : ''}
+        ${tagline ? `<div class="ep-tagline">«${_epRenderInline(tagline)}»</div>` : ''}
+        ${dateBig ? `<div class="ep-date-big">${escapeHtml(dateBig)}</div>` : ''}
+        <div class="ep-info-blocks">
+          ${time ? `<div><div class="ep-info-label">Время</div><div class="ep-info-value">${escapeHtml(time)}</div></div>` : ''}
+          ${price ? `<div><div class="ep-info-label">Стоимость</div><div class="ep-info-value">${escapeHtml(price)}</div></div>` : ''}
+          ${duration ? `<div><div class="ep-info-label">Длительность</div><div class="ep-info-value">${escapeHtml(duration)}</div></div>` : ''}
+        </div>
+      </div>
+      <div class="ep-foot">Пожарный 3Б · +375 29 315-15-83</div>
+    </div>
+  `;
+}
+
+// ====== GRID LAYOUT ======
+// 4 фото квадратом, в центре наложенная плашка с информацией
+function _epRenderGridLayout(snap) {
+  const allRefs = _epAllRefs();
+  const cells = [0,1,2,3].map(slot => {
+    const refIdx = _epState.refIdxs[slot];
+    if (refIdx === undefined || refIdx === null) {
+      // Пустая ячейка — заполняем акцентным цветом с буквой
+      return `<div class="ep-grid-cell ep-grid-cell-empty">${escapeHtml(_epDecoMark(snap))}</div>`;
+    }
+    const ref = allRefs[refIdx];
+    if (!ref || !ref.thumb) {
+      return `<div class="ep-grid-cell ep-grid-cell-empty">${escapeHtml(_epDecoMark(snap))}</div>`;
+    }
+    // Используем background-image (img внутри grid cell проще через background)
+    const upgraded = _epUpgradeImageUrl(ref.thumb);
+    return `<div class="ep-grid-cell"><img class="ep-hero-img" crossorigin="anonymous" src="${escapeAttr(upgraded)}" data-fallback="${escapeAttr(ref.thumb)}" onerror="this.onerror=null; if(this.src!==this.dataset.fallback) this.src=this.dataset.fallback;"></div>`;
+  }).join('');
+
+  const tagline = (document.getElementById('epTagline').value || '').trim();
+  const whenLine = _epFormatWhen(snap);
+  const metaParts = [];
+  if (snap.duration) metaParts.push(snap.duration + ' ч');
+  if (snap.price) metaParts.push(snap.price + ' руб');
+  const metaLine = metaParts.join(' · ');
+
+  return `
+    <div class="ep-grid-photos">${cells}</div>
+    <div class="ep-content">
+      <div class="ep-content-inner">
+        <div class="ep-main">
+          <div class="ep-brand">Пространство «Детали»</div>
+          ${snap.format ? `<div class="ep-format-line">${_epRenderInline(snap.format)}</div>` : ''}
+          ${snap.name ? `<div class="ep-name">${_epRenderInline(snap.name)}</div>` : ''}
+          ${tagline ? `<div class="ep-tagline">«${_epRenderInline(tagline)}»</div>` : ''}
+          <div class="ep-divider"></div>
+          <div class="ep-when-block">
+            <div class="ep-when">${escapeHtml(whenLine)}</div>
+            ${metaLine ? `<div class="ep-meta">${escapeHtml(metaLine)}</div>` : ''}
+          </div>
+        </div>
+        <div class="ep-foot">Пожарный 3Б · +375 29 315-15-83</div>
+      </div>
+    </div>
+  `;
+}
+
+// Вспомогательные: тег <img> с CORS+fallback и формат даты «дд.мм.гггг» для split
+function _epImgTag(thumbUrl) {
+  const upgraded = _epUpgradeImageUrl(thumbUrl);
+  return `<img class="ep-hero-img" crossorigin="anonymous" src="${escapeAttr(upgraded)}" data-fallback="${escapeAttr(thumbUrl)}" onerror="this.onerror=null; if(this.src!==this.dataset.fallback) this.src=this.dataset.fallback;">`;
+}
+function _epFormatDateBig(snap) {
+  if (!snap.dateObj) return '';
+  const d = snap.dateObj;
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
 }
 
 function _epFitContent() {
   const poster = document.getElementById('epPoster');
-  const main = poster.querySelector('.ep-main');
-  if (!main) return;
+  if (!poster) return;
   poster.style.setProperty('--ep-scale', '1');
   let scale = 1.0;
+  // Замеряем переполнение на самом постере (overflow:hidden обрезает, но scrollHeight видит реальный размер)
   for (let i = 0; i < 12; i++) {
-    if (main.scrollHeight <= main.clientHeight) break;
+    if (poster.scrollHeight <= poster.clientHeight) break;
     scale -= 0.05;
     if (scale < 0.6) { scale = 0.6; poster.style.setProperty('--ep-scale', String(scale)); break; }
     poster.style.setProperty('--ep-scale', String(scale));
