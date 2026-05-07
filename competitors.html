@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Конкуренты · Детали</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --milk: #F5EFE6;
+  --cream: #FAF6EE;
+  --paper: #faf8f5;
+  --dark: #3D2B1F;
+  --soft-dark: #5C4636;
+  --line: #ece6dd;
+  --muted: #8a8580;
+  --terracotta: #C06D54;
+  --terracotta-deep: #A8543E;
+  --amber: #EF9F27;
+  --olive: #6B7A4A;
+  --green: #5b8a4e;
+  --red: #c45a5a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--paper);
+  color: var(--dark);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.page {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 24px 28px 60px;
+}
+
+.app-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.app-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--dark);
+}
+.app-header .subtitle {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-left: 14px;
+}
+.header-actions { display: flex; gap: 8px; }
+
+.btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--dark);
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn:hover { background: var(--milk); border-color: var(--terracotta); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.primary {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+.btn.primary:hover { background: var(--terracotta-deep); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.danger { color: var(--red); }
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.tab {
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all .15s;
+}
+.tab:hover { color: var(--dark); }
+.tab.active {
+  color: var(--terracotta);
+  border-bottom-color: var(--terracotta);
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.section {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin-bottom: 16px;
+}
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--soft-dark);
+}
+.section-meta { font-size: 11px; color: var(--muted); }
+
+/* СТАТУС-КАРТЫ */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.status-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.status-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.status-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--dark);
+  line-height: 1;
+}
+.status-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.status-card.error { border-color: var(--red); }
+.status-card.error .status-value { color: var(--red); font-size: 13px; font-family: 'Inter', sans-serif; font-weight: 500; }
+.status-card.ok { border-color: var(--green); }
+.status-card.ok .status-value { color: var(--green); }
+
+/* ТАБЛИЦА КОНКУРЕНТОВ */
+.competitors-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.competitors-table th {
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.competitors-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.competitors-table tr:hover { background: var(--milk); }
+.handle-cell {
+  font-family: 'Roboto Mono', 'Courier New', monospace;
+  color: var(--terracotta);
+  font-weight: 500;
+}
+.city-tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: var(--milk);
+  color: var(--soft-dark);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.city-tag.mogilev { background: #FAECE7; color: #993C1D; }
+
+/* ФОРМА ДОБАВЛЕНИЯ */
+.add-form {
+  display: grid;
+  grid-template-columns: 200px 1fr 130px 130px auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 14px;
+  background: var(--cream);
+  border-radius: 8px;
+}
+.add-form input, .add-form select {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+  color: var(--dark);
+  width: 100%;
+}
+.add-form input:focus, .add-form select:focus {
+  outline: none;
+  border-color: var(--terracotta);
+}
+
+/* ПРОГОН */
+.run-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 16px 18px;
+  background: var(--milk);
+  border-radius: 8px;
+  margin-bottom: 18px;
+}
+.run-controls label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.run-controls input[type="number"] {
+  width: 60px;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  text-align: center;
+}
+
+#runStatus {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  display: none;
+}
+#runStatus.show { display: block; }
+#runStatus.running { background: #FAEEDA; color: #854F0B; }
+#runStatus.success { background: #E8F5E1; color: #2D5016; }
+#runStatus.error { background: #FAECE7; color: #993C1D; }
+
+/* ЛЕНТА ПОСТОВ */
+.posts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.post-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all .15s;
+}
+.post-card:hover {
+  border-color: var(--terracotta);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+}
+.post-image {
+  width: 100%;
+  aspect-ratio: 1;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--milk);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+.post-body { padding: 12px 14px; }
+.post-handle {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 11px;
+  color: var(--terracotta);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.post-caption {
+  font-size: 12px;
+  color: var(--soft-dark);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.post-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.post-meta-item { display: flex; align-items: center; gap: 4px; }
+.post-meta-item.likes { color: var(--terracotta); font-weight: 600; }
+
+/* АНАЛИТИКА */
+.analytics-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 900px) {
+  .analytics-row { grid-template-columns: 1fr; }
+}
+
+.bar-chart .row {
+  display: grid;
+  grid-template-columns: 140px 1fr 60px;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 7px;
+  font-size: 12px;
+}
+.bar-chart .label { color: var(--soft-dark); font-weight: 500; }
+.bar-chart .bar-bg {
+  background: var(--milk);
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.bar-chart .bar-fill {
+  height: 100%;
+  background: var(--terracotta);
+  border-radius: 4px;
+}
+.bar-chart .value { text-align: right; color: var(--dark); font-weight: 600; }
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+.empty-state h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  color: var(--dark);
+  margin-bottom: 10px;
+}
+
+#toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  z-index: 100;
+  display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+#toast.err { background: var(--red); }
+#toast.ok { background: var(--green); }
+#toast.show { display: block; }
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(192,109,84,0.3);
+  border-top-color: var(--terracotta);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="app-header">
+    <div>
+      <h1 style="display:inline-block;">Конкуренты</h1>
+      <span class="subtitle">аналитика Instagram-аккаунтов</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn" onclick="window.close()">✕ Закрыть</button>
+    </div>
+  </header>
+
+  <!-- Статусы -->
+  <div class="status-grid" id="statusGrid">
+    <div class="status-card">
+      <div class="status-label">Аккаунтов отслеживается</div>
+      <div class="status-value" id="statCompetitors">—</div>
+    </div>
+    <div class="status-card">
+      <div class="status-label">Постов в базе</div>
+      <div class="status-value" id="statPosts">—</div>
+    </div>
+    <div class="status-card">
+      <div class="status-label">Последний прогон</div>
+      <div class="status-value" id="statLastRun">—</div>
+      <div class="status-sub" id="statLastRunSub"></div>
+    </div>
+    <div class="status-card" id="apifyStatusCard">
+      <div class="status-label">Apify токен</div>
+      <div class="status-value" id="statApify">проверяю…</div>
+      <div class="status-sub" id="statApifySub"></div>
+    </div>
+  </div>
+
+  <!-- Табы -->
+  <div class="tabs">
+    <div class="tab active" data-tab="run">🔄 Запуск парсинга</div>
+    <div class="tab" data-tab="competitors">📋 Список аккаунтов</div>
+    <div class="tab" data-tab="posts">📰 Лента постов</div>
+    <div class="tab" data-tab="analytics">📊 Аналитика</div>
+    <div class="tab" data-tab="runs">📜 История прогонов</div>
+  </div>
+
+  <!-- ПАНЕЛЬ: ЗАПУСК -->
+  <div class="tab-panel active" id="panel-run">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Запустить новый прогон</div>
+        <div class="section-meta">Apify free tier: $5/мес ≈ 3300 постов</div>
+      </div>
+
+      <div class="run-controls">
+        <label>Постов на аккаунт:</label>
+        <input type="number" id="postsPerHandle" value="5" min="1" max="20">
+        <span style="font-size:12px;color:var(--muted);">×</span>
+        <label>Аккаунтов: <b id="activeCount" style="color:var(--dark);">—</b></label>
+        <span style="font-size:12px;color:var(--muted);">=</span>
+        <label>Будет: <b id="totalPosts" style="color:var(--dark);">—</b> постов · ~<b id="estCost" style="color:var(--terracotta);">$0.00</b></label>
+        <button class="btn primary" id="runBtn" onclick="runParse()" style="margin-left:auto;">🔄 Запустить парсинг</button>
+      </div>
+
+      <div id="runStatus"></div>
+    </div>
+  </div>
+
+  <!-- ПАНЕЛЬ: КОНКУРЕНТЫ -->
+  <div class="tab-panel" id="panel-competitors">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Список отслеживаемых аккаунтов</div>
+      </div>
+
+      <div class="add-form">
+        <input id="newHandle" placeholder="@handle" onkeydown="if(event.key==='Enter')addCompetitor()">
+        <input id="newName" placeholder="Название (необязательно)">
+        <select id="newCity">
+          <option value="">Город…</option>
+          <option value="Могилёв">Могилёв</option>
+          <option value="Минск">Минск</option>
+          <option value="другое">Другое</option>
+        </select>
+        <input id="newCategory" placeholder="Категория">
+        <button class="btn primary" onclick="addCompetitor()">+ Добавить</button>
+      </div>
+
+      <table class="competitors-table">
+        <thead>
+          <tr>
+            <th>Handle</th>
+            <th>Название</th>
+            <th>Город</th>
+            <th>Категория</th>
+            <th>Постов</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="competitorsList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ПАНЕЛЬ: ЛЕНТА ПОСТОВ -->
+  <div class="tab-panel" id="panel-posts">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Свежие посты</div>
+        <div class="section-meta">
+          <select id="postsFilter" onchange="renderPosts()" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:5px;">
+            <option value="">Все аккаунты</option>
+          </select>
+        </div>
+      </div>
+      <div id="postsContainer"></div>
+    </div>
+  </div>
+
+  <!-- ПАНЕЛЬ: АНАЛИТИКА -->
+  <div class="tab-panel" id="panel-analytics">
+    <div class="analytics-row">
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">Топ аккаунтов по среднему engagement</div>
+        </div>
+        <div class="bar-chart" id="topAccounts"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">Тренды форматов</div>
+          <div class="section-meta">по упоминаниям в caption</div>
+        </div>
+        <div class="bar-chart" id="formatTrends"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Топ-10 постов по engagement</div>
+      </div>
+      <div class="posts-grid" id="topPosts"></div>
+    </div>
+  </div>
+
+  <!-- ПАНЕЛЬ: ИСТОРИЯ -->
+  <div class="tab-panel" id="panel-runs">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">История прогонов</div>
+      </div>
+      <table class="competitors-table">
+        <thead>
+          <tr>
+            <th>Запущен</th>
+            <th>Аккаунтов</th>
+            <th>Постов</th>
+            <th>Стоимость</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody id="runsList"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+const CONFIG = {
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyHrfjsxMyN2TGfAw-JH8MN0KW8QdUUy-bIQSlgjtEIciAw_FnbrL8ay5CrEcqrcQrF/exec',
+  PROJECT: 'competitors'
+};
+
+const state = {
+  competitors: [],
+  posts: [],
+  runs: []
+};
+
+// ============================================================
+// API
+// ============================================================
+async function api(action, params, isPost) {
+  const url = new URL(CONFIG.APPS_SCRIPT_URL);
+  url.searchParams.set('project', CONFIG.PROJECT);
+  url.searchParams.set('action', action);
+  if (!isPost && params) {
+    Object.keys(params).forEach(k => params[k] != null && url.searchParams.set(k, params[k]));
+  }
+
+  if (isPost) {
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ project: CONFIG.PROJECT, action, ...params })
+    });
+    return res.json();
+  } else {
+    const res = await fetch(url);
+    return res.json();
+  }
+}
+
+// ============================================================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+async function init() {
+  // Табы
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
+
+  // Тестируем токен
+  testApifyToken();
+
+  // Загружаем данные
+  await loadCompetitors();
+  await loadPosts();
+  await loadRuns();
+
+  updateRunControls();
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+  if (name === 'analytics') renderAnalytics();
+}
+
+// ============================================================
+// APIFY ТОКЕН
+// ============================================================
+async function testApifyToken() {
+  const card = document.getElementById('apifyStatusCard');
+  const valEl = document.getElementById('statApify');
+  const subEl = document.getElementById('statApifySub');
+
+  try {
+    const r = await api('testToken', {}, true);
+    if (r.ok) {
+      card.classList.add('ok');
+      valEl.textContent = '✓ работает';
+      subEl.textContent = (r.username || '') + (r.plan ? ' · ' + r.plan : '');
+    } else {
+      card.classList.add('error');
+      valEl.textContent = '✗ ошибка';
+      subEl.textContent = r.error || '';
+    }
+  } catch(e) {
+    card.classList.add('error');
+    valEl.textContent = '✗ ошибка';
+    subEl.textContent = e.message;
+  }
+}
+
+// ============================================================
+// КОНКУРЕНТЫ
+// ============================================================
+async function loadCompetitors() {
+  try {
+    const r = await api('list');
+    if (!r.ok) { toast(r.error, 'err'); return; }
+    state.competitors = r.items || [];
+    renderCompetitors();
+    updateStatusCounts();
+    updatePostsFilter();
+  } catch(e) {
+    toast('Ошибка загрузки: ' + e.message, 'err');
+  }
+}
+
+function renderCompetitors() {
+  const tbody = document.getElementById('competitorsList');
+  if (!state.competitors.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px;">Список пуст. Добавь первый аккаунт сверху.</td></tr>`;
+    return;
+  }
+
+  // Считаем посты на каждый handle
+  const postsByHandle = {};
+  state.posts.forEach(p => {
+    postsByHandle[p.handle] = (postsByHandle[p.handle] || 0) + 1;
+  });
+
+  tbody.innerHTML = state.competitors.map(c => `
+    <tr>
+      <td><span class="handle-cell">@${escapeHtml(c.handle)}</span></td>
+      <td>${escapeHtml(c.name || '—')}</td>
+      <td>${c.city ? `<span class="city-tag ${c.city.toLowerCase().includes('могил') ? 'mogilev' : ''}">${escapeHtml(c.city)}</span>` : '—'}</td>
+      <td style="font-size:12px;color:var(--muted);">${escapeHtml(c.category || '')}</td>
+      <td style="font-weight:600;color:var(--terracotta);">${postsByHandle[c.handle] || 0}</td>
+      <td><button class="btn ghost danger" onclick="removeCompetitor('${c.handle}')" title="Удалить">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+async function addCompetitor() {
+  const handle = document.getElementById('newHandle').value.trim().replace(/^@/, '');
+  if (!handle) { toast('Введите handle', 'err'); return; }
+  const body = {
+    handle,
+    name: document.getElementById('newName').value.trim(),
+    city: document.getElementById('newCity').value,
+    category: document.getElementById('newCategory').value.trim()
+  };
+  const r = await api('addCompetitor', body, true);
+  if (r.ok) {
+    document.getElementById('newHandle').value = '';
+    document.getElementById('newName').value = '';
+    document.getElementById('newCity').value = '';
+    document.getElementById('newCategory').value = '';
+    await loadCompetitors();
+    updateRunControls();
+    toast('Добавлен @' + handle, 'ok');
+  } else {
+    toast(r.error, 'err');
+  }
+}
+
+async function removeCompetitor(handle) {
+  if (!confirm('Удалить @' + handle + ' из списка? (Сохранённые посты останутся)')) return;
+  const r = await api('removeCompetitor', { handle }, true);
+  if (r.ok) {
+    await loadCompetitors();
+    updateRunControls();
+    toast('Удалён @' + handle, 'ok');
+  } else {
+    toast(r.error, 'err');
+  }
+}
+
+// ============================================================
+// ПРОГОН
+// ============================================================
+function updateRunControls() {
+  const active = state.competitors.filter(c => c.active).length;
+  const ppr = parseInt(document.getElementById('postsPerHandle').value, 10) || 5;
+  const total = active * ppr;
+  const cost = (total / 1000 * 1.50).toFixed(3);
+
+  document.getElementById('activeCount').textContent = active;
+  document.getElementById('totalPosts').textContent = total;
+  document.getElementById('estCost').textContent = '$' + cost;
+
+  document.getElementById('runBtn').disabled = active === 0;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('postsPerHandle').addEventListener('input', updateRunControls);
+});
+
+async function runParse() {
+  const btn = document.getElementById('runBtn');
+  const status = document.getElementById('runStatus');
+  const ppr = parseInt(document.getElementById('postsPerHandle').value, 10) || 5;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Парсю…';
+  status.className = 'show running';
+  status.innerHTML = '<span class="spinner"></span>Apify работает… Это займёт 30–90 секунд для ' + state.competitors.filter(c=>c.active).length + ' аккаунтов. Не закрывайте вкладку.';
+
+  try {
+    const r = await api('parseRun', { postsPerHandle: ppr }, true);
+    if (r.ok) {
+      status.className = 'show success';
+      status.innerHTML = `✓ Готово! Получено <b>${r.itemsReturned}</b> постов, новых: <b>${r.saved}</b>${r.duplicates ? ', дубликатов пропущено: ' + r.duplicates : ''}. Стоимость: <b>$${r.costUsd.toFixed(4)}</b>.`;
+      await loadPosts();
+      await loadRuns();
+      updateStatusCounts();
+      toast('Парсинг завершён · ' + r.saved + ' новых постов', 'ok');
+    } else {
+      status.className = 'show error';
+      status.innerHTML = '✗ Ошибка: ' + r.error;
+      toast(r.error, 'err');
+    }
+  } catch(e) {
+    status.className = 'show error';
+    status.innerHTML = '✗ Ошибка: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔄 Запустить парсинг';
+  }
+}
+
+// ============================================================
+// ПОСТЫ
+// ============================================================
+async function loadPosts() {
+  const r = await api('getPosts', { limit: 200 });
+  if (r.ok) {
+    state.posts = r.items || [];
+    renderPosts();
+    renderCompetitors();
+    updatePostsFilter();
+    updateStatusCounts();
+  }
+}
+
+function updatePostsFilter() {
+  const sel = document.getElementById('postsFilter');
+  const handles = [...new Set(state.competitors.map(c => c.handle))];
+  sel.innerHTML = '<option value="">Все аккаунты</option>' +
+    handles.map(h => `<option value="${h}">@${h}</option>`).join('');
+}
+
+function renderPosts() {
+  const filter = document.getElementById('postsFilter').value;
+  const filtered = filter ? state.posts.filter(p => p.handle === filter) : state.posts;
+  const container = document.getElementById('postsContainer');
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty-state">
+      <h3>Пока нет постов</h3>
+      <p>Добавь конкурентов и запусти первый прогон во вкладке «🔄 Запуск парсинга»</p>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = '<div class="posts-grid">' + filtered.slice(0, 50).map(p => {
+    const img = p.media_urls && p.media_urls[0];
+    const date = p.posted_at ? new Date(p.posted_at).toLocaleDateString('ru-RU') : '';
+    return `
+      <div class="post-card">
+        <a href="${p.post_url}" target="_blank" style="text-decoration:none;color:inherit;">
+          <div class="post-image" style="${img ? `background-image:url('${img}');` : ''}">${img ? '' : '🖼 нет фото'}</div>
+        </a>
+        <div class="post-body">
+          <div class="post-handle">@${escapeHtml(p.handle)}<span style="color:var(--muted);font-weight:400;float:right;">${date}</span></div>
+          <div class="post-caption">${escapeHtml(p.caption || '—')}</div>
+          <div class="post-meta">
+            <span class="post-meta-item likes">♥ ${p.likes != null ? p.likes : '—'}</span>
+            <span class="post-meta-item">💬 ${p.comments_count != null ? p.comments_count : '—'}</span>
+            ${p.video_views ? `<span class="post-meta-item">▶ ${p.video_views}</span>` : ''}
+            ${p.type !== 'Image' ? `<span class="post-meta-item" style="margin-left:auto;color:var(--muted);">${p.type}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('') + '</div>';
+}
+
+// ============================================================
+// АНАЛИТИКА
+// ============================================================
+async function renderAnalytics() {
+  const r = await api('analytics');
+  if (!r.ok) return;
+
+  // Топ аккаунтов
+  const maxLikes = Math.max(...r.byHandle.map(h => h.avgLikes), 1);
+  document.getElementById('topAccounts').innerHTML = r.byHandle.length ?
+    r.byHandle.slice(0, 10).map(h => `
+      <div class="row">
+        <div class="label">@${escapeHtml(h.handle)}</div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${(h.avgLikes/maxLikes*100).toFixed(0)}%;"></div></div>
+        <div class="value">${h.avgLikes}</div>
+      </div>
+    `).join('') :
+    '<div class="empty-state"><p>Сначала запусти парсинг</p></div>';
+
+  // Тренды форматов
+  const maxFmt = Math.max(...r.formatTrends.map(f => f.avgLikes), 1);
+  document.getElementById('formatTrends').innerHTML = r.formatTrends.length ?
+    r.formatTrends.map(f => `
+      <div class="row">
+        <div class="label">${escapeHtml(f.name)}<br><span style="font-size:10px;color:var(--muted);">упоминаний: ${f.count}</span></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${(f.avgLikes/maxFmt*100).toFixed(0)}%;"></div></div>
+        <div class="value">${f.avgLikes}</div>
+      </div>
+    `).join('') :
+    '<div class="empty-state"><p>Нет упоминаний форматов</p></div>';
+
+  // Топ-постов
+  document.getElementById('topPosts').innerHTML = r.topPosts.length ?
+    r.topPosts.map(p => {
+      const img = p.media_urls && p.media_urls[0];
+      return `
+        <div class="post-card">
+          <a href="${p.post_url}" target="_blank" style="text-decoration:none;color:inherit;">
+            <div class="post-image" style="${img ? `background-image:url('${img}');` : ''}">${img ? '' : '🖼'}</div>
+          </a>
+          <div class="post-body">
+            <div class="post-handle">@${escapeHtml(p.handle)}</div>
+            <div class="post-caption">${escapeHtml(p.caption || '—')}</div>
+            <div class="post-meta">
+              <span class="post-meta-item likes">♥ ${p.likes || 0}</span>
+              <span class="post-meta-item">💬 ${p.comments_count || 0}</span>
+              <span class="post-meta-item" style="margin-left:auto;color:var(--terracotta);font-weight:600;">${p.engagement}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('') :
+    '<div class="empty-state"><p>Сначала запусти парсинг</p></div>';
+}
+
+// ============================================================
+// ИСТОРИЯ ПРОГОНОВ
+// ============================================================
+async function loadRuns() {
+  const r = await api('getRuns');
+  if (!r.ok) return;
+  state.runs = r.items || [];
+  renderRuns();
+}
+
+function renderRuns() {
+  const tbody = document.getElementById('runsList');
+  if (!state.runs.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:30px;">История пуста</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = state.runs.map(r => {
+    const d = r.started_at ? new Date(r.started_at) : null;
+    const dateStr = d ? d.toLocaleString('ru-RU') : '';
+    let statusColor = 'var(--muted)';
+    if (r.status === 'done') statusColor = 'var(--green)';
+    else if (r.status.startsWith('error')) statusColor = 'var(--red)';
+    else if (r.status === 'running') statusColor = 'var(--amber)';
+    return `
+      <tr>
+        <td style="font-size:12px;">${dateStr}</td>
+        <td>${r.handles_count}</td>
+        <td>${r.posts_fetched}</td>
+        <td>$${r.cost_usd.toFixed(4)}</td>
+        <td><span style="font-size:11px;color:${statusColor};font-weight:500;text-transform:uppercase;letter-spacing:0.06em;">${r.status}</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// СТАТУСЫ
+// ============================================================
+function updateStatusCounts() {
+  document.getElementById('statCompetitors').textContent = state.competitors.filter(c => c.active).length;
+  document.getElementById('statPosts').textContent = state.posts.length;
+
+  if (state.runs.length) {
+    const last = state.runs[0];
+    const d = new Date(last.started_at);
+    document.getElementById('statLastRun').textContent = d.toLocaleDateString('ru-RU');
+    document.getElementById('statLastRunSub').textContent = last.posts_fetched + ' постов · ' + last.status;
+  } else {
+    document.getElementById('statLastRun').textContent = '—';
+    document.getElementById('statLastRunSub').textContent = 'ещё не запускали';
+  }
+}
+
+// ============================================================
+// УТИЛИТЫ
+// ============================================================
+function escapeHtml(s) {
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = (type || '') + ' show';
+  setTimeout(() => t.className = '', 3000);
+}
+
+init();
+</script>
+
+</body>
+</html>
