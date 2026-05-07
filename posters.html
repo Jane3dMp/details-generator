@@ -499,34 +499,35 @@ body {
   overflow-y: auto;
 }
 .workspace-header {
-  text-align: center;
-  margin-bottom: 24px;
+  text-align: left;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 .workspace-header .day {
   font-family: 'Playfair Display', serif;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--dark);
 }
 .workspace-header .event-info {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--soft-dark);
-  margin-top: 4px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 .workspace-header .hint {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--soft-dark);
-  margin-top: 10px;
   font-style: italic;
 }
 .workspace-actions {
   display: flex;
-  gap: 12px;
-  justify-content: center;
+  gap: 10px;
   align-items: center;
-  margin-top: 14px;
+  margin-left: auto;
 }
 .btn-regen {
   font-size: 12px;
@@ -2106,7 +2107,7 @@ function goToGenerator() {
   // Превращаем выбранные события в формат WEEK_DATA для галереи
   state.galleryDays = selected.map(e => buildDayFromEvent(e));
   state.variantSelections = {};
-  state.activeDay = state.galleryDays[0]?.date || null;
+  state.activeDay = state.galleryDays[0]?.dayKey || null;
 
   // Переключаем экраны
   document.getElementById('screenSelector').classList.remove('active');
@@ -2159,6 +2160,7 @@ function buildDayFromEvent(e, regenSeed) {
   const layouts = pickLayoutsForEvent(e, photos.length, regenSeed);
 
   return {
+    dayKey: e.id,  // уникальный ключ (не date — на одну дату может быть 2+ события)
     date: e.date,
     dayOfWeek: DOWS[d.getDay()],
     time: e.timeStart || '18:00',
@@ -2357,7 +2359,7 @@ function renderDayList() {
     const d = parseDate(day.date);
     const dayLabel = `${day.dayOfWeek} · ${d.getDate()} ${MONTHS[d.getMonth()]}`;
     return `
-      <li class="day-item" data-date="${day.date}" onclick="selectDay('${day.date}')">
+      <li class="day-item" data-daykey="${day.dayKey}" onclick="selectDay('${day.dayKey}')">
         <div class="day-label">${dayLabel}</div>
         <div class="event-name">${escapeHtml(day.event.title || '—')}</div>
         <div class="event-meta">${escapeHtml(day.event.format || '')} · ${day.time} · ${day.event.price || '—'} руб</div>
@@ -2367,19 +2369,19 @@ function renderDayList() {
   }).join('');
 }
 
-function selectDay(date) {
-  state.activeDay = date;
+function selectDay(dayKey) {
+  state.activeDay = dayKey;
   document.querySelectorAll('.day-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.date === date);
+    el.classList.toggle('active', el.dataset.daykey === dayKey);
   });
-  renderWorkspace(date);
+  renderWorkspace(dayKey);
 }
 
-function selectVariant(date, variantId) {
-  state.variantSelections[date] = variantId;
-  const dayEl = document.querySelector(`.day-item[data-date="${date}"]`);
+function selectVariant(dayKey, variantId) {
+  state.variantSelections[dayKey] = variantId;
+  const dayEl = document.querySelector(`.day-item[data-daykey="${dayKey}"]`);
   if (dayEl) dayEl.classList.add('has-selection');
-  renderWorkspace(date);
+  renderWorkspace(dayKey);
   updateBatchButton();
 }
 
@@ -2394,8 +2396,8 @@ function updateBatchButton() {
     : `Выбрано: ${selected} из ${total}`;
 }
 
-function renderWorkspace(date) {
-  const day = state.galleryDays.find(d => d.date === date);
+function renderWorkspace(dayKey) {
+  const day = state.galleryDays.find(d => d.dayKey === dayKey);
   if (!day) return;
   const d = parseDate(day.date);
   const dayLabel = `${day.dayOfWeek} · ${d.getDate()} ${MONTHS[d.getMonth()]}`;
@@ -2406,11 +2408,10 @@ function renderWorkspace(date) {
     <div class="workspace-header">
       <div class="day">${dayLabel}</div>
       <div class="event-info">${escapeHtml(day.event.format || '')} · ${day.time} · ${day.event.price || '—'} руб</div>
-      <div class="hint">Кликните по варианту, который выбираете</div>
       <div class="workspace-actions">
-        <button class="btn ghost btn-regen" onclick="regenerateVariants('${date}')">🔄 Другие варианты</button>
+        <button class="btn ghost btn-regen" onclick="regenerateVariants('${dayKey}')">🔄 Другие</button>
         <label class="toggle-no-tagline">
-          <input type="checkbox" ${noTagState ? 'checked' : ''} onchange="toggleNoTagline('${date}', this.checked)">
+          <input type="checkbox" ${noTagState ? 'checked' : ''} onchange="toggleNoTagline('${dayKey}', this.checked)">
           <span>Без подписи</span>
         </label>
       </div>
@@ -2420,19 +2421,19 @@ function renderWorkspace(date) {
 
   const row = document.getElementById('variantsRow');
   row.innerHTML = day.variants.map(v => {
-    const isSelected = state.variantSelections[date] === v.id;
+    const isSelected = state.variantSelections[dayKey] === v.id;
     return `
       <div class="variant-card ${isSelected ? 'selected' : ''}" data-variant="${v.id}">
         <div class="variant-label">Вариант ${v.id}</div>
-        <div class="poster-frame" onclick="selectVariant('${date}', '${v.id}')">
+        <div class="poster-frame" onclick="selectVariant('${dayKey}', '${v.id}')">
           ${renderPoster(day, v, 'stories')}
         </div>
         <div class="variant-meta">
           <span class="layout-name">${layoutDisplayName(v.layout)}</span> · ${accentDisplayName(v.accent)}
         </div>
         <div class="export-buttons">
-          <button class="btn-export" onclick="exportPNG(event, '${date}', '${v.id}', 'stories')">↓ Stories</button>
-          <button class="btn-export" onclick="exportPNG(event, '${date}', '${v.id}', 'square')">↓ Square</button>
+          <button class="btn-export" onclick="exportPNG(event, '${dayKey}', '${v.id}', 'stories')">↓ Stories</button>
+          <button class="btn-export" onclick="exportPNG(event, '${dayKey}', '${v.id}', 'square')">↓ Square</button>
         </div>
       </div>
     `;
@@ -2456,18 +2457,18 @@ function renderWorkspace(date) {
 }
 
 // Переключатель «Без подписи» — пересобирает варианты с/без tagline
-function toggleNoTagline(date, checked) {
-  const day = state.galleryDays.find(d => d.date === date);
+function toggleNoTagline(dayKey, checked) {
+  const day = state.galleryDays.find(d => d.dayKey === dayKey);
   if (!day) return;
   day.no_tagline = checked;
   // Применяем флаг ко всем вариантам
   day.variants.forEach(v => v.no_tagline = checked);
-  renderWorkspace(date);
+  renderWorkspace(dayKey);
 }
 
 // Перегенерация — выбираем другие 2 макета (избегая текущих)
-function regenerateVariants(date) {
-  const day = state.galleryDays.find(d => d.date === date);
+function regenerateVariants(dayKey) {
+  const day = state.galleryDays.find(d => d.dayKey === dayKey);
   if (!day) return;
 
   // Запоминаем текущие, чтобы не повторить
@@ -2482,16 +2483,16 @@ function regenerateVariants(date) {
 
   // Увеличиваем счётчик регенераций для этого события — на нём сидит сид
   if (!state.regenCounters) state.regenCounters = {};
-  state.regenCounters[date] = (state.regenCounters[date] || 0) + 1;
+  state.regenCounters[dayKey] = (state.regenCounters[dayKey] || 0) + 1;
 
   // Пересобираем день с новым сидом
-  const newDay = buildDayFromEvent(origEvent, state.regenCounters[date]);
+  const newDay = buildDayFromEvent(origEvent, state.regenCounters[dayKey]);
 
   // Если новые варианты совпали с предыдущими — крутим ещё раз
   let safety = 0;
   while (safety < 5 && newDay.variants.every((v, i) => v.layout === currentLayouts[i])) {
-    state.regenCounters[date]++;
-    const retry = buildDayFromEvent(origEvent, state.regenCounters[date]);
+    state.regenCounters[dayKey]++;
+    const retry = buildDayFromEvent(origEvent, state.regenCounters[dayKey]);
     newDay.variants = retry.variants;
     safety++;
   }
@@ -2503,15 +2504,15 @@ function regenerateVariants(date) {
   }
 
   // Заменяем день в state
-  const idx = state.galleryDays.findIndex(d => d.date === date);
+  const idx = state.galleryDays.findIndex(d => d.dayKey === dayKey);
   state.galleryDays[idx] = newDay;
 
   // Сбрасываем выбор варианта для этого дня (новые варианты — новый выбор)
-  delete state.variantSelections[date];
-  const dayEl = document.querySelector(`.day-item[data-date="${date}"]`);
+  delete state.variantSelections[dayKey];
+  const dayEl = document.querySelector(`.day-item[data-daykey="${dayKey}"]`);
   if (dayEl) dayEl.classList.remove('has-selection');
 
-  renderWorkspace(date);
+  renderWorkspace(dayKey);
   updateBatchButton();
   toast('Сгенерированы новые варианты', 'ok');
 }
@@ -2949,19 +2950,19 @@ function renderEditorialLayer(v, day, titleHtml, dateMeta, formatMeta, dateMetaS
 /* ============================================================
    PNG-ЭКСПОРТ
    ============================================================ */
-async function exportPNG(evt, date, variantId, format) {
+async function exportPNG(evt, dayKey, variantId, format) {
   evt.stopPropagation();
   const btn = evt.target;
   const orig = btn.textContent;
   btn.disabled = true;
   btn.textContent = '...';
   try {
-    const blob = await renderPosterToBlob(date, variantId, format);
+    const blob = await renderPosterToBlob(dayKey, variantId, format);
     if (!blob) {
       toast('Не удалось сгенерировать PNG. Возможно, фото с CORS-блокировкой.', 'err');
       return;
     }
-    const day = state.galleryDays.find(d => d.date === date);
+    const day = state.galleryDays.find(d => d.dayKey === dayKey);
     triggerDownload(blob, makeFilename(day, variantId, format));
   } catch(e) {
     console.error(e);
@@ -2972,8 +2973,8 @@ async function exportPNG(evt, date, variantId, format) {
   }
 }
 
-async function renderPosterToBlob(date, variantId, format) {
-  const day = state.galleryDays.find(d => d.date === date);
+async function renderPosterToBlob(dayKey, variantId, format) {
+  const day = state.galleryDays.find(d => d.dayKey === dayKey);
   const variant = day.variants.find(v => v.id === variantId);
   const zone = document.getElementById('hiddenRenderZone');
   zone.innerHTML = renderPoster(day, variant, format);
@@ -3060,8 +3061,8 @@ async function downloadAllSelected() {
   const status = document.getElementById('batchStatus');
   btn.disabled = true;
 
-  const dates = Object.keys(state.variantSelections);
-  if (!dates.length) return;
+  const dayKeys = Object.keys(state.variantSelections);
+  if (!dayKeys.length) return;
 
   if (typeof JSZip === 'undefined') {
     toast('JSZip не загрузился. Скачайте PNG по одному.', 'err');
@@ -3071,18 +3072,19 @@ async function downloadAllSelected() {
 
   const zip = new JSZip();
   let done = 0;
-  const total = dates.length * 2;
+  const total = dayKeys.length * 2;
 
-  for (const date of dates) {
-    const variantId = state.variantSelections[date];
-    const day = state.galleryDays.find(d => d.date === date);
+  for (const dayKey of dayKeys) {
+    const variantId = state.variantSelections[dayKey];
+    const day = state.galleryDays.find(d => d.dayKey === dayKey);
+    if (!day) continue;
     for (const fmt of ['stories', 'square']) {
       status.textContent = `Рендерю ${++done}/${total}: ${day.event.title} (${fmt})…`;
       try {
-        const blob = await renderPosterToBlob(date, variantId, fmt);
+        const blob = await renderPosterToBlob(dayKey, variantId, fmt);
         if (blob) zip.file(makeFilename(day, variantId, fmt), blob);
       } catch(e) {
-        console.error('Render failed', date, variantId, fmt, e);
+        console.error('Render failed', dayKey, variantId, fmt, e);
       }
     }
   }
@@ -3091,7 +3093,7 @@ async function downloadAllSelected() {
   const zipBlob = await zip.generateAsync({type: 'blob'});
   const firstDate = state.galleryDays[0]?.date || 'afishi';
   triggerDownload(zipBlob, `afishi_${firstDate}.zip`);
-  status.textContent = `Готово: ${dates.length} афиш × 2 формата`;
+  status.textContent = `Готово: ${dayKeys.length} афиш × 2 формата`;
   btn.disabled = false;
 }
 
