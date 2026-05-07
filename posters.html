@@ -2438,8 +2438,607 @@ body {
 .poster.clipping.square .cl-meta-right { font-size: 9px; }
 
 
+/* ============================================================
+   МАКЕТ S: TICKET — театральный билет с перфорацией
+   ============================================================ */
+.poster.ticket {
+  background: var(--cream);
+  display: grid;
+  grid-template-columns: 52px 1px 1fr;
+  position: relative;
+  overflow: hidden;
+}
+.poster.ticket.square { grid-template-columns: 44px 1px 1fr; }
+
+.poster.ticket .tkt-spine {
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.poster.ticket .tkt-spine-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: white;
+  opacity: 0.9;
+}
+.poster.ticket.stories .tkt-spine-text { font-size: 8px; }
+.poster.ticket.square .tkt-spine-text { font-size: 7px; }
+
+.poster.ticket .tkt-perf {
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--line) 0, var(--line) 6px,
+    transparent 6px, transparent 13px
+  );
+  width: 1px;
+}
+
+.poster.ticket .tkt-body {
+  padding: 24px 22px 20px 18px;
+  display: flex;
+  flex-direction: column;
+}
+.poster.ticket.square .tkt-body { padding: 18px 16px 14px 14px; }
+
+.poster.ticket .tkt-brand {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.poster.ticket.stories .tkt-brand { font-size: 8px; }
+.poster.ticket.square .tkt-brand { font-size: 7px; margin-bottom: 8px; }
+
+.poster.ticket .tkt-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: var(--dark);
+  line-height: 1.05;
+  flex: 1;
+}
+.poster.ticket.stories .tkt-title { font-size: 32px; }
+.poster.ticket.square .tkt-title { font-size: 22px; }
+
+.poster.ticket .tkt-tagline {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: var(--accent);
+  margin-top: 10px;
+  margin-bottom: 16px;
+}
+.poster.ticket.stories .tkt-tagline { font-size: 14px; }
+.poster.ticket.square .tkt-tagline { font-size: 11px; margin-bottom: 10px; }
+
+.poster.ticket .tkt-tear {
+  border-top: 1px dashed var(--line);
+  padding-top: 14px;
+  margin-top: auto;
+}
+.poster.ticket.square .tkt-tear { padding-top: 10px; }
+
+.poster.ticket .tkt-date {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  color: var(--dark);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.poster.ticket.stories .tkt-date { font-size: 28px; }
+.poster.ticket.square .tkt-date { font-size: 20px; }
+
+.poster.ticket .tkt-meta {
+  font-family: 'Inter', sans-serif;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.poster.ticket.stories .tkt-meta { font-size: 11px; }
+.poster.ticket.square .tkt-meta { font-size: 9px; margin-top: 2px; }
+
+.poster.ticket .tkt-price {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 10px;
+}
+.poster.ticket.stories .tkt-price { font-size: 22px; }
+.poster.ticket.square .tkt-price { font-size: 16px; margin-top: 6px; }
+
+.poster.ticket .tkt-addr {
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.poster.ticket.stories .tkt-addr { font-size: 8px; }
+.poster.ticket.square .tkt-addr { font-size: 7px; margin-top: 3px; }
+
+/* ============================================================
+   МАКЕТ T: WINDOW — жёсткая рамка-окно
+   ============================================================ */
+.poster.window-frame {
+  background: var(--paper-cream);
+  position: relative;
+  overflow: hidden;
+}
+.poster.window-frame .wf-border {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  right: 18px;
+  bottom: 82px;
+  border: 2px solid var(--dark);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.poster.window-frame.square .wf-border {
+  bottom: 66px;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+}
+.poster.window-frame .wf-photo {
+  flex: 1;
+  background-size: cover;
+  background-position: center;
+  background-color: #d8c8b5;
+  position: relative;
+}
+/* Перекрестие */
+.poster.window-frame .wf-photo::before {
+  content: '';
+  position: absolute;
+  left: 50%; top: 0; bottom: 0;
+  width: 1px;
+  background: rgba(61,43,31,0.12);
+}
+.poster.window-frame .wf-photo::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: 1px;
+  background: rgba(61,43,31,0.12);
+}
+.poster.window-frame .wf-inner-caption {
+  border-top: 2px solid var(--dark);
+  padding: 10px 14px 12px;
+  background: var(--paper-cream);
+}
+.poster.window-frame.square .wf-inner-caption { padding: 7px 10px 8px; }
+.poster.window-frame .wf-inner-format {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.poster.window-frame.stories .wf-inner-format { font-size: 8px; }
+.poster.window-frame.square .wf-inner-format { font-size: 7px; }
+.poster.window-frame .wf-inner-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: var(--dark);
+  line-height: 1.05;
+  margin-top: 3px;
+}
+.poster.window-frame.stories .wf-inner-title { font-size: 20px; }
+.poster.window-frame.square .wf-inner-title { font-size: 14px; margin-top: 2px; }
+
+/* Нижний блок вне рамки */
+.poster.window-frame .wf-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 80px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.poster.window-frame.square .wf-footer { height: 64px; padding: 10px 14px; }
+.poster.window-frame .wf-date {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  color: var(--dark);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.poster.window-frame.stories .wf-date { font-size: 26px; }
+.poster.window-frame.square .wf-date { font-size: 18px; }
+.poster.window-frame .wf-time {
+  font-family: 'Inter', sans-serif;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.poster.window-frame.stories .wf-time { font-size: 10px; }
+.poster.window-frame.square .wf-time { font-size: 8px; margin-top: 1px; }
+.poster.window-frame .wf-brand {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-align: right;
+}
+.poster.window-frame.stories .wf-brand { font-size: 9px; }
+.poster.window-frame.square .wf-brand { font-size: 7px; }
+
+/* ============================================================
+   МАКЕТ U: TIMELINE — расписание нескольких событий
+   (особый макет — принимает массив событий)
+   ============================================================ */
+.poster.timeline {
+  background: var(--cream);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.poster.timeline .tl-header {
+  background: var(--accent);
+  padding: 14px 18px 12px;
+  flex-shrink: 0;
+}
+.poster.timeline.square .tl-header { padding: 10px 14px 8px; }
+.poster.timeline .tl-header-label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.75);
+}
+.poster.timeline.stories .tl-header-label { font-size: 8px; }
+.poster.timeline.square .tl-header-label { font-size: 7px; }
+.poster.timeline .tl-header-month {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: white;
+  line-height: 1.1;
+  margin-top: 2px;
+}
+.poster.timeline.stories .tl-header-month { font-size: 22px; }
+.poster.timeline.square .tl-header-month { font-size: 16px; }
+
+.poster.timeline .tl-body {
+  flex: 1;
+  padding: 16px 18px 10px;
+  position: relative;
+}
+.poster.timeline.square .tl-body { padding: 10px 14px 7px; }
+/* Вертикальная линия */
+.poster.timeline .tl-body::before {
+  content: '';
+  position: absolute;
+  left: 28px;
+  top: 16px;
+  bottom: 10px;
+  width: 1.5px;
+  background: var(--line);
+}
+.poster.timeline.square .tl-body::before { left: 22px; top: 10px; bottom: 7px; }
+
+.poster.timeline .tl-event {
+  position: relative;
+  padding-left: 28px;
+  margin-bottom: 18px;
+}
+.poster.timeline.square .tl-event { padding-left: 20px; margin-bottom: 12px; }
+.poster.timeline .tl-event:last-child { margin-bottom: 0; }
+.poster.timeline .tl-dot {
+  position: absolute;
+  left: -5px;
+  top: 5px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--cream);
+}
+.poster.timeline.square .tl-dot { width: 9px; height: 9px; left: -4px; top: 4px; }
+.poster.timeline .tl-ev-date {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  line-height: 1;
+}
+.poster.timeline.stories .tl-ev-date { font-size: 9px; }
+.poster.timeline.square .tl-ev-date { font-size: 8px; }
+.poster.timeline .tl-ev-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: var(--dark);
+  line-height: 1.1;
+  margin-top: 2px;
+}
+.poster.timeline.stories .tl-ev-title { font-size: 16px; }
+.poster.timeline.square .tl-ev-title { font-size: 12px; margin-top: 1px; }
+.poster.timeline .tl-ev-meta {
+  font-family: 'Inter', sans-serif;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.poster.timeline.stories .tl-ev-meta { font-size: 9px; }
+.poster.timeline.square .tl-ev-meta { font-size: 7px; margin-top: 1px; }
+
+.poster.timeline .tl-footer {
+  padding: 8px 18px 12px;
+  border-top: 1px solid var(--line);
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.poster.timeline.stories .tl-footer { font-size: 8px; }
+.poster.timeline.square .tl-footer { font-size: 7px; padding: 6px 14px 8px; }
+
+
+/* ============================================================
+   МАКЕТ V: STRIPE — цветная шапка + тёмная подошва
+   ============================================================ */
+.poster.stripe { background:var(--cream); display:flex; flex-direction:column; }
+.poster.stripe .str-head { background:var(--accent); display:flex; align-items:center; padding:0 22px; flex-shrink:0; }
+.poster.stripe.stories .str-head { height:120px; }
+.poster.stripe.square .str-head { height:90px; }
+.poster.stripe .str-head-title { font-family:'Inter',sans-serif; font-weight:900; color:white; line-height:.88; letter-spacing:-.025em; text-transform:uppercase; word-break:keep-all; overflow-wrap:normal; font-size:var(--stripe-head-size,52px); }
+.poster.stripe.stories .str-head-title { --stripe-head-size:52px; }
+.poster.stripe.square .str-head-title { --stripe-head-size:36px; }
+.poster.stripe .str-divider { height:3px; background:var(--dark); flex-shrink:0; }
+.poster.stripe .str-body { flex:1; padding:20px 22px; display:flex; flex-direction:column; }
+.poster.stripe.square .str-body { padding:14px 16px; }
+.poster.stripe .str-format { font-family:'Inter',sans-serif; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+.poster.stripe.stories .str-format { font-size:9px; }
+.poster.stripe.square .str-format { font-size:7px; margin-bottom:8px; }
+.poster.stripe .str-title { font-family:'Playfair Display',serif; font-weight:700; color:var(--dark); line-height:1.05; flex:1; }
+.poster.stripe.stories .str-title { font-size:26px; }
+.poster.stripe.square .str-title { font-size:18px; }
+.poster.stripe .str-tagline { font-family:'Playfair Display',serif; font-style:italic; color:var(--accent); margin-top:8px; margin-bottom:14px; }
+.poster.stripe.stories .str-tagline { font-size:14px; }
+.poster.stripe.square .str-tagline { font-size:10px; margin-bottom:10px; }
+.poster.stripe .str-info { border-top:1px solid var(--line); padding-top:10px; }
+.poster.stripe.square .str-info { padding-top:7px; }
+.poster.stripe .str-date { font-family:'Inter',sans-serif; font-weight:700; color:var(--dark); letter-spacing:.02em; }
+.poster.stripe.stories .str-date { font-size:13px; }
+.poster.stripe.square .str-date { font-size:10px; }
+.poster.stripe .str-meta { font-family:'Inter',sans-serif; color:var(--muted); margin-top:3px; }
+.poster.stripe.stories .str-meta { font-size:10px; }
+.poster.stripe.square .str-meta { font-size:8px; }
+.poster.stripe .str-foot { background:var(--dark); padding:7px 22px; font-family:'Inter',sans-serif; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.55); flex-shrink:0; }
+.poster.stripe.stories .str-foot { font-size:8px; }
+.poster.stripe.square .str-foot { font-size:7px; padding:5px 16px; }
+
+/* МАКЕТ W: OVERLAP */
+.poster.overlap { background:var(--warm-gray); position:relative; overflow:hidden; }
+.poster.overlap .ov-back { position:absolute; background:var(--accent); background-size:cover; background-position:center; top:22px; left:18px; right:42px; bottom:90px; }
+.poster.overlap.square .ov-back { top:16px; left:14px; right:34px; bottom:72px; }
+.poster.overlap .ov-front { position:absolute; background:white; padding:18px 16px; display:flex; flex-direction:column; top:44px; left:40px; right:14px; bottom:60px; }
+.poster.overlap.square .ov-front { top:32px; left:30px; right:10px; bottom:48px; padding:12px; }
+.poster.overlap .ov-format { font-family:'Inter',sans-serif; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+.poster.overlap.stories .ov-format { font-size:8px; }
+.poster.overlap.square .ov-format { font-size:7px; margin-bottom:6px; }
+.poster.overlap .ov-title { font-family:'Playfair Display',serif; font-weight:700; color:var(--dark); line-height:1.05; flex:1; }
+.poster.overlap.stories .ov-title { font-size:24px; }
+.poster.overlap.square .ov-title { font-size:16px; }
+.poster.overlap .ov-tagline { font-family:'Playfair Display',serif; font-style:italic; color:var(--accent); margin-top:8px; }
+.poster.overlap.stories .ov-tagline { font-size:12px; }
+.poster.overlap.square .ov-tagline { font-size:9px; }
+.poster.overlap .ov-bottom { position:absolute; bottom:0; left:0; right:0; height:58px; padding:10px 18px; display:flex; justify-content:space-between; align-items:flex-end; }
+.poster.overlap.square .ov-bottom { height:46px; padding:8px 14px; }
+.poster.overlap .ov-date { font-family:'Inter',sans-serif; font-weight:800; color:var(--dark); letter-spacing:-.02em; line-height:1; }
+.poster.overlap.stories .ov-date { font-size:26px; }
+.poster.overlap.square .ov-date { font-size:18px; }
+.poster.overlap .ov-addr { font-family:'Inter',sans-serif; color:var(--muted); text-align:right; }
+.poster.overlap.stories .ov-addr { font-size:9px; }
+.poster.overlap.square .ov-addr { font-size:7px; }
+
+/* МАКЕТ X: STAMP */
+.poster.stamp-mk { background:var(--milk); position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.poster.stamp-mk.stories { padding:24px; }
+.poster.stamp-mk.square { padding:18px; }
+.poster.stamp-mk .stmp-circle { border-radius:50%; border:2.5px solid var(--accent); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; flex-shrink:0; }
+.poster.stamp-mk.stories .stmp-circle { width:300px; height:300px; padding:36px; }
+.poster.stamp-mk.square .stmp-circle { width:220px; height:220px; padding:26px; }
+.poster.stamp-mk .stmp-brand { font-family:'Inter',sans-serif; font-weight:600; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); }
+.poster.stamp-mk.stories .stmp-brand { font-size:8px; margin-bottom:10px; }
+.poster.stamp-mk.square .stmp-brand { font-size:7px; margin-bottom:7px; }
+.poster.stamp-mk .stmp-title { font-family:'Playfair Display',serif; font-weight:700; color:var(--dark); line-height:1.05; }
+.poster.stamp-mk.stories .stmp-title { font-size:26px; }
+.poster.stamp-mk.square .stmp-title { font-size:18px; }
+.poster.stamp-mk .stmp-format { font-family:'Inter',sans-serif; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); }
+.poster.stamp-mk.stories .stmp-format { font-size:9px; margin-top:8px; }
+.poster.stamp-mk.square .stmp-format { font-size:7px; margin-top:5px; }
+.poster.stamp-mk .stmp-divider { width:40px; height:1px; background:var(--line); margin:10px auto; }
+.poster.stamp-mk.square .stmp-divider { margin:7px auto; width:28px; }
+.poster.stamp-mk .stmp-date { font-family:'Inter',sans-serif; font-weight:800; color:var(--dark); letter-spacing:-.01em; }
+.poster.stamp-mk.stories .stmp-date { font-size:22px; }
+.poster.stamp-mk.square .stmp-date { font-size:15px; }
+.poster.stamp-mk .stmp-time { font-family:'Inter',sans-serif; color:var(--muted); margin-top:3px; }
+.poster.stamp-mk.stories .stmp-time { font-size:10px; }
+.poster.stamp-mk.square .stmp-time { font-size:8px; }
+.poster.stamp-mk .stmp-footer { position:absolute; bottom:16px; left:0; right:0; text-align:center; font-family:'Inter',sans-serif; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
+.poster.stamp-mk.stories .stmp-footer { font-size:8px; }
+.poster.stamp-mk.square .stmp-footer { font-size:7px; bottom:10px; }
+
+/* МАКЕТ Y: DIAGONAL */
+.poster.diagonal { background:var(--cream); position:relative; overflow:hidden; }
+.poster.diagonal .diag-top { position:absolute; top:0; left:0; right:0; background:var(--accent); background-size:cover; background-position:center; }
+.poster.diagonal.stories .diag-top { height:260px; clip-path:polygon(0 0,100% 0,100% 60%,0 100%); }
+.poster.diagonal.square .diag-top { height:190px; clip-path:polygon(0 0,100% 0,100% 55%,0 100%); }
+.poster.diagonal .diag-top-content { position:absolute; top:0; left:0; right:0; padding:24px 24px 0; }
+.poster.diagonal.square .diag-top-content { padding:16px 18px 0; }
+.poster.diagonal .diag-day { font-family:'Inter',sans-serif; font-weight:900; color:white; line-height:.85; letter-spacing:-.04em; text-transform:uppercase; }
+.poster.diagonal.stories .diag-day { font-size:90px; }
+.poster.diagonal.square .diag-day { font-size:60px; }
+.poster.diagonal .diag-dow { font-family:'Inter',sans-serif; font-weight:600; color:rgba(255,255,255,.75); letter-spacing:.08em; text-transform:uppercase; margin-top:2px; }
+.poster.diagonal.stories .diag-dow { font-size:12px; }
+.poster.diagonal.square .diag-dow { font-size:9px; }
+.poster.diagonal .diag-bottom { position:absolute; bottom:0; left:0; right:0; padding:0 24px 22px; }
+.poster.diagonal.square .diag-bottom { padding:0 18px 16px; }
+.poster.diagonal .diag-title { font-family:'Playfair Display',serif; font-weight:700; color:var(--dark); line-height:1.05; }
+.poster.diagonal.stories .diag-title { font-size:28px; }
+.poster.diagonal.square .diag-title { font-size:19px; }
+.poster.diagonal .diag-tagline { font-family:'Playfair Display',serif; font-style:italic; color:var(--accent); margin-top:6px; }
+.poster.diagonal.stories .diag-tagline { font-size:13px; }
+.poster.diagonal.square .diag-tagline { font-size:10px; margin-top:4px; }
+.poster.diagonal .diag-meta { font-family:'Inter',sans-serif; color:var(--muted); margin-top:8px; }
+.poster.diagonal.stories .diag-meta { font-size:10px; }
+.poster.diagonal.square .diag-meta { font-size:8px; margin-top:5px; }
+
+/* МАКЕТ Z: SIDEBAR */
+.poster.sidebar { display:grid; grid-template-columns:1fr 56px; background:var(--cream); }
+.poster.sidebar.square { grid-template-columns:1fr 44px; }
+.poster.sidebar .sb-main { padding:22px 14px 18px 22px; display:flex; flex-direction:column; overflow:hidden; }
+.poster.sidebar.square .sb-main { padding:16px 10px 14px 16px; }
+.poster.sidebar .sb-format { font-family:'Inter',sans-serif; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+.poster.sidebar.stories .sb-format { font-size:9px; }
+.poster.sidebar.square .sb-format { font-size:7px; margin-bottom:8px; }
+.poster.sidebar .sb-title { font-family:'Playfair Display',serif; font-weight:700; color:var(--dark); line-height:1.05; flex:1; }
+.poster.sidebar.stories .sb-title { font-size:26px; }
+.poster.sidebar.square .sb-title { font-size:18px; }
+.poster.sidebar .sb-tagline { font-family:'Playfair Display',serif; font-style:italic; color:var(--accent); margin-bottom:14px; }
+.poster.sidebar.stories .sb-tagline { font-size:13px; margin-top:8px; }
+.poster.sidebar.square .sb-tagline { font-size:10px; margin-top:5px; margin-bottom:10px; }
+.poster.sidebar .sb-meta { border-top:1px solid var(--line); padding-top:10px; }
+.poster.sidebar.square .sb-meta { padding-top:7px; }
+.poster.sidebar .sb-date { font-family:'Inter',sans-serif; font-weight:700; color:var(--dark); }
+.poster.sidebar.stories .sb-date { font-size:13px; }
+.poster.sidebar.square .sb-date { font-size:10px; }
+.poster.sidebar .sb-sub { font-family:'Inter',sans-serif; color:var(--muted); margin-top:2px; }
+.poster.sidebar.stories .sb-sub { font-size:10px; }
+.poster.sidebar.square .sb-sub { font-size:8px; }
+.poster.sidebar .sb-col { background:var(--accent); display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:14px 0; }
+.poster.sidebar.square .sb-col { padding:10px 0; }
+.poster.sidebar .sb-col-brand { writing-mode:vertical-rl; transform:rotate(180deg); font-family:'Inter',sans-serif; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.85); }
+.poster.sidebar.stories .sb-col-brand { font-size:8px; }
+.poster.sidebar.square .sb-col-brand { font-size:7px; }
+.poster.sidebar .sb-col-day { font-family:'Inter',sans-serif; font-weight:900; color:white; text-align:center; line-height:1; letter-spacing:-.02em; }
+.poster.sidebar.stories .sb-col-day { font-size:20px; }
+.poster.sidebar.square .sb-col-day { font-size:14px; }
+.poster.sidebar .sb-col-price { font-family:'Inter',sans-serif; font-weight:700; color:white; }
+.poster.sidebar.stories .sb-col-price { font-size:11px; }
+.poster.sidebar.square .sb-col-price { font-size:8px; }
+
+/* МАКЕТ AA: QUOTE-CARD */
+.poster.quote-card { background:var(--night); display:flex; flex-direction:column; position:relative; overflow:hidden; }
+.poster.quote-card.stories { padding:36px 30px 28px; }
+.poster.quote-card.square { padding:24px 22px 18px; }
+.poster.quote-card .qc-mark { font-family:'Playfair Display',serif; font-size:96px; color:rgba(255,255,255,.06); line-height:.7; margin-bottom:8px; flex-shrink:0; }
+.poster.quote-card.square .qc-mark { font-size:64px; margin-bottom:4px; }
+.poster.quote-card .qc-text { font-family:'Playfair Display',serif; font-style:italic; color:white; line-height:1.35; flex:1; }
+.poster.quote-card.stories .qc-text { font-size:22px; }
+.poster.quote-card.square .qc-text { font-size:15px; }
+.poster.quote-card .qc-line { width:36px; height:2px; background:var(--accent); margin:20px 0; flex-shrink:0; }
+.poster.quote-card.square .qc-line { margin:14px 0; width:24px; }
+.poster.quote-card .qc-title { font-family:'Playfair Display',serif; font-weight:700; color:white; line-height:1.1; flex-shrink:0; }
+.poster.quote-card.stories .qc-title { font-size:20px; }
+.poster.quote-card.square .qc-title { font-size:13px; }
+.poster.quote-card .qc-sub { font-family:'Inter',sans-serif; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.45); margin-top:6px; }
+.poster.quote-card.stories .qc-sub { font-size:9px; }
+.poster.quote-card.square .qc-sub { font-size:7px; margin-top:4px; }
+.poster.quote-card .qc-addr { font-family:'Inter',sans-serif; color:rgba(255,255,255,.25); margin-top:4px; }
+.poster.quote-card.stories .qc-addr { font-size:9px; }
+.poster.quote-card.square .qc-addr { font-size:7px; margin-top:2px; }
+
+/* МАКЕТ BB: CORNERS */
+.poster.corners { background:var(--paper-cream); position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.poster.corners.stories { padding:40px 36px; }
+.poster.corners.square { padding:28px 26px; }
+.poster.corners::before,.poster.corners::after { content:''; position:absolute; border-color:var(--accent); border-style:solid; }
+.poster.corners::before { top:14px; left:14px; width:28px; height:28px; border-width:2px 0 0 2px; }
+.poster.corners::after { bottom:14px; right:14px; width:28px; height:28px; border-width:0 2px 2px 0; }
+.poster.corners.square::before { width:20px; height:20px; top:10px; left:10px; }
+.poster.corners.square::after { width:20px; height:20px; bottom:10px; right:10px; }
+.poster.corners .cn-corner-tr { position:absolute; top:14px; right:14px; width:28px; height:28px; border-top:2px solid var(--accent); border-right:2px solid var(--accent); }
+.poster.corners.square .cn-corner-tr { width:20px; height:20px; top:10px; right:10px; }
+.poster.corners .cn-corner-bl { position:absolute; bottom:14px; left:14px; width:28px; height:28px; border-bottom:2px solid var(--accent); border-left:2px solid var(--accent); }
+.poster.corners.square .cn-corner-bl { width:20px; height:20px; bottom:10px; left:10px; }
+.poster.corners .cn-brand { font-family:'Inter',sans-serif; font-weight:600; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); margin-bottom:18px; }
+.poster.corners.stories .cn-brand { font-size:9px; }
+.poster.corners.square .cn-brand { font-size:7px; margin-bottom:12px; }
+.poster.corners .cn-title { font-family:'Playfair Display',serif; font-weight:700; color:var(--dark); line-height:1.1; }
+.poster.corners.stories .cn-title { font-size:36px; }
+.poster.corners.square .cn-title { font-size:24px; }
+.poster.corners .cn-divider { width:40px; height:1px; background:var(--line); margin:16px auto; }
+.poster.corners.square .cn-divider { margin:10px auto; width:28px; }
+.poster.corners .cn-date { font-family:'Inter',sans-serif; font-weight:800; color:var(--dark); letter-spacing:-.01em; }
+.poster.corners.stories .cn-date { font-size:32px; }
+.poster.corners.square .cn-date { font-size:22px; }
+.poster.corners .cn-time { font-family:'Inter',sans-serif; color:var(--muted); margin-top:4px; }
+.poster.corners.stories .cn-time { font-size:11px; }
+.poster.corners.square .cn-time { font-size:8px; margin-top:2px; }
+.poster.corners .cn-addr { font-family:'Inter',sans-serif; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-top:18px; }
+.poster.corners.stories .cn-addr { font-size:9px; }
+.poster.corners.square .cn-addr { font-size:7px; margin-top:12px; }
+
+/* МАКЕТ CC: BAND */
+.poster.band { position:relative; overflow:hidden; background:var(--soft-dark); }
+.poster.band .band-photo { position:absolute; inset:0; background-size:cover; background-position:center; background-color:#6b5a4e; }
+.poster.band .band-photo::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,.25); }
+.poster.band .band-strip { position:absolute; left:0; right:0; background:var(--accent); padding:18px 22px; }
+.poster.band.stories .band-strip { top:45%; }
+.poster.band.square .band-strip { top:40%; padding:12px 16px; }
+.poster.band .band-title { font-family:'Playfair Display',serif; font-weight:700; color:white; line-height:1.05; letter-spacing:-.01em; }
+.poster.band.stories .band-title { font-size:28px; }
+.poster.band.square .band-title { font-size:19px; }
+.poster.band .band-tagline { font-family:'Playfair Display',serif; font-style:italic; color:rgba(255,255,255,.75); margin-top:6px; }
+.poster.band.stories .band-tagline { font-size:13px; }
+.poster.band.square .band-tagline { font-size:10px; margin-top:4px; }
+.poster.band .band-top { position:absolute; top:18px; left:22px; right:22px; display:flex; justify-content:space-between; align-items:flex-start; }
+.poster.band.square .band-top { top:12px; left:16px; right:16px; }
+.poster.band .band-date { font-family:'Inter',sans-serif; font-weight:700; color:white; letter-spacing:.04em; text-shadow:0 1px 4px rgba(0,0,0,.4); }
+.poster.band.stories .band-date { font-size:13px; }
+.poster.band.square .band-date { font-size:10px; }
+.poster.band .band-format { font-family:'Inter',sans-serif; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.75); text-shadow:0 1px 4px rgba(0,0,0,.4); }
+.poster.band.stories .band-format { font-size:9px; }
+.poster.band.square .band-format { font-size:7px; }
+.poster.band .band-bottom { position:absolute; bottom:16px; left:22px; right:22px; display:flex; justify-content:space-between; align-items:flex-end; }
+.poster.band.square .band-bottom { bottom:10px; left:16px; right:16px; }
+.poster.band .band-brand { font-family:'Inter',sans-serif; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.6); text-shadow:0 1px 3px rgba(0,0,0,.4); }
+.poster.band.stories .band-brand { font-size:8px; }
+.poster.band.square .band-brand { font-size:7px; }
+.poster.band .band-price { font-family:'Inter',sans-serif; font-weight:700; color:rgba(255,255,255,.75); text-shadow:0 1px 3px rgba(0,0,0,.4); }
+.poster.band.stories .band-price { font-size:12px; }
+.poster.band.square .band-price { font-size:9px; }
+
+/* МАКЕТ DD: MINIMAL-GRID */
+.poster.minimal-grid { background:#FAFAF8; border:1px solid var(--line); display:flex; flex-direction:column; }
+.poster.minimal-grid .mg-topline { height:3px; background:var(--accent); flex-shrink:0; }
+.poster.minimal-grid .mg-body { flex:1; padding:22px 22px 0; display:flex; flex-direction:column; }
+.poster.minimal-grid.square .mg-body { padding:16px 16px 0; }
+.poster.minimal-grid .mg-brand { font-family:'Inter',sans-serif; font-weight:600; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; }
+.poster.minimal-grid.stories .mg-brand { font-size:8px; }
+.poster.minimal-grid.square .mg-brand { font-size:7px; margin-bottom:10px; }
+.poster.minimal-grid .mg-title { font-family:'Playfair Display',serif; font-weight:700; color:var(--dark); line-height:1.05; flex:1; }
+.poster.minimal-grid.stories .mg-title { font-size:30px; }
+.poster.minimal-grid.square .mg-title { font-size:21px; }
+.poster.minimal-grid .mg-tagline { font-family:'Playfair Display',serif; font-style:italic; color:var(--accent); margin-top:10px; margin-bottom:18px; }
+.poster.minimal-grid.stories .mg-tagline { font-size:14px; }
+.poster.minimal-grid.square .mg-tagline { font-size:10px; margin-top:6px; margin-bottom:12px; }
+.poster.minimal-grid .mg-facts { display:grid; grid-template-columns:1fr 1fr; gap:12px 8px; margin-bottom:16px; }
+.poster.minimal-grid.square .mg-facts { gap:8px 6px; margin-bottom:10px; }
+.poster.minimal-grid .mg-fact-label { font-family:'Inter',sans-serif; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+.poster.minimal-grid.stories .mg-fact-label { font-size:7px; }
+.poster.minimal-grid.square .mg-fact-label { font-size:6px; }
+.poster.minimal-grid .mg-fact-value { font-family:'Inter',sans-serif; font-weight:600; color:var(--dark); margin-top:2px; }
+.poster.minimal-grid.stories .mg-fact-value { font-size:11px; }
+.poster.minimal-grid.square .mg-fact-value { font-size:9px; margin-top:1px; }
+.poster.minimal-grid .mg-fact-value.accent { color:var(--accent); }
+.poster.minimal-grid .mg-footer { padding:10px 22px; border-top:1px solid var(--line); font-family:'Inter',sans-serif; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+.poster.minimal-grid.stories .mg-footer { font-size:8px; }
+.poster.minimal-grid.square .mg-footer { font-size:7px; padding:7px 16px; }
+
+
 #toast {
-  position: fixed;
   bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
@@ -2797,12 +3396,26 @@ function buildDayFromEvent(e, regenSeed) {
   // Два варианта: разные макеты с учётом regen-сида
   const layouts = pickLayoutsForEvent(e, photos.length, regenSeed);
 
+  // Ближайшие события для TIMELINE-макета
+  const siblings = state.allEvents
+    ? state.allEvents
+        .filter(ev => ev.id !== e.id && ev.date >= e.date)
+        .sort((a,b) => a.date < b.date ? -1 : 1)
+        .slice(0, 3)
+        .map(ev => ({
+          date: ev.date,
+          time: ev.timeStart || '18:00',
+          event: { title: ev.name, format: ev.format, price: ev.price }
+        }))
+    : [];
+
   return {
-    dayKey: e.id,  // уникальный ключ (не date — на одну дату может быть 2+ события)
+    dayKey: e.id,
     date: e.date,
     dayOfWeek: DOWS[d.getDay()],
     time: e.timeStart || '18:00',
     no_tagline: false,
+    siblings,
     event: {
       id: e.id,
       format: e.format,
@@ -2907,6 +3520,18 @@ function pickLayoutsForEvent(e, photoCount, regenSeed) {
     ['product',           2,  1,  false, false],
     ['arch-trio',         2,  1,  false, false],
     ['clipping',          2,  1,  false, false],
+    ['ticket',            2,  0,  false, false],  // TICKET — без фото, типографика
+    ['window-frame',      2,  1,  false, false],  // WINDOW — с рамкой, нужно фото
+    ['timeline',          1,  0,  false, false],
+    ['stripe',            2,  0,  false, false],
+    ['overlap',           2,  1,  false, false],
+    ['stamp-mk',          1,  0,  true,  false],
+    ['diagonal',          2,  1,  false, false],
+    ['sidebar',           2,  1,  false, false],
+    ['quote-card',        2,  0,  false, false],
+    ['corners',           2,  0,  true,  false],
+    ['band',              2,  1,  false, false],
+    ['minimal-grid',      2,  0,  false, false],
   ];
 
   // Бонусные веса по категории события (+3 = сильно предпочтительно)
@@ -2915,22 +3540,22 @@ function pickLayoutsForEvent(e, photoCount, regenSeed) {
       bold:3, halftone:3, collage:3, clipping:3, 'broken-grid':2, 'arch-trio':2, frame:2
     },
     'вечеринк|дегустац': {
-      collage:3, frame:3, casual:2, bold:2, 'stacked-split':2, clipping:2, editorial:1
+      collage:3, frame:3, casual:2, bold:2, 'stacked-split':2, clipping:2, editorial:1, 'window-frame':2
     },
     'глина|рисов|украш|кулинар': {
-      scrapbook:3, 'grid-layout':3, product:3, 'arch-trio':2, 'split-elegant':2, hero:2
+      scrapbook:3, 'grid-layout':3, product:3, 'arch-trio':2, 'split-elegant':2, hero:2, ticket:2
     },
     'бьюти': {
-      'split-elegant':3, casual:2, product:2, clipping:2, scrapbook:2, frame:2
+      'split-elegant':3, casual:2, product:2, clipping:2, scrapbook:2, frame:2, 'window-frame':2
     },
     'книжн|эксперт|разговор|встреч': {
-      editorial:3, 'split-elegant':2, frame:2, clipping:2, 'stacked-split':2, product:2
+      editorial:3, 'split-elegant':2, frame:2, clipping:2, 'stacked-split':2, product:2, ticket:2
     },
     'день рождения|свидан': {
-      casual:3, frame:2, collage:2, clipping:2, scrapbook:2
+      casual:3, frame:2, collage:2, clipping:2, scrapbook:2, ticket:2, 'window-frame':2
     },
     'макраме|вышив|рукодел': {
-      product:3, 'arch-trio':2, 'split-elegant':2, scrapbook:2
+      product:3, 'arch-trio':2, 'split-elegant':2, scrapbook:2, ticket:2
     }
   };
 
@@ -3078,6 +3703,33 @@ function buildVariant(id, layout, accent, tagline, photo, photos, heroWord, e) {
   } else if (layout === 'clipping') {
     variant.photo = photo;
     variant.hero_word = heroWord;
+  } else if (layout === 'stripe') {
+    // нет фото
+  } else if (layout === 'overlap') {
+    variant.photo = photo;
+  } else if (layout === 'stamp-mk') {
+    // нет фото
+  } else if (layout === 'diagonal') {
+    variant.photo = photo;
+  } else if (layout === 'sidebar') {
+    variant.photo = photo;
+  } else if (layout === 'quote-card') {
+    // тёмный фон — ночной акцент
+    variant.accent = 'night';
+  } else if (layout === 'corners') {
+    // нет фото
+  } else if (layout === 'band') {
+    variant.photo = photo;
+  } else if (layout === 'minimal-grid') {
+    // нет фото
+  } else if (layout === 'ticket') {
+    // TICKET — чистый макет без фото, акцент на типографике
+  } else if (layout === 'window-frame') {
+    variant.photo = photo;
+  } else if (layout === 'timeline') {
+    // TIMELINE собирает ближайшие события из стейта
+    // Передаётся через buildDayFromEvent — добавим соседние события
+    variant.timeline_events = null; // заполняется при рендере через day.siblings
   }
   return variant;
 }
@@ -3331,7 +3983,11 @@ function layoutDisplayName(l) {
     'broken-grid':'BROKEN-GRID', 'halftone':'HALFTONE', 'frame':'FRAME',
     'casual':'CASUAL', 'split-elegant':'SPLIT-ELEGANT', 'editorial-layer':'JOURNAL',
     'collage':'COLLAGE', 'stacked-split':'STACKED', 'cutout':'CUTOUT',
-    'product':'PRODUCT', 'arch-trio':'ARCH-TRIO', 'clipping':'CLIPPING'
+    'product':'PRODUCT', 'arch-trio':'ARCH-TRIO', 'clipping':'CLIPPING',
+    'ticket':'TICKET', 'window-frame':'WINDOW', 'timeline':'TIMELINE',
+    'stripe':'STRIPE','overlap':'OVERLAP','stamp-mk':'STAMP',
+    'diagonal':'DIAGONAL','sidebar':'SIDEBAR','quote-card':'QUOTE',
+    'corners':'CORNERS','band':'BAND','minimal-grid':'MINIMAL'
   })[l] || l.toUpperCase();
 }
 function accentDisplayName(a) {
@@ -3385,6 +4041,18 @@ function renderPoster(day, v, format) {
   if (layoutClass === 'product') return renderProduct(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
   if (layoutClass === 'arch-trio') return renderArchTrio(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
   if (layoutClass === 'clipping') return renderClipping(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'ticket') return renderTicket(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'window-frame') return renderWindowFrame(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'timeline') return renderTimeline(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'stripe') return renderStripe(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'overlap') return renderOverlap(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'stamp-mk') return renderStampMk(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'diagonal') return renderDiagonal(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'sidebar') return renderSidebar(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'quote-card') return renderQuoteCard(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'corners') return renderCorners(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'band') return renderBand(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'minimal-grid') return renderMinimalGrid(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
   return '';
 }
 
@@ -3909,6 +4577,275 @@ function renderClipping(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, 
 }
 
 
+// S. TICKET — афиша в форме театрального билета
+function renderTicket(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const dayNum = String(d.getDate()).padStart(2,'0');
+  const monthNum = String(d.getMonth()+1).padStart(2,'0');
+  const taglineHtml = tg(v, 'tkt-tagline', true, 'div');
+  return `
+    <article class="poster ticket ${formatClass} ${accentClass}">
+      <div class="tkt-spine">
+        <div class="tkt-spine-text">Пространство · Детали</div>
+      </div>
+      <div class="tkt-perf"></div>
+      <div class="tkt-body">
+        <div class="tkt-brand">Пространство «Детали»</div>
+        <div class="tkt-title">${titleHtml}</div>
+        ${taglineHtml}
+        <div class="tkt-tear">
+          <div class="tkt-date">${dayNum}.${monthNum}</div>
+          <div class="tkt-meta">${day.dayOfWeek} · ${day.time} · ${escapeHtml(day.event.format || '')}</div>
+          ${day.event.price ? `<div class="tkt-price">${day.event.price} руб</div>` : ''}
+          <div class="tkt-addr">Пожарный 3Б · +375 29 315-15-83</div>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+// T. WINDOW — жёсткая рамка-окно с фото и подписью внутри
+function renderWindowFrame(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const dayNum = String(d.getDate()).padStart(2,'0');
+  const monthNum = String(d.getMonth()+1).padStart(2,'0');
+  const photoStyle = v.photo ? `background-image: url('${v.photo}');` : '';
+  return `
+    <article class="poster window-frame ${formatClass} ${accentClass}">
+      <div class="wf-border">
+        <div class="wf-photo" style="${photoStyle}"></div>
+        <div class="wf-inner-caption">
+          <div class="wf-inner-format">${escapeHtml(day.event.format || '')}</div>
+          <div class="wf-inner-title">${titleHtml}</div>
+        </div>
+      </div>
+      <div class="wf-footer">
+        <div>
+          <div class="wf-date">${dayNum}.${monthNum}</div>
+          <div class="wf-time">${day.dayOfWeek} · ${day.time}${day.event.price ? ' · ' + day.event.price + ' руб' : ''}</div>
+        </div>
+        <div class="wf-brand">Пространство<br>Детали</div>
+      </div>
+    </article>
+  `;
+}
+
+// U. TIMELINE — расписание нескольких событий на одной афише
+// Использует v.timeline_events — массив событий недели
+function renderTimeline(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const monthLabel = MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear();
+  // Акценты по категориям для разных точек на временной шкале
+  const dotColors = {
+    terracotta: '#C06D54', amber: '#EF9F27', olive: '#6B7A4A',
+    ochra: '#C47A35', graphite: '#4A5568', coffee: '#8B7355',
+    night: '#1F2D4A', forest: '#2D4A3E', scarlet: '#C94444'
+  };
+  const events = v.timeline_events || [{ date: day.date, time: day.time, event: day.event }, ...(day.siblings || [])];
+  const eventsHtml = events.slice(0,4).map(ev => {
+    const evD = parseDate(ev.date || ev.event?.date || day.date);
+    const evDow = DOWS[evD.getDay()];
+    const evDay = evD.getDate();
+    const evMonth = MONTHS[evD.getMonth()];
+    const evTitle = ev.event?.title || ev.name || day.event.title || '';
+    const evFormat = ev.event?.format || ev.format || day.event.format || '';
+    const evPrice = ev.event?.price || ev.price || day.event.price;
+    const evTime = ev.time || ev.timeStart || day.time;
+    const evAccent = pickAccentByFormat(evFormat);
+    const dotColor = dotColors[evAccent] || '#C06D54';
+    return `
+      <div class="tl-event">
+        <div class="tl-dot" style="background:${dotColor};"></div>
+        <div class="tl-ev-date" style="color:${dotColor};">${evDow} · ${evDay} ${evMonth}</div>
+        <div class="tl-ev-title">${escapeHtml(evTitle)}</div>
+        <div class="tl-ev-meta">${evTime ? evTime + ' · ' : ''}${escapeHtml(evFormat)}${evPrice ? ' · ' + evPrice + ' руб' : ''}</div>
+      </div>`;
+  }).join('');
+
+  return `
+    <article class="poster timeline ${formatClass} ${accentClass}">
+      <div class="tl-header">
+        <div class="tl-header-label">Расписание</div>
+        <div class="tl-header-month">${monthLabel}</div>
+      </div>
+      <div class="tl-body">${eventsHtml}</div>
+      <div class="tl-footer">Пожарный 3Б · +375 29 315-15-83</div>
+    </article>
+  `;
+}
+
+
+// V. STRIPE
+function renderStripe(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const words = (day.event.title||'').split(' ').filter(Boolean);
+  const headText = words.slice(0,2).join(' ').toUpperCase();
+  return `<article class="poster stripe ${formatClass} ${accentClass}">
+    <div class="str-head"><div class="str-head-title">${escapeHtml(headText)}</div></div>
+    <div class="str-divider"></div>
+    <div class="str-body">
+      <div class="str-format">${escapeHtml(day.event.format||'')}</div>
+      <div class="str-title">${titleHtml}</div>
+      ${tg(v,'str-tagline')}
+      <div class="str-info">
+        <div class="str-date">${d.getDate()} ${monthName} · ${day.time}</div>
+        <div class="str-meta">${escapeHtml(formatMeta)}</div>
+      </div>
+    </div>
+    <div class="str-foot">Пространство · Детали · Пожарный 3Б</div>
+  </article>`;
+}
+
+// W. OVERLAP
+function renderOverlap(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const dayNum = String(d.getDate()).padStart(2,'0');
+  const monthNum = String(d.getMonth()+1).padStart(2,'0');
+  const backStyle = v.photo ? `background-image:url('${v.photo}');` : '';
+  return `<article class="poster overlap ${formatClass} ${accentClass}">
+    <div class="ov-back" style="${backStyle}"></div>
+    <div class="ov-front">
+      <div class="ov-format">${escapeHtml(day.event.format||'')}</div>
+      <div class="ov-title">${titleHtml}</div>
+      ${tg(v,'ov-tagline')}
+    </div>
+    <div class="ov-bottom">
+      <div class="ov-date">${dayNum}.${monthNum}</div>
+      <div class="ov-addr">${day.time}${day.event.price ? ' · '+day.event.price+' руб' : ''}<br>Пожарный 3Б</div>
+    </div>
+  </article>`;
+}
+
+// X. STAMP-MK
+function renderStampMk(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const dayNum = String(d.getDate()).padStart(2,'0');
+  const monthNum = String(d.getMonth()+1).padStart(2,'0');
+  return `<article class="poster stamp-mk ${formatClass} ${accentClass}">
+    <div class="stmp-circle">
+      <div class="stmp-brand">Детали</div>
+      <div class="stmp-title">${titleHtml}</div>
+      <div class="stmp-format">${escapeHtml(day.event.format||'')}</div>
+      <div class="stmp-divider"></div>
+      <div class="stmp-date">${dayNum}.${monthNum}</div>
+      <div class="stmp-time">${day.time}${day.event.price ? ' · '+day.event.price+' руб' : ''}</div>
+    </div>
+    <div class="stmp-footer">Пожарный 3Б · +375 29 315-15-83</div>
+  </article>`;
+}
+
+// Y. DIAGONAL
+function renderDiagonal(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const photoStyle = v.photo ? `background-image:url('${v.photo}');` : '';
+  return `<article class="poster diagonal ${formatClass} ${accentClass}">
+    <div class="diag-top" style="${photoStyle}"></div>
+    <div class="diag-top-content">
+      <div class="diag-day">${String(d.getDate()).padStart(2,'0')}</div>
+      <div class="diag-dow">${day.dayOfWeek} · ${monthName}</div>
+    </div>
+    <div class="diag-bottom">
+      <div class="diag-title">${titleHtml}</div>
+      ${tg(v,'diag-tagline')}
+      <div class="diag-meta">${day.time}${day.event.price ? ' · '+day.event.price+' руб' : ''} · ${escapeHtml(day.event.format||'')} · Пожарный 3Б</div>
+    </div>
+  </article>`;
+}
+
+// Z. SIDEBAR
+function renderSidebar(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  return `<article class="poster sidebar ${formatClass} ${accentClass}">
+    <div class="sb-main">
+      <div class="sb-format">${escapeHtml(day.event.format||'')}</div>
+      <div class="sb-title">${titleHtml}</div>
+      ${tg(v,'sb-tagline')}
+      <div class="sb-meta">
+        <div class="sb-date">${d.getDate()} ${monthName} · ${day.time}</div>
+        <div class="sb-sub">${escapeHtml(day.event.format||'')}${day.event.price ? ' · '+day.event.price+' руб' : ''}</div>
+      </div>
+    </div>
+    <div class="sb-col">
+      <div class="sb-col-brand">Детали</div>
+      <div class="sb-col-day">${String(d.getDate()).padStart(2,'0')}<br><span style="font-size:.5em;font-weight:600;letter-spacing:.1em;opacity:.75;">${monthName.slice(0,3).toUpperCase()}</span></div>
+      <div class="sb-col-price">${day.event.price ? day.event.price+'₽' : ''}</div>
+    </div>
+  </article>`;
+}
+
+// AA. QUOTE-CARD
+function renderQuoteCard(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const quoteText = v.tagline || pickTaglineByFormat(day.event.format, day.event.title);
+  return `<article class="poster quote-card ${formatClass} ${accentClass}">
+    <div class="qc-mark">"</div>
+    <div class="qc-text">${escapeHtml(quoteText)}</div>
+    <div class="qc-line"></div>
+    <div class="qc-title">${titleHtml}</div>
+    <div class="qc-sub">${escapeHtml(day.event.format||'')} · ${d.getDate()} ${monthName} · ${day.time}</div>
+    <div class="qc-addr">${day.event.price ? day.event.price+' руб · ' : ''}Пожарный 3Б · +375 29 315-15-83</div>
+  </article>`;
+}
+
+// BB. CORNERS
+function renderCorners(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const dayNum = String(d.getDate()).padStart(2,'0');
+  const monthNum = String(d.getMonth()+1).padStart(2,'0');
+  return `<article class="poster corners ${formatClass} ${accentClass}">
+    <div class="cn-corner-tr"></div>
+    <div class="cn-corner-bl"></div>
+    <div class="cn-brand">Пространство Детали</div>
+    <div class="cn-title">${titleHtml}</div>
+    <div class="cn-divider"></div>
+    <div class="cn-date">${dayNum}.${monthNum}</div>
+    <div class="cn-time">${day.dayOfWeek} · ${day.time}${day.event.price ? ' · '+day.event.price+' руб' : ''}</div>
+    <div class="cn-addr">Пожарный 3Б · +375 29 315-15-83</div>
+  </article>`;
+}
+
+// CC. BAND
+function renderBand(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const photoStyle = v.photo ? `background-image:url('${v.photo}');` : '';
+  return `<article class="poster band ${formatClass} ${accentClass}">
+    <div class="band-photo" style="${photoStyle}"></div>
+    <div class="band-top">
+      <div class="band-date">${d.getDate()} ${monthName} · ${day.time}</div>
+      <div class="band-format">${escapeHtml(day.event.format||'')}</div>
+    </div>
+    <div class="band-strip">
+      <div class="band-title">${titleHtml}</div>
+      ${tg(v,'band-tagline')}
+    </div>
+    <div class="band-bottom">
+      <div class="band-brand">Детали</div>
+      <div class="band-price">${day.event.price ? day.event.price+' руб' : ''}</div>
+    </div>
+  </article>`;
+}
+
+// DD. MINIMAL-GRID
+function renderMinimalGrid(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  return `<article class="poster minimal-grid ${formatClass} ${accentClass}">
+    <div class="mg-topline"></div>
+    <div class="mg-body">
+      <div class="mg-brand">Пространство Детали</div>
+      <div class="mg-title">${titleHtml}</div>
+      ${tg(v,'mg-tagline')}
+      <div class="mg-facts">
+        <div><div class="mg-fact-label">Дата</div><div class="mg-fact-value">${d.getDate()} ${monthName} ${d.getFullYear()}</div></div>
+        <div><div class="mg-fact-label">Время</div><div class="mg-fact-value">${day.time}</div></div>
+        <div><div class="mg-fact-label">Формат</div><div class="mg-fact-value">${escapeHtml(day.event.format||'')}</div></div>
+        <div><div class="mg-fact-label">Цена</div><div class="mg-fact-value accent">${day.event.price ? day.event.price+' руб' : '—'}</div></div>
+      </div>
+    </div>
+    <div class="mg-footer">Пожарный 3Б · +375 29 315-15-83</div>
+  </article>`;
+}
+
+
 /* ============================================================
    PNG-ЭКСПОРТ
    ============================================================ */
@@ -4204,7 +5141,11 @@ function renderPreview(ev) {
     ['bold', 'night'], ['scrapbook', accent], ['broken-grid', accent], ['halftone', accent],
     ['frame', accent], ['casual', accent], ['split-elegant', accent], ['editorial-layer', accent],
     ['collage', accent], ['stacked-split', accent], ['cutout', accent],
-    ['product', 'coffee'], ['arch-trio', accent], ['clipping', accent]
+    ['product', 'coffee'], ['arch-trio', accent], ['clipping', accent],
+    ['ticket', accent], ['window-frame', accent], ['timeline', accent],
+    ['stripe', accent], ['overlap', accent], ['stamp-mk', accent],
+    ['diagonal', accent], ['sidebar', accent], ['quote-card', 'night'],
+    ['corners', accent], ['band', accent], ['minimal-grid', accent]
   ];
 
   const evOptions = state.allEvents.map(e =>
