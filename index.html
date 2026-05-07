@@ -776,11 +776,15 @@ main {
     </div>
     <div class="sep"></div>
     <div class="group">
-      <button class="primary" onclick="publishEventsToAlfa('create')" title="Создать в Альфе все события со статусом «Черновик»">🚀 Опубликовать черновики</button>
       <button onclick="publishEventsToAlfa('sync')" title="Применить в Альфе все изменения" id="syncBtn" style="display:none">🔄 Применить изменения <span id="syncCount" class="badge"></span></button>
       <button onclick="pullFromAlfa()" title="Сравнить локальные данные с Альфой и подсветить расхождения" id="pullBtn">⬇ Подтянуть из Альфы <span id="pullDiffCount" class="badge" style="display:none">0</span></button>
       <button onclick="rebuildFromAlfa()" title="Полностью переписать админку из Альфы (Альфа = мастер)" style="border-color: var(--red); color: var(--red);">🔁 Перезагрузить из Альфы</button>
       <button class="ghost" onclick="testAlfaConnection()" title="Проверить связь с Альфа CRM">🔍</button>
+    </div>
+    <div class="sep"></div>
+    <div class="group">
+      <button onclick="window.open('view.html', '_blank')" title="Открыть страницу для клиентов в новой вкладке">🌐 Как клиент</button>
+      <button onclick="window.open('team.html', '_blank')" title="Открыть страницу для промо/SMM в новой вкладке">📣 Как промо</button>
     </div>
     <div class="sep"></div>
     <div class="group">
