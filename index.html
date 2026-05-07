@@ -1459,6 +1459,7 @@ main {
       <button onclick="window.open('team.html', '_blank')" title="Открыть страницу для промо/SMM в новой вкладке">📣 Как промо</button>
       <button onclick="openWeekPoster()" title="Сделать афишу на неделю — текст для Telegram + картинка для Instagram">🗓 Афиша недели</button>
       <button onclick="openPostersStudio()" title="Открыть генератор афиш на каждое событие — выбираешь дни, агент собирает 2 варианта на каждый">🎨 Афиши событий</button>
+      <button onclick="openTemplatesGallery()" title="Посмотреть все 18 шаблонов на одном событии">🖼 Галерея шаблонов</button>
     </div>
     <div class="sep"></div>
     <div class="group">
@@ -4200,6 +4201,34 @@ const PRIVATE_FORMATS = ['День рождения', 'Свидание'];
 // Открывает отдельную страницу-генератор афиш на каждое событие.
 // Передача данных — через localStorage, чтобы posters.html не нужно было
 // заново логиниться и вызывать API.
+// Открыть галерею всех 18 шаблонов
+function openTemplatesGallery() {
+  try {
+    const payload = {
+      timestamp: new Date().toISOString(),
+      editorName: state.editorName || '',
+      apiUrl: CONFIG.APPS_SCRIPT_URL,
+      project: CONFIG.PROJECT,
+      events: state.events.map(e => ({
+        id: e.id, date: e.date, timeStart: e.timeStart || '',
+        duration: e.duration || null, format: e.format || '',
+        name: e.name || '', teacher: e.teacher || '',
+        price: e.price || null, limit: e.limit || null,
+        description: e.description || '',
+        publishedToClients: e.publishedToClients !== false,
+        status: e.status || 'draft',
+        references: Array.isArray(e.references) ? e.references.map(r => ({
+          url: r.url||'', thumb: r.thumb||'', domain: r.domain||'', note: r.note||''
+        })).filter(r => r.url) : []
+      }))
+    };
+    localStorage.setItem('detali_posters_payload', JSON.stringify(payload));
+    window.open('posters.html?mode=preview&v=' + Date.now(), '_blank');
+  } catch(e) {
+    toast('Не удалось открыть галерею: ' + e.message, 'err');
+  }
+}
+
 function openPostersStudio() {
   if (!state.events || !state.events.length) {
     toast('Сначала добавьте события', 'err');

@@ -4156,8 +4156,144 @@ function toast(msg, type) {
   setTimeout(() => t.className = '', 3000);
 }
 
+/* ============================================================
+   PREVIEW-РЕЖИМ — галерея всех 18 шаблонов на одном событии
+   Запуск: posters.html?mode=preview
+   ============================================================ */
+function initPreview() {
+  document.title = 'Галерея шаблонов · Детали';
+  document.querySelector('.app-header h1').textContent = 'Галерея шаблонов';
+  document.getElementById('headerActions').innerHTML =
+    `<button class="btn ghost" onclick="window.close()">✕ Закрыть</button>`;
+
+  document.getElementById('screenSelector').classList.remove('active');
+  document.getElementById('screenGenerator').classList.remove('active');
+  document.body.insertAdjacentHTML('beforeend',
+    `<div id="previewRoot" style="max-width:1200px;margin:0 auto;padding:24px 28px 60px;"></div>`);
+
+  loadFromStorage();
+
+  const evWithPhoto = state.allEvents.find(e => (e.references||[]).some(r=>r.thumb));
+  const ev = evWithPhoto || state.allEvents[0];
+
+  if (!ev) {
+    document.getElementById('previewRoot').innerHTML = `
+      <div style="text-align:center;padding:80px 0;color:var(--muted)">
+        <div style="font-family:'Playfair Display',serif;font-size:24px;margin-bottom:8px;color:var(--dark)">Нет данных</div>
+        <div>Откройте через кнопку «🎨 Афиши событий» в админке.</div>
+      </div>`;
+    return;
+  }
+  renderPreview(ev);
+}
+
+function renderPreview(ev) {
+  const root = document.getElementById('previewRoot');
+  if (!root) return;
+  const day = buildDayFromEvent(ev, 0);
+  const photos = (ev.references||[]).map(r => upgradePinterestUrl(r.thumb||r.url||'')).filter(Boolean);
+  const photo = photos[0] || null;
+  const heroWord = pickHeroWord(ev.name, ev.format);
+  const tagline = pickTaglineByFormat(ev.format, ev.name);
+  const accent = pickAccentByFormat(ev.format);
+  const d = parseDate(ev.date);
+  const dateStr = `${DOWS[d.getDay()]} · ${d.getDate()} ${MONTHS[d.getMonth()]} · ${ev.timeStart||'18:00'}`;
+
+  const ALL_LAYOUTS = [
+    ['hero', accent], ['split', accent], ['grid-layout', accent], ['editorial', accent],
+    ['bold', 'night'], ['scrapbook', accent], ['broken-grid', accent], ['halftone', accent],
+    ['frame', accent], ['casual', accent], ['split-elegant', accent], ['editorial-layer', accent],
+    ['collage', accent], ['stacked-split', accent], ['cutout', accent],
+    ['product', 'coffee'], ['arch-trio', accent], ['clipping', accent]
+  ];
+
+  const evOptions = state.allEvents.map(e =>
+    `<option value="${escapeHtml(e.id)}"${e.id===ev.id?' selected':''}>${escapeHtml(e.name||'—')} · ${e.date}</option>`
+  ).join('');
+
+  root.innerHTML = `
+    <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px;">
+      <h2 style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--dark);">${escapeHtml(ev.name||'—')}</h2>
+      <span style="font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;">${dateStr}</span>
+      <span style="font-size:11px;color:var(--terracotta);font-weight:600;">${escapeHtml(ev.format||'')}</span>
+      ${ev.price ? `<span style="font-size:11px;color:var(--soft-dark);">${ev.price} руб</span>` : ''}
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:32px;">
+      <label style="font-size:12px;color:var(--muted);">Событие:</label>
+      <select id="pvSel" style="font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:white;color:var(--dark);max-width:340px;">${evOptions}</select>
+      <button class="btn" onclick="renderPreview(state.allEvents.find(e=>e.id===document.getElementById('pvSel').value)||state.allEvents[0])">Обновить</button>
+    </div>
+    <div id="pvGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:28px 20px;"></div>
+  `;
+
+  document.getElementById('pvSel').onchange = function() {
+    const chosen = state.allEvents.find(e => e.id === this.value);
+    if (chosen) renderPreview(chosen);
+  };
+
+  const grid = document.getElementById('pvGrid');
+  const SCALE = 0.48;
+  const PH = 720, PW = 405;
+  const cardH = Math.round(PH * SCALE);
+  const cardW = Math.round(PW * SCALE);
+
+  ALL_LAYOUTS.forEach(([layout, ac]) => {
+    const variant = buildVariant('A', layout, ac, tagline, photo, photos, heroWord, ev);
+    const posterHtml = renderPoster(day, variant, 'stories');
+    const name = layoutDisplayName(layout);
+    const acName = accentDisplayName(variant.accent || ac);
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `display:flex;flex-direction:column;align-items:center;gap:6px;`;
+    wrap.innerHTML = `
+      <div style="width:${cardW}px;height:${cardH}px;overflow:hidden;border-radius:10px;box-shadow:0 6px 22px rgba(0,0,0,0.11);flex-shrink:0;">
+        <div style="transform:scale(${SCALE});transform-origin:top left;width:${PW}px;height:${PH}px;">${posterHtml}</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.18em;color:var(--dark);text-transform:uppercase;">${name}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:1px;">${acName}</div>
+      </div>
+    `;
+    grid.appendChild(wrap);
+  });
+
+  requestAnimationFrame(() => {
+    const autoFits = [
+      ['.poster.editorial .hero-word', autoFitHeroWord, null],
+      ['.poster.frame .frame-title', el => autoFitElement(el,'--frame-title-size'), null],
+      ['.poster.bold .bold-title', el => autoFitElement(el,'--bold-title-size'), null],
+      ['.poster.cutout .co-headline', el => autoFitElement(el,'--co-headline-size'), null],
+      ['.poster.arch-trio .at-title', el => autoFitElement(el,'--at-title-size'), null],
+      ['.poster.split-elegant .se-title', el => autoFitElement(el,'--se-title-size'), null],
+      ['.poster.casual .casual-title', el => autoFitElement(el,'--casual-title-size'), null],
+      ['.poster.product .prod-title', el => autoFitElement(el,'--prod-title-size'), null],
+    ];
+    autoFits.forEach(([sel, fn]) => grid.querySelectorAll(sel).forEach(fn));
+    grid.querySelectorAll('.poster.stacked-split').forEach(poster => {
+      const col = poster.querySelector('.ss-column');
+      const maxW = col ? col.clientWidth - 36 : 150;
+      poster.querySelectorAll('.ss-word').forEach(el => {
+        let sz = parseFloat(window.getComputedStyle(el).fontSize), g=20;
+        while (el.scrollWidth > maxW && sz > 14 && g-- > 0) {
+          sz -= 3; el.style.setProperty('--ss-word-size', sz+'px');
+        }
+      });
+    });
+    grid.querySelectorAll('.poster.halftone .ht-title-row').forEach(el => {
+      const pw = (el.closest('.poster')||{clientWidth:405}).clientWidth - 60;
+      let sz = parseFloat(window.getComputedStyle(el).fontSize);
+      while (el.scrollWidth > pw && sz > 16) { sz -= 4; el.style.fontSize = sz+'px'; }
+    });
+  });
+}
+
 // Запуск
-init();
+const _urlMode = new URLSearchParams(location.search).get('mode');
+if (_urlMode === 'preview') {
+  initPreview();
+} else {
+  init();
+}
 </script>
 
 </body>
