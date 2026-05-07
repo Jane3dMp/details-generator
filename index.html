@@ -4237,7 +4237,7 @@ function openPostersStudio() {
       }))
     };
     localStorage.setItem('detali_posters_payload', JSON.stringify(payload));
-    window.open('posters.html', '_blank');
+    window.open('posters.html?v=' + Date.now(), '_blank');
   } catch(e) {
     console.error('openPostersStudio failed', e);
     toast('Не удалось передать данные: ' + e.message, 'err');
