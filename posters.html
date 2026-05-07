@@ -33,25 +33,51 @@
   --green: #5b8a4e;
   --red: #c45a5a;
 
-  /* РАСШИРЕННАЯ ПАЛИТРА — для макетов «выбиваться» */
-  --night: #1F2D4A;          /* глубокий ночной (как реф #1) */
+  /* РАСШИРЕННАЯ ПАЛИТРА — выбивающиеся акценты */
+  --night: #1F2D4A;
   --night-deep: #131C2E;
-  --mint: #A8E0A0;            /* контрастный зелёный (как реф #4) */
+  --mint: #A8E0A0;
   --mint-deep: #6FBA64;
-  --bordeaux: #4A1F1F;        /* тёмный бордо для кинопостеров */
+  --bordeaux: #4A1F1F;
   --bordeaux-deep: #2B0F0F;
-  --paper-cream: #F0E6D2;     /* кремовая бумага для journal-стиля */
+
+  /* НОВЫЕ АКЦЕНТЫ из референсов */
+  --ochra: #C47A35;           /* охра-золото — книжный/живопись (реф Minimal Aesthetics) */
+  --ochra-deep: #A05E22;
+  --scarlet: #C94444;         /* красный — яркий выбивающийся (реф Касание, Doubts) */
+  --scarlet-deep: #A03030;
+  --graphite: #4A5568;        /* грифель — журнальный холодный (реф Sunday, Jen) */
+  --graphite-deep: #2D3748;
+  --coffee: #8B7355;          /* кофе — архивный нейтральный (реф Petrichor) */
+  --coffee-deep: #6B5640;
+  --forest: #2D4A3E;          /* тёмный лес — глубокий зелёный (реф New Post) */
+  --forest-deep: #1A2E26;
+
+  /* НОВЫЕ ФОНОВЫЕ ТОНА */
+  --paper-cream: #F0E6D2;     /* архивная бумага — journal/product стиль */
+  --warm-gray: #E8E4DC;       /* тёплый серый — ARCH-TRIO фон */
+  --chalk: #F5F2EC;           /* почти-белый — PRODUCT, Living Clay */
   --tape-yellow: #F4D77A;     /* малярный скотч в скрапбуке */
 
   --accent: var(--terracotta);
   --accent-deep: var(--terracotta-deep);
 }
+
+/* Существующие классы */
 .accent-terracotta { --accent: var(--terracotta); --accent-deep: var(--terracotta-deep); }
-.accent-amber { --accent: var(--amber); --accent-deep: var(--amber-deep); }
-.accent-olive { --accent: var(--olive); --accent-deep: var(--olive-light); }
-.accent-night { --accent: var(--night); --accent-deep: var(--night-deep); }
-.accent-mint { --accent: var(--mint-deep); --accent-deep: var(--mint); }
-.accent-bordeaux { --accent: var(--bordeaux); --accent-deep: var(--bordeaux-deep); }
+.accent-amber      { --accent: var(--amber);      --accent-deep: var(--amber-deep); }
+.accent-olive      { --accent: var(--olive);      --accent-deep: var(--olive-light); }
+.accent-night      { --accent: var(--night);      --accent-deep: var(--night-deep); }
+.accent-mint       { --accent: var(--mint-deep);  --accent-deep: var(--mint); }
+.accent-bordeaux   { --accent: var(--bordeaux);   --accent-deep: var(--bordeaux-deep); }
+
+/* Новые классы */
+.accent-ochra    { --accent: var(--ochra);    --accent-deep: var(--ochra-deep); }
+.accent-scarlet  { --accent: var(--scarlet);  --accent-deep: var(--scarlet-deep); }
+.accent-graphite { --accent: var(--graphite); --accent-deep: var(--graphite-deep); }
+.accent-coffee   { --accent: var(--coffee);   --accent-deep: var(--coffee-deep); }
+.accent-forest   { --accent: var(--forest);   --accent-deep: var(--forest-deep); }
+
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1055,13 +1081,13 @@ body {
   overflow: hidden;
 }
 .poster.scrapbook .scrap-body {
-  padding: 24px 24px 18px;
-  padding-right: 48%;  /* оставляем место под полароид справа */
+  padding: 22px 22px 18px;
   position: relative;
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
-.poster.scrapbook.square .scrap-body { padding: 18px 20px 14px; padding-right: 44%; }
+.poster.scrapbook.square .scrap-body { padding: 16px 18px 14px; }
 .poster.scrapbook .scrap-brand {
   font-family: 'Inter', sans-serif;
   font-size: 10px;
@@ -1069,7 +1095,7 @@ body {
   text-transform: uppercase;
   color: var(--soft-dark);
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 .poster.scrapbook.square .scrap-brand { font-size: 8px; margin-bottom: 8px; }
 .poster.scrapbook .scrap-title {
@@ -1080,72 +1106,57 @@ body {
   letter-spacing: -0.01em;
   word-break: normal;
   hyphens: none;
-  max-width: 60%;
+  max-width: 62%;  /* оставляем место под полароид справа */
 }
 .poster.scrapbook.stories .scrap-title { font-size: 48px; }
-.poster.scrapbook.square .scrap-title { font-size: 32px; }
+.poster.scrapbook.square .scrap-title { font-size: 30px; }
 .poster.scrapbook .scrap-tagline {
   font-family: 'Caveat', cursive;
   color: var(--accent);
   font-style: italic;
+  max-width: 62%;
 }
-.poster.scrapbook.stories .scrap-tagline { font-size: 22px; margin-top: 4px; }
-.poster.scrapbook.square .scrap-tagline { font-size: 16px; margin-top: 2px; }
+.poster.scrapbook.stories .scrap-tagline { font-size: 20px; margin-top: 4px; }
+.poster.scrapbook.square .scrap-tagline { font-size: 14px; margin-top: 2px; }
 
-/* Flex-ряд: заголовок слева + полароид справа */
-.poster.scrapbook .scrap-main-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  flex: 1;
-  min-height: 0;
-}
-.poster.scrapbook .scrap-text-col {
-  flex: 1;
-  min-width: 0;
-}
+/* Полароид — absolute в правом верхнем углу body */
+.poster.scrapbook .scrap-main-row { display: contents; }
+.poster.scrapbook .scrap-text-col { display: contents; }
 .poster.scrapbook .polaroid {
-  flex-shrink: 0;
-  width: 28%;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 30%;
   background: white;
   padding: 5px 5px 10px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-  transform: rotate(4deg);
-  position: relative;
-  margin-top: 8px;
+  transform: rotate(5deg);
+  z-index: 10;
 }
-.poster.scrapbook.square .polaroid {
-  width: 26%;
-  padding: 4px 4px 8px;
-}
+.poster.scrapbook.square .polaroid { width: 28%; top: 12px; right: 12px; }
 .poster.scrapbook .polaroid-img {
   aspect-ratio: 1;
   background-size: cover;
   background-position: center;
   background-color: #d8c8b5;
 }
-/* Малярный скотч полароида */
 .poster.scrapbook .polaroid::before,
 .poster.scrapbook .polaroid::after {
   content: '';
   position: absolute;
-  width: 38px;
-  height: 14px;
+  width: 32px;
+  height: 12px;
   background: var(--tape-yellow);
   background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.5) 0 4px, transparent 4px 8px);
   opacity: 0.85;
 }
-.poster.scrapbook .polaroid::before { top: -8px; left: 8px; transform: rotate(-12deg); }
-.poster.scrapbook .polaroid::after { bottom: -6px; right: 12px; transform: rotate(8deg); }
+.poster.scrapbook .polaroid::before { top: -7px; left: 6px; transform: rotate(-10deg); }
+.poster.scrapbook .polaroid::after { bottom: -5px; right: 8px; transform: rotate(7deg); }
 .poster.scrapbook .scrap-date-block {
   margin-top: auto;
-  margin-right: -48%;  /* компенсируем padding-right scrap-body, идём на полную ширину */
   font-family: 'Caveat', cursive;
   color: var(--dark);
-  position: relative;
-  z-index: 5;
 }
-.poster.scrapbook.square .scrap-date-block { margin-right: -44%; }
 .poster.scrapbook.stories .scrap-date-block { font-size: 32px; line-height: 1.1; }
 .poster.scrapbook.square .scrap-date-block { font-size: 22px; }
 .poster.scrapbook .scrap-meta {
@@ -1153,12 +1164,11 @@ body {
   font-size: 11px;
   color: var(--soft-dark);
   margin-top: 12px;
-  margin-right: -48%;
   letter-spacing: 0.04em;
   position: relative;
   z-index: 5;
 }
-.poster.scrapbook.square .scrap-meta { font-size: 9px; margin-top: 8px; margin-right: -44%; }
+.poster.scrapbook.square .scrap-meta { font-size: 9px; margin-top: 8px;  }
 .poster.scrapbook .scrap-footer {
   font-family: 'Inter', sans-serif;
   font-size: 9px;
@@ -1166,11 +1176,10 @@ body {
   text-transform: uppercase;
   color: var(--muted);
   margin-top: 6px;
-  margin-right: -48%;
   position: relative;
   z-index: 5;
 }
-.poster.scrapbook.square .scrap-footer { margin-right: -44%; }
+.poster.scrapbook.square .scrap-footer {  }
 
 /* ============================================================
    МАКЕТ G: BROKEN-GRID — сетка фото с текстом между ячеек
@@ -1848,7 +1857,8 @@ body {
   letter-spacing: -0.025em;
   text-transform: uppercase;
   margin-top: auto;
-  word-break: break-word;
+  word-break: keep-all;
+  overflow-wrap: normal;
   max-width: 58%;
 }
 .poster.collage.stories .collage-title { font-size: 56px; }
@@ -1998,28 +2008,25 @@ body {
   line-height: 0.88;
   letter-spacing: -0.03em;
   text-transform: uppercase;
-  word-break: break-word;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  font-size: var(--co-headline-size);
 }
-.poster.cutout.stories .co-headline { font-size: 72px; }
-.poster.cutout.square .co-headline { font-size: 48px; }
+.poster.cutout.stories .co-headline { --co-headline-size: 72px; }
+.poster.cutout.square .co-headline { --co-headline-size: 48px; }
 .poster.cutout .co-photo {
-  position: absolute;
-  left: 0;
-  right: 0;
+  width: 70%;
+  margin: 8px auto 0;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  filter: grayscale(0.2);
+  filter: grayscale(0.15);
+  position: relative;
   z-index: 2;
+  flex-shrink: 0;
 }
-.poster.cutout.stories .co-photo {
-  top: 20%;
-  bottom: 30%;
-}
-.poster.cutout.square .co-photo {
-  top: 18%;
-  bottom: 28%;
-}
+.poster.cutout.stories .co-photo { height: 220px; }
+.poster.cutout.square .co-photo { height: 140px; }
 .poster.cutout .co-subtitle {
   font-family: 'Inter', sans-serif;
   font-weight: 500;
@@ -2034,13 +2041,14 @@ body {
   font-style: italic;
   color: var(--soft-dark);
   text-align: right;
-  position: absolute;
+  position: relative;
   z-index: 3;
-  right: 28px;
-  max-width: 40%;
+  margin-left: auto;
+  margin-top: 8px;
+  max-width: 55%;
 }
-.poster.cutout.stories .co-quote { bottom: 28%; font-size: 13px; }
-.poster.cutout.square .co-quote { bottom: 26%; font-size: 10px; }
+.poster.cutout.stories .co-quote { font-size: 13px; }
+.poster.cutout.square .co-quote { font-size: 10px; }
 .poster.cutout .co-bottom {
   margin-top: auto;
   position: relative;
@@ -2074,7 +2082,7 @@ body {
    (референс #6 — Диван)
    ============================================================ */
 .poster.product {
-  background: white;
+  background: var(--chalk);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -2233,7 +2241,7 @@ body {
    (референс #7 — кинокультура)
    ============================================================ */
 .poster.arch-trio {
-  background: #E8E4DC;
+  background: var(--warm-gray);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -2252,10 +2260,12 @@ body {
   line-height: 0.9;
   letter-spacing: -0.03em;
   text-transform: uppercase;
-  word-break: break-word;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  font-size: var(--at-title-size);
 }
-.poster.arch-trio.stories .at-title { font-size: 52px; }
-.poster.arch-trio.square .at-title { font-size: 34px; }
+.poster.arch-trio.stories .at-title { --at-title-size: 52px; }
+.poster.arch-trio.square .at-title { --at-title-size: 34px; }
 .poster.arch-trio .at-date-row {
   display: flex;
   gap: 10px;
@@ -2796,9 +2806,19 @@ function buildDayFromEvent(e, regenSeed) {
 
 function pickAccentByFormat(format) {
   const f = (format || '').toLowerCase();
-  if (/мк|глина|рисов|украш|бьюти|кулинар/.test(f)) return 'terracotta';
-  if (/вечеринк|дегустац|караоке|кино|день рождения|свидан/.test(f)) return 'amber';
-  if (/книжн|эксперт|разговор|встреч/.test(f)) return 'olive';
+  if (/глина|керамик|гончар/.test(f))      return 'terracotta';  // тёплый терракот
+  if (/рисов|акрил|акварел|живопис/.test(f)) return 'ochra';     // охра — живописный тон
+  if (/украш|бисер|макраме|вышив/.test(f)) return 'coffee';      // кофе — архивный
+  if (/бьюти|косметол/.test(f))            return 'terracotta';
+  if (/кулинар/.test(f))                   return 'amber';
+  if (/вечеринк|дегустац/.test(f))         return 'amber';
+  if (/кино|киновечер/.test(f))            return 'graphite';    // грифель — киноатмосфера
+  if (/настолк|карао/.test(f))             return 'amber';
+  if (/книжн/.test(f))                     return 'ochra';       // охра — библиотечный
+  if (/эксперт|разговор|встреч/.test(f))   return 'graphite';    // грифель — журнальный
+  if (/день рождения/.test(f))             return 'amber';
+  if (/свидан/.test(f))                    return 'terracotta';
+  if (/мастер.класс/.test(f))             return 'terracotta';
   return 'terracotta';
 }
 
@@ -2969,9 +2989,12 @@ function buildVariant(id, layout, accent, tagline, photo, photos, heroWord, e) {
   // Новые 8 макетов
   else if (layout === 'bold') {
     variant.photo = photo;
-    // BOLD требует тёмного фона — переопределяем акцент на night
-    if (id === 'B' || /кино|настолк/.test((e.format || '').toLowerCase())) {
-      variant.accent = 'night';
+    // BOLD вариант B — тёмный выбивающийся. Выбираем по формату
+    if (id === 'B') {
+      const f = (e.format || '').toLowerCase();
+      if (/кино|вечеринк/.test(f))  variant.accent = 'night';
+      else if (/рисов|живопис/.test(f)) variant.accent = 'forest';
+      else variant.accent = 'scarlet';
     }
   } else if (layout === 'scrapbook') {
     variant.photo = photo;
@@ -2984,8 +3007,13 @@ function buildVariant(id, layout, accent, tagline, photo, photos, heroWord, e) {
   } else if (layout === 'halftone') {
     variant.photo = photo;
     variant.side_text = ((e.description || '').slice(0, 60) || `${e.format} · ${e.timeStart || ''} · ${e.price || '—'} руб`);
-    // HALFTONE отлично работает с mint (контрастный зелёный)
-    if (id === 'B') variant.accent = 'mint';
+    // HALFTONE вариант B — контрастный. Выбираем по настроению события
+    if (id === 'B') {
+      const f = (e.format || '').toLowerCase();
+      if (/кино/.test(f))           variant.accent = 'graphite';
+      else if (/вечеринк/.test(f))  variant.accent = 'scarlet';
+      else                          variant.accent = 'mint';
+    }
   } else if (layout === 'frame') {
     variant.photo = photo;
     variant.hero_word = heroWord;
@@ -2999,18 +3027,38 @@ function buildVariant(id, layout, accent, tagline, photo, photos, heroWord, e) {
     variant.ed_subtitle = `${e.format || ''}${e.name && e.name !== e.format ? ' · ' + e.name : ''}`.trim();
   } else if (layout === 'collage') {
     variant.photo = photo;
-    // COLLAGE хорошо с тёмным фоном — вариант B выбивается
-    if (id === 'B') variant.accent = 'night';
+    // COLLAGE вариант B — тёмный выбивающийся
+    if (id === 'B') {
+      const f = (e.format || '').toLowerCase();
+      if (/кино/.test(f))           variant.accent = 'night';
+      else if (/вечеринк/.test(f))  variant.accent = 'scarlet';
+      else if (/рисов|живопис/.test(f)) variant.accent = 'forest';
+      else                          variant.accent = 'night';
+    }
   } else if (layout === 'stacked-split') {
     variant.photo = photo;
+    // STACKED вариант B — насыщенный по формату
+    if (id === 'B') {
+      const f = (e.format || '').toLowerCase();
+      if (/книжн|эксперт/.test(f))  variant.accent = 'ochra';
+      else if (/кино/.test(f))      variant.accent = 'graphite';
+    }
   } else if (layout === 'cutout') {
     variant.photo = photo;
-    // CUTOUT — акцент янтарь или терракот (красный текст как в реф #5)
+    // CUTOUT — охра или красный акцент для смелости
+    if (id === 'B') {
+      const f = (e.format || '').toLowerCase();
+      variant.accent = /кино|вечеринк/.test(f) ? 'scarlet' : 'ochra';
+    }
   } else if (layout === 'product') {
     variant.photo = photo;
     const descWords = (e.description || '').split(/\s+/).slice(0,8).join(' ');
     variant.col1 = escapeHtml(e.format || 'Мастер-класс');
     variant.col2 = descWords || (e.price ? e.price + ' руб' : 'Записаться');
+    // PRODUCT — кофе или охра для «архивного» вида
+    if (!variant.accent || variant.accent === 'terracotta') {
+      variant.accent = id === 'B' ? 'coffee' : variant.accent;
+    }
   } else if (layout === 'arch-trio') {
     variant.photos = photos.slice(0,3);
     variant.photo = photo;
@@ -3104,6 +3152,10 @@ function renderWorkspace(dayKey) {
           <span class="layout-name">${layoutDisplayName(v.layout)}</span> · ${accentDisplayName(v.accent)}
         </div>
         <div class="export-buttons">
+          <button class="btn-export" title="Загрузить своё фото" onclick="triggerPhotoUpload('${dayKey}', '${v.id}')">📎 Фото</button>
+          <input type="file" accept="image/*" style="display:none"
+            id="photo-input-${dayKey}-${v.id}"
+            onchange="handlePhotoUpload(event, '${dayKey}', '${v.id}')">
           <button class="btn-export" onclick="exportPNG(event, '${dayKey}', '${v.id}', 'stories')">↓ Stories</button>
           <button class="btn-export" onclick="exportPNG(event, '${dayKey}', '${v.id}', 'square')">↓ Square</button>
         </div>
@@ -3116,6 +3168,27 @@ function renderWorkspace(dayKey) {
     row.querySelectorAll('.poster.editorial .hero-word').forEach(autoFitHeroWord);
     row.querySelectorAll('.poster.frame .frame-title').forEach(el => autoFitElement(el, '--frame-title-size'));
     row.querySelectorAll('.poster.bold .bold-title').forEach(el => autoFitElement(el, '--bold-title-size'));
+    row.querySelectorAll('.poster.cutout .co-headline').forEach(el => autoFitElement(el, '--co-headline-size'));
+    row.querySelectorAll('.poster.arch-trio .at-title').forEach(el => autoFitElement(el, '--at-title-size'));
+    row.querySelectorAll('.poster.collage .collage-title').forEach(el => {
+      const poster = el.closest('.poster');
+      if (!poster) return;
+      const available = poster.clientWidth * 0.58 - 16;
+      let size = parseFloat(window.getComputedStyle(el).fontSize);
+      const lines = el.innerText.split('\n');
+      let guard = 20;
+      while (guard-- > 0) {
+        const testEl = document.createElement('span');
+        testEl.style.cssText = `font-family:Inter,sans-serif;font-weight:800;font-size:${size}px;letter-spacing:-0.025em;text-transform:uppercase;white-space:nowrap;visibility:hidden;position:fixed`;
+        testEl.textContent = lines.reduce((a,b) => a.length > b.length ? a : b, '');
+        document.body.appendChild(testEl);
+        const w = testEl.scrollWidth;
+        document.body.removeChild(testEl);
+        if (w <= available || size <= 20) break;
+        size -= 3;
+        el.style.fontSize = size + 'px';
+      }
+    });
     // STACKED — каждое слово подгоняется под ширину колонки
     row.querySelectorAll('.poster.stacked-split').forEach(poster => {
       const col = poster.querySelector('.ss-column');
@@ -3247,12 +3320,10 @@ function layoutDisplayName(l) {
 }
 function accentDisplayName(a) {
   return ({
-    'terracotta':'терракот',
-    'amber':'янтарь',
-    'olive':'олива',
-    'night':'ночной',
-    'mint':'мятный',
-    'bordeaux':'бордо'
+    'terracotta':'терракот', 'amber':'янтарь',   'olive':'олива',
+    'night':'ночной',        'mint':'мятный',     'bordeaux':'бордо',
+    'ochra':'охра',          'scarlet':'красный', 'graphite':'грифель',
+    'coffee':'кофе',         'forest':'тёмный лес'
   })[a] || a;
 }
 
@@ -3986,6 +4057,46 @@ async function downloadAllSelected() {
    УТИЛИТЫ
    ============================================================ */
 // Апгрейд Pinterest thumbnail до полного разрешения (originals)
+// ============================================================
+// ЗАГРУЗКА СВОЕГО ФОТО
+// ============================================================
+function triggerPhotoUpload(dayKey, variantId) {
+  const input = document.getElementById(`photo-input-${dayKey}-${variantId}`);
+  if (input) input.click();
+}
+
+function handlePhotoUpload(evt, dayKey, variantId) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    // Применяем фото ко всем нужным полям варианта
+    const day = state.galleryDays.find(d => d.dayKey === dayKey);
+    if (!day) return;
+    const variant = day.variants.find(v => v.id === variantId);
+    if (!variant) return;
+    // Заменяем основное фото
+    variant.photo = dataUrl;
+    // Для grid — заменяем первое фото в массиве
+    if (variant.photos && variant.photos.length > 0) {
+      variant.photos[0] = dataUrl;
+    }
+    // Для arch-trio — первое фото
+    if (Array.isArray(variant.photos)) {
+      variant.photos[0] = dataUrl;
+    }
+    // Перерисовываем workspace
+    renderWorkspace(dayKey);
+    // Восстанавливаем selection если был выбран
+    if (state.variantSelections[dayKey] === variantId) {
+      // selection уже сохранён, просто перерисовалось
+    }
+    toast('Фото заменено', 'ok');
+  };
+  reader.readAsDataURL(file);
+}
+
 function upgradePinterestUrl(url) {
   if (!url) return '';
   if (!url.includes('pinimg.com')) return url;
