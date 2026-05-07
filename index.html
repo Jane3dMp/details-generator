@@ -546,6 +546,61 @@ main {
   color: white;
 }
 
+/* Карточки идей форматов */
+.fmt-idea {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  background: white;
+  transition: all 0.15s;
+}
+.fmt-idea:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 6px rgba(194, 132, 91, 0.08);
+}
+.fmt-idea-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.fmt-idea-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-dark);
+}
+.fmt-idea-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.fmt-idea-tpl {
+  font-size: 12px;
+  color: #555;
+  line-height: 1.45;
+  margin: 8px 0 10px;
+  background: #fdfcfa;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-left: 2px solid var(--line);
+}
+.fmt-idea-use {
+  background: var(--accent);
+  color: white;
+  border: 1px solid var(--accent);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.fmt-idea-use:hover {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
 /* ============== РЕФЕРЕНСЫ И КОММЕНТАРИЙ КОМАНДЕ ============== */
 .refs-block {
   border: 1px solid var(--line);
@@ -777,6 +832,10 @@ main {
           <h3>Форматы <span class="count" id="fmtCount">0</span></h3>
           <div id="formatsList"></div>
           <button class="ghost" style="margin-top:8px; width:100%;" onclick="openAddFormat()">＋ Новый формат</button>
+          <button class="ghost" style="margin-top:6px; width:100%;" onclick="aiGenerateFormatIdeas()" id="aiFmtIdeasBtn">
+            <span id="aiFmtIdeasSpinner" style="display:none"><span class="ai-loader"></span></span>
+            ✨ Подсказать форматы
+          </button>
         </div>
       </div>
 
@@ -1064,6 +1123,31 @@ main {
       <div class="right">
         <button onclick="closeModal('formatModal')">Отмена</button>
         <button class="primary" onclick="addFormat()">Добавить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== МОДАЛКА: ИИ-ИДЕИ ФОРМАТОВ ====== -->
+<div class="modal-bg" id="formatIdeasModal">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2>✨ Идеи новых форматов</h2>
+      <button class="ghost" onclick="closeModal('formatIdeasModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">
+        ИИ предложил форматы, которых ещё нет в вашей библиотеке. Клик «Использовать» — откроется форма с предзаполненными полями, проверите и сохраните.
+      </div>
+      <div id="formatIdeasList">
+        <div style="text-align:center; padding: 40px; color: var(--muted);">Загружаю идеи…</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div class="right">
+        <button onclick="aiGenerateFormatIdeas()">🔄 Ещё 5 идей</button>
+        <button onclick="closeModal('formatIdeasModal')">Закрыть</button>
       </div>
     </div>
   </div>
@@ -3109,6 +3193,140 @@ async function addFormat() {
   } else {
     toast('Ошибка', 'err');
   }
+}
+
+// ============================================================
+// ИИ-ГЕНЕРАЦИЯ ИДЕЙ НОВЫХ ФОРМАТОВ
+// ============================================================
+// Кэш последней пачки идей — чтобы по клику «Использовать» подставить нужную
+let _fmtIdeasCache = [];
+
+async function aiGenerateFormatIdeas() {
+  const btn = document.getElementById('aiFmtIdeasBtn');
+  const spin = document.getElementById('aiFmtIdeasSpinner');
+  if (btn) { btn.disabled = true; }
+  if (spin) { spin.style.display = 'inline-block'; }
+
+  // Открываем модалку сразу с лоадером (если ещё не открыта)
+  document.getElementById('formatIdeasModal').classList.add('show');
+  document.getElementById('formatIdeasList').innerHTML =
+    '<div style="text-align:center; padding: 40px; color: var(--muted);">' +
+    '<span class="ai-loader"></span> Придумываю 5 новых форматов…</div>';
+
+  // Список того, что УЖЕ есть — чтобы ИИ не повторялся
+  const existingNames = state.formats.map(f => f.name);
+  const existingByCategory = {};
+  state.formats.forEach(f => {
+    const cat = f.category || 'Другое';
+    if (!existingByCategory[cat]) existingByCategory[cat] = [];
+    existingByCategory[cat].push(f.name);
+  });
+
+  const system = `Ты помощник менеджера творческого пространства «Детали» в Могилёве. Помогаешь придумывать новые форматы регулярных мероприятий — то, что можно запустить как серию (минимум 8–12 человек на событие, длительность 2–3 часа, цена для города 50–150 руб). Стиль площадки: уютный, тёплый, женская/семейная аудитория, локальный продукт, акцент на телесность/творчество/общение. НЕ предлагай: спорт, экстрим, алкогольные дегустации с серьёзным закусом, кулинарию (она у них есть), активности требующие специального оборудования (печь обжига, лазерный станок). Возможные категории: Творчество, Развлечения, Образование, Уход, Частное, Другое.`;
+
+  const prompt = `Уже существующие форматы в библиотеке (НЕ ПРЕДЛАГАЙ ИХ И ПОХОЖИЕ):
+${existingNames.length ? existingNames.map(n => '— ' + n).join('\n') : '(пока пусто)'}
+
+Придумай 5 НОВЫХ форматов событий, которых ещё нет в этом списке. Для каждого укажи:
+- name: короткое название формата (2–4 слова, например «МК Мыловарение», «Вечер настолок»)
+- category: одна из: Творчество, Развлечения, Образование, Уход, Частное, Другое
+- duration: длительность в часах (число, обычно 1.5, 2, 2.5, 3)
+- price: цена клиенту в рублях (число, обычно 30–150)
+- limit: лимит участников (число, обычно 8–16)
+- template: 1–2 предложения о том, что внутри (для подсказки копирайтеру)
+
+Верни СТРОГО валидный JSON-массив из 5 объектов. Без префикса \`\`\`json, без комментариев до или после. Только массив.`;
+
+  try {
+    const r = await apiPost('claude', { prompt, system });
+    if (!r.ok || !r.text) {
+      document.getElementById('formatIdeasList').innerHTML =
+        '<div style="text-align:center; padding: 30px; color: var(--red);">ИИ не ответил: ' +
+        escapeHtml(r.error || 'неизвестная ошибка') + '</div>';
+      return;
+    }
+
+    // Извлекаем JSON-массив из ответа (на случай если Клод обернул в ```json)
+    const txt = r.text.trim();
+    const jsonMatch = txt.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      document.getElementById('formatIdeasList').innerHTML =
+        '<div style="text-align:center; padding: 30px; color: var(--red);">ИИ вернул неожиданный формат. Попробуйте ещё раз.</div>';
+      return;
+    }
+
+    let ideas;
+    try {
+      ideas = JSON.parse(jsonMatch[0]);
+    } catch(e) {
+      document.getElementById('formatIdeasList').innerHTML =
+        '<div style="text-align:center; padding: 30px; color: var(--red);">Не получилось разобрать ответ ИИ. Попробуйте ещё раз.</div>';
+      return;
+    }
+
+    if (!Array.isArray(ideas) || !ideas.length) {
+      document.getElementById('formatIdeasList').innerHTML =
+        '<div style="text-align:center; padding: 30px; color: var(--muted);">ИИ вернул пустой список.</div>';
+      return;
+    }
+
+    // Чистим и валидируем каждую идею
+    _fmtIdeasCache = ideas.slice(0, 5).map(i => ({
+      name: String(i.name || '').trim(),
+      category: ['Творчество','Развлечения','Образование','Уход','Частное','Другое'].includes(i.category) ? i.category : 'Другое',
+      duration: parseFloat(i.duration) || 2.5,
+      price: parseFloat(i.price) || null,
+      limit: parseInt(i.limit) || 12,
+      template: String(i.template || '').trim()
+    })).filter(i => i.name);
+
+    renderFormatIdeas();
+  } catch(e) {
+    document.getElementById('formatIdeasList').innerHTML =
+      '<div style="text-align:center; padding: 30px; color: var(--red);">Ошибка вызова ИИ</div>';
+  } finally {
+    if (btn) { btn.disabled = false; }
+    if (spin) { spin.style.display = 'none'; }
+  }
+}
+
+function renderFormatIdeas() {
+  const box = document.getElementById('formatIdeasList');
+  if (!_fmtIdeasCache.length) {
+    box.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--muted);">Идей нет — попробуйте «🔄 Ещё 5 идей».</div>';
+    return;
+  }
+  box.innerHTML = _fmtIdeasCache.map((idea, idx) => `
+    <div class="fmt-idea">
+      <div class="fmt-idea-head">
+        <div>
+          <div class="fmt-idea-title">${escapeHtml(idea.name)}</div>
+          <div class="fmt-idea-meta">${escapeHtml(idea.category)} · ${idea.duration}ч · ${idea.price ? idea.price + ' руб' : 'цена не указана'} · до ${idea.limit} чел</div>
+        </div>
+        <button class="fmt-idea-use" onclick="useFormatIdea(${idx})">Использовать →</button>
+      </div>
+      ${idea.template ? `<div class="fmt-idea-tpl">${escapeHtml(idea.template)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function useFormatIdea(idx) {
+  const idea = _fmtIdeasCache[idx];
+  if (!idea) return;
+  // Если введённое в форме «Новый формат» уже что-то есть — спросим
+  const fmtNameField = document.getElementById('fmtName');
+  if (fmtNameField.value.trim() && !confirm('В форме «Новый формат» уже что-то введено. Заменить на эту идею?')) return;
+
+  // Закрываем модалку идей, открываем форму с предзаполнением
+  closeModal('formatIdeasModal');
+  fmtNameField.value = idea.name;
+  document.getElementById('fmtCategory').value = idea.category;
+  document.getElementById('fmtDuration').value = idea.duration;
+  document.getElementById('fmtPrice').value = idea.price ?? '';
+  document.getElementById('fmtLimit').value = idea.limit;
+  document.getElementById('fmtTemplate').value = idea.template;
+  openAddFormat();
+  toast('Подставлено — проверьте и сохраните', 'ok');
 }
 
 function openAddTeacher() { document.getElementById('teacherModal').classList.add('show'); }
