@@ -629,6 +629,7 @@ main {
 
 /* Афиша недели — стиль постера */
 .week-poster {
+  --wp-scale: 1;
   margin: 0 auto;
   background: #fdf9f2;
   border: 2px solid var(--accent);
@@ -692,8 +693,8 @@ main {
   overflow: hidden;
 }
 
-.week-poster .wp-day { margin-bottom: 14px; }
-.week-poster.fmt-square .wp-day { margin-bottom: 10px; }
+.week-poster .wp-day { margin-bottom: calc(14px * var(--wp-scale)); }
+.week-poster.fmt-square .wp-day { margin-bottom: calc(10px * var(--wp-scale)); }
 
 .week-poster .wp-day-head {
   font-weight: 600;
@@ -704,19 +705,19 @@ main {
   padding-bottom: 4px;
   margin-bottom: 6px;
 }
-.week-poster.fmt-stories .wp-day-head { font-size: 13px; }
-.week-poster.fmt-square .wp-day-head { font-size: 11px; padding-bottom: 3px; margin-bottom: 5px; }
+.week-poster.fmt-stories .wp-day-head { font-size: calc(13px * var(--wp-scale)); }
+.week-poster.fmt-square .wp-day-head { font-size: calc(11px * var(--wp-scale)); padding-bottom: 3px; margin-bottom: 5px; }
 
 .week-poster .wp-event {
   display: flex;
   gap: 10px;
   align-items: baseline;
   line-height: 1.4;
-  margin-bottom: 5px;
+  margin-bottom: calc(5px * var(--wp-scale));
   padding-left: 4px;
 }
-.week-poster.fmt-stories .wp-event { font-size: 14px; }
-.week-poster.fmt-square .wp-event { font-size: 12px; gap: 8px; margin-bottom: 4px; }
+.week-poster.fmt-stories .wp-event { font-size: calc(14px * var(--wp-scale)); }
+.week-poster.fmt-square .wp-event { font-size: calc(12px * var(--wp-scale)); gap: 8px; margin-bottom: calc(4px * var(--wp-scale)); }
 
 .week-poster .wp-event .wp-time {
   font-weight: 700;
@@ -729,8 +730,8 @@ main {
 .week-poster .wp-event .wp-info { flex: 1; min-width: 0; }
 .week-poster .wp-event .wp-name { font-weight: 600; color: #2b2b2b; }
 .week-poster .wp-event .wp-meta { color: #7a6a5e; margin-top: 1px; }
-.week-poster.fmt-stories .wp-event .wp-meta { font-size: 12px; }
-.week-poster.fmt-square .wp-event .wp-meta { font-size: 11px; }
+.week-poster.fmt-stories .wp-event .wp-meta { font-size: calc(12px * var(--wp-scale)); }
+.week-poster.fmt-square .wp-event .wp-meta { font-size: calc(11px * var(--wp-scale)); }
 
 .week-poster .wp-foot {
   border-top: 1px solid var(--line);
@@ -3672,8 +3673,29 @@ function renderWeekPoster() {
         </div>
       `).join('')}
     </div>
-    <div class="wp-foot">Пожарный 3Б · Запись на сайте</div>
+    <div class="wp-foot">Пожарный 3Б · +375 29 315-15-83 · Запись на сайте</div>
   `;
+
+  // Если контент не влезает — уменьшаем шрифт пошагово
+  _wpFitContent();
+}
+
+// Подгоняем содержимое под фиксированную высоту: уменьшаем --wp-scale
+// шагами по 0.05 пока wp-body не перестанет переполняться (минимум 0.6)
+function _wpFitContent() {
+  const poster = document.getElementById('wpPoster');
+  const body = poster.querySelector('.wp-body');
+  if (!body) return;
+  poster.style.setProperty('--wp-scale', '1');
+  // Браузеру даём пересчитать layout
+  let scale = 1.0;
+  // Защита от бесконечного цикла
+  for (let i = 0; i < 12; i++) {
+    if (body.scrollHeight <= body.clientHeight) break;
+    scale -= 0.05;
+    if (scale < 0.6) { scale = 0.6; poster.style.setProperty('--wp-scale', String(scale)); break; }
+    poster.style.setProperty('--wp-scale', String(scale));
+  }
 }
 
 // ============================================================
@@ -3743,6 +3765,7 @@ function _wpBuildText() {
 
   let out = `🗓 Афиша недели · ${rangeLabel}\n`;
   out += `Пространство «Детали» · Пожарный 3Б\n`;
+  out += `📞 +375 29 315-15-83\n`;
   if (intro) out += `\n${intro}\n`;
   out += '\n';
   dates.forEach(d => {
