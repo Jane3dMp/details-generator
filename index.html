@@ -931,16 +931,40 @@ main {
 }
 .event-poster.fmt-square .ep-brand { font-size: calc(9px * var(--ep-scale)); }
 
+/* Большой формат — БОЛЬШЕ названия, sans, разрядка, ВЕРХ иерархии */
+.event-poster .ep-format-line {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-dark);
+  line-height: 1.05;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+.event-poster.fmt-stories .ep-format-line { font-size: calc(32px * var(--ep-scale)); }
+.event-poster.fmt-square .ep-format-line { font-size: calc(18px * var(--ep-scale)); }
+
+/* Тема (название) — МЕНЬШЕ формата, serif, тонкий вес */
 .event-poster .ep-name {
   font-family: Georgia, 'Times New Roman', serif;
-  font-weight: 700;
-  line-height: 1.08;
-  letter-spacing: -0.015em;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
   color: var(--brand-dark);
   max-width: 100%;
 }
-.event-poster.fmt-stories .ep-name { font-size: calc(40px * var(--ep-scale)); }
-.event-poster.fmt-square .ep-name { font-size: calc(24px * var(--ep-scale)); }
+.event-poster.fmt-stories .ep-name { font-size: calc(22px * var(--ep-scale)); }
+.event-poster.fmt-square .ep-name { font-size: calc(14px * var(--ep-scale)); }
+
+/* Курсивные акценты в словах — *слово* в подписи, имени или формате
+   рендерится как <em>: курсив + акцентный цвет. Микшируем шрифт + цвет
+   на одной строке для типографичности. */
+.event-poster em {
+  font-style: italic;
+  color: var(--ep-accent);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 400;
+  letter-spacing: 0;
+}
 
 .event-poster .ep-tagline {
   font-style: italic;
@@ -949,6 +973,8 @@ main {
   line-height: 1.35;
   max-width: 90%;
 }
+/* В tagline em уже на курсиве — не нужен повторный italic, цвет важен */
+.event-poster .ep-tagline em { font-style: italic; }
 .event-poster.fmt-stories .ep-tagline { font-size: calc(19px * var(--ep-scale)); }
 .event-poster.fmt-square .ep-tagline { font-size: calc(13px * var(--ep-scale)); }
 
@@ -976,11 +1002,12 @@ main {
 }
 .event-poster.fmt-square .ep-when { font-size: calc(11px * var(--ep-scale)); }
 
-.event-poster .ep-format {
+/* Длительность · цена — без формата (он теперь сверху) */
+.event-poster .ep-meta {
   font-size: calc(13px * var(--ep-scale));
   color: #6a5848;
 }
-.event-poster.fmt-square .ep-format { font-size: calc(10px * var(--ep-scale)); }
+.event-poster.fmt-square .ep-meta { font-size: calc(10px * var(--ep-scale)); }
 
 .event-poster .ep-foot {
   border-top: 1px solid rgba(61, 43, 31, 0.15);
@@ -1023,6 +1050,61 @@ main {
   transition: all 0.15s;
 }
 .ep-ref-add:hover { background: #fdf3ee; }
+
+/* Блок 3 ИИ-вариантов — мини-превью постеров */
+.ep-variants-wrap {
+  background: #e9e2d4;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.ep-variants-grid {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.ep-variant {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.15s;
+}
+.ep-variant:hover { transform: translateY(-3px); }
+.ep-variant-mini {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background: var(--brand-milk);
+  flex-shrink: 0;
+}
+.ep-variant.active .ep-variant-mini { border-color: var(--brand-terracotta); box-shadow: 0 4px 12px rgba(192,109,84,0.25); }
+.ep-variant-mini.fmt-stories { width: 162px; height: 288px; }
+.ep-variant-mini.fmt-square { width: 162px; height: 162px; }
+/* Полноразмерный постер внутри мини — через transform: scale(0.3) */
+.ep-variant-mini > .event-poster {
+  transform: scale(0.3);
+  transform-origin: top left;
+  border-radius: 0;
+  border: none;
+}
+.ep-variant-label {
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+  max-width: 162px;
+  line-height: 1.3;
+}
+.ep-variant-label .accent-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: 4px;
+}
 
 /* ============== РЕФЕРЕНСЫ И КОММЕНТАРИЙ КОМАНДЕ ============== */
 .refs-block {
@@ -1687,6 +1769,12 @@ main {
           </label>
           <input type="text" id="epTagline" maxlength="80" placeholder="Например: лепим, обжигаем, забираем тёплое" oninput="renderEventPoster()">
         </div>
+      </div>
+
+      <!-- Блок 3 ИИ-вариантов (показывается после клика «Сгенерировать ИИ») -->
+      <div id="epVariantsWrap" class="ep-variants-wrap" style="display:none;">
+        <label style="font-weight:600; color: var(--brand-dark);">3 варианта от ИИ — клик по тому, что нравится:</label>
+        <div id="epVariants" class="ep-variants-grid"></div>
       </div>
 
       <label style="margin-top:8px;">Превью:</label>
@@ -4212,6 +4300,8 @@ const _epState = {
   accent: 'terracotta',        // 'terracotta' | 'amber' | 'olive'
   refIdx: -1,                  // -1 = без референса, иначе индекс в combined refs (snapshot.references + customRefs)
   customRefs: [],              // вставленные через «+ Свой URL» прямые ссылки на картинки
+  lastVariants: [],            // последние 3 варианта от ИИ
+  activeVariantIdx: -1,        // какой из вариантов сейчас выбран (-1 = ни один)
   // Снимок данных события на момент открытия (читаем из формы)
   snapshot: null
 };
@@ -4220,14 +4310,16 @@ const RU_DOW_SHORT = ['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
 const RU_MONTHS_SHORT = ['ЯНВ','ФЕВ','МАР','АПР','МАЯ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
 
 // Pinterest и подобные CDN отдают разные размеры одной картинки через подмену
-// сегмента в URL: 236x → 736x → 1200x → originals. Маленькие размеры даются
-// в OG-тегах для предпросмотра, для постера нам нужен крупный.
+// сегмента в URL: 60x60 → 236x → 736x → 1200x → originals. OG-теги дают мелкие
+// для быстрого предпросмотра — для постера нам нужен крупный.
+// Берём ANY первый сегмент после pinimg.com (кроме самого 'originals') и меняем
+// на 'originals'. В onerror fallback откатываемся на исходный thumb.
 function _epUpgradeImageUrl(url) {
   if (!url || typeof url !== 'string') return url;
-  // Pinterest CDN: i.pinimg.com/236x/.../foo.jpg → originals/.../foo.jpg
-  const pinSizeRe = /^(https?:\/\/i\.pinimg\.com\/)(?:236x|474x|564x|736x)\//;
-  if (pinSizeRe.test(url)) {
-    return url.replace(pinSizeRe, '$1originals/');
+  // Negative lookahead: матчится первый сегмент после i.pinimg.com/, кроме самого 'originals/'
+  const re = /^(https?:\/\/i\.pinimg\.com\/)(?!originals\/)[^\/]+\//;
+  if (re.test(url)) {
+    return url.replace(re, '$1originals/');
   }
   return url;
 }
@@ -4265,8 +4357,14 @@ function openEventPoster() {
   _epState.format = 'stories';
   _epState.accent = 'terracotta';
   _epState.customRefs = [];
+  _epState.lastVariants = [];
+  _epState.activeVariantIdx = -1;
   // Если есть референсы — берём первый по умолчанию, иначе -1
   _epState.refIdx = snap.references.length ? 0 : -1;
+
+  // Сбрасываем блок вариантов
+  document.getElementById('epVariantsWrap').style.display = 'none';
+  document.getElementById('epVariants').innerHTML = '';
 
   // Подсветка дефолтных кнопок
   document.querySelectorAll('#eventPosterModal .wp-fmt-btn').forEach(b => {
@@ -4332,6 +4430,7 @@ function setEventPosterRef(idx) {
   _epState.refIdx = idx;
   _epRenderRefPicker();
   renderEventPoster();
+  if (_epState.lastVariants && _epState.lastVariants.length) _epRenderVariants(_epState.lastVariants);
 }
 
 function setEventPosterFormat(fmt) {
@@ -4341,6 +4440,7 @@ function setEventPosterFormat(fmt) {
     b.classList.toggle('active', b.dataset.fmt === fmt);
   });
   renderEventPoster();
+  if (_epState.lastVariants && _epState.lastVariants.length) _epRenderVariants(_epState.lastVariants);
 }
 
 function setEventPosterAccent(color) {
@@ -4376,9 +4476,22 @@ function _epDecoMark(snap) {
   return name.charAt(0).toUpperCase() || '✻';
 }
 
-function renderEventPoster() {
+// Парсит markdown-style маркеры *слово* и оборачивает их в <em>.
+// Для постера: <em> = курсив + акцентный цвет (стилизуется через CSS).
+// Сначала экранируем HTML, потом обрабатываем маркеры — звёздочки в исходном
+// тексте никак не повлияют на безопасность.
+function _epRenderInline(text) {
+  if (!text) return '';
+  const escaped = escapeHtml(text);
+  // *слово или фраза* → <em>слово или фраза</em>
+  // Не жадная: первая закрывающая звёздочка обрывает.
+  return escaped.replace(/\*([^*\n]+?)\*/g, '<em>$1</em>');
+}
+
+function renderEventPoster(targetEl) {
   const snap = _epState.snapshot;
-  const poster = document.getElementById('epPoster');
+  // Если targetEl не передан — рендерим основной превью
+  const poster = targetEl || document.getElementById('epPoster');
   if (!snap) return;
 
   poster.className = `event-poster fmt-${_epState.format} accent-${_epState.accent}`;
@@ -4390,8 +4503,6 @@ function renderEventPoster() {
   if (ref && ref.thumb) {
     const upgraded = _epUpgradeImageUrl(ref.thumb);
     const fallback = ref.thumb;
-    // <img> с onerror — если апгрейднутая ссылка не открывается, откатываемся
-    // на оригинальный thumb. crossorigin нужен для html2canvas чтобы canvas не taint'нулся.
     heroHtml = `<div class="ep-hero"><img class="ep-hero-img" crossorigin="anonymous" src="${escapeAttr(upgraded)}" data-fallback="${escapeAttr(fallback)}" onerror="this.onerror=null; if(this.src!==this.dataset.fallback) this.src=this.dataset.fallback;"></div>`;
   } else {
     heroHtml = `<div class="ep-hero-deco"><div class="ep-hero-deco-mark">${escapeHtml(_epDecoMark(snap))}</div></div>`;
@@ -4399,25 +4510,31 @@ function renderEventPoster() {
 
   const tagline = (document.getElementById('epTagline').value || '').trim();
   const whenLine = _epFormatWhen(snap);
-  const fmtLine = _epFormatFmtLine(snap);
+  // Длительность·цена (формат теперь сверху отдельной строкой)
+  const metaParts = [];
+  if (snap.duration) metaParts.push(snap.duration + ' ч');
+  if (snap.price) metaParts.push(snap.price + ' руб');
+  const metaLine = metaParts.join(' · ');
 
   poster.innerHTML = `
     ${heroHtml}
     <div class="ep-content">
       <div class="ep-main">
         <div class="ep-brand">Пространство «Детали»</div>
-        <div class="ep-name">${escapeHtml(snap.name || snap.format || 'Событие')}</div>
-        ${tagline ? `<div class="ep-tagline">«${escapeHtml(tagline)}»</div>` : ''}
+        ${snap.format ? `<div class="ep-format-line">${_epRenderInline(snap.format)}</div>` : ''}
+        ${snap.name ? `<div class="ep-name">${_epRenderInline(snap.name)}</div>` : ''}
+        ${tagline ? `<div class="ep-tagline">«${_epRenderInline(tagline)}»</div>` : ''}
         <div class="ep-divider"></div>
         <div class="ep-when-block">
           <div class="ep-when">${escapeHtml(whenLine)}</div>
-          ${fmtLine ? `<div class="ep-format">${escapeHtml(fmtLine)}</div>` : ''}
+          ${metaLine ? `<div class="ep-meta">${escapeHtml(metaLine)}</div>` : ''}
         </div>
       </div>
       <div class="ep-foot">Пожарный 3Б · +375 29 315-15-83</div>
     </div>
   `;
-  _epFitContent();
+  // Авто-уменьшение шрифта только для основного превью (не для мини-вариантов)
+  if (!targetEl) _epFitContent();
 }
 
 function _epFitContent() {
@@ -4435,7 +4552,7 @@ function _epFitContent() {
 }
 
 // ============================================================
-// АФИША СОБЫТИЯ — ИИ
+// АФИША СОБЫТИЯ — ИИ (3 варианта)
 // ============================================================
 async function aiGenerateEventPosterCopy() {
   const snap = _epState.snapshot;
@@ -4451,24 +4568,28 @@ async function aiGenerateEventPosterCopy() {
 
   const system = `Ты подбираешь акцентный цвет и сочиняешь короткие подписи к постерам событий пространства «Детали» в Могилёве.
 
-Палитра акцентов (выбери ОДИН, по смыслу события):
+Палитра акцентов (выбери ОДИН на каждый вариант, по смыслу события):
 - terracotta — для тёплого, творческого, рукодельного (МК глина/рисование/украшения, рукоделие, бьюти-уход)
 - amber — для живого, праздничного, социального (вечеринки, дегустации, киновечер, ДР, караоке)
 - olive — для спокойного, осмысленного, разговорного (книжный клуб, эксперты, лекции, медитативные форматы)
 
 Подпись: 3–7 слов, в стиле Деталей. Конкретные глаголы и предметы. Без пафоса («незабываемый вечер»), без штампов («окунитесь в мир»), без эмодзи, без приветствий, без призывов («приходите»). Маленькая буква в начале допустима.
 
-Хорошие примеры:
-— «лепим, обжигаем, забираем тёплое»
-— «вино, болтовня, картины»
-— «читаем вслух Шекспира при свечах»
-— «фильм, пледы, попкорн, разговоры»
-— «рассказ косметолога, вопросы вслух»
+ТИПОГРАФИЧЕСКИЙ ТРЮК: можешь обернуть в звёздочки ОДНО слово (макс. два), которое хочешь выделить — например *перо*, *тёплое*, *вслух*. Это слово станет курсивом и акцентным цветом. Это придаёт постеру жизни. Используй умеренно — не в каждом варианте, а только когда есть слово которое реально выделяется.
 
-Плохие примеры (так НЕ надо):
+Хорошие примеры:
+— «лепим, *обжигаем*, забираем тёплое»
+— «вино, болтовня, картины»
+— «читаем *вслух* Шекспира»
+— «фильм, пледы, разговоры»
+— «тушь, *перо*, линии живые»
+
+Плохие (так НЕ надо):
 — «Незабываемый вечер творчества!»
 — «Окунитесь в мир глины»
-— «Подарите себе праздник»`;
+— «Подарите себе праздник»
+
+Дай 3 РАЗНЫХ варианта — разные настроения, разные акценты в подписи (например один с *выделенным* словом, другой без; один терракотовый, другой оливковый — по смыслу).`;
 
   const prompt = `Событие:
 - Формат: ${snap.format || '—'}
@@ -4477,8 +4598,12 @@ async function aiGenerateEventPosterCopy() {
 - Длительность: ${snap.duration || '—'} ч
 - Цена: ${snap.price || '—'} руб
 
-Верни СТРОГО валидный JSON, без обёрток \`\`\`json и без комментариев:
-{"accent":"terracotta"|"amber"|"olive","tagline":"подпись 3-7 слов"}`;
+Верни СТРОГО валидный JSON-массив из 3 объектов, без обёрток \`\`\`json и без комментариев:
+[
+  {"accent":"terracotta"|"amber"|"olive","tagline":"подпись 3-7 слов"},
+  {"accent":"...","tagline":"..."},
+  {"accent":"...","tagline":"..."}
+]`;
 
   try {
     const r = await apiPost('claude', { prompt, system });
@@ -4487,29 +4612,99 @@ async function aiGenerateEventPosterCopy() {
       return;
     }
     const txt = r.text.trim();
-    const jsonMatch = txt.match(/\{[\s\S]*\}/);
+    const jsonMatch = txt.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
       toast('ИИ вернул неожиданный формат', 'err');
       return;
     }
-    let data;
-    try { data = JSON.parse(jsonMatch[0]); }
+    let arr;
+    try { arr = JSON.parse(jsonMatch[0]); }
     catch(e) { toast('Не получилось разобрать ответ ИИ', 'err'); return; }
 
-    if (data.accent && ['terracotta','amber','olive'].includes(data.accent)) {
-      setEventPosterAccent(data.accent);
+    // Валидируем — отбрасываем мусор, оставляем 3 валидных варианта
+    const variants = (Array.isArray(arr) ? arr : [])
+      .map(v => ({
+        accent: ['terracotta','amber','olive'].includes(v.accent) ? v.accent : 'terracotta',
+        tagline: typeof v.tagline === 'string' ? v.tagline.trim().replace(/^["«„]|["»“]$/g, '') : ''
+      }))
+      .filter(v => v.tagline)
+      .slice(0, 3);
+
+    if (variants.length === 0) {
+      toast('ИИ не вернул годных вариантов', 'err');
+      return;
     }
-    if (data.tagline && typeof data.tagline === 'string') {
-      document.getElementById('epTagline').value = data.tagline.trim().replace(/^["«„]|["»“]$/g, '');
-      renderEventPoster();
-    }
-    toast('Сгенерировано ✨', 'ok');
+
+    _epState.lastVariants = variants;
+    _epRenderVariants(variants);
+    // Сразу применяем первый по умолчанию (можно потыкать другие)
+    pickEventPosterVariant(0);
+    toast(`Сгенерировано ${variants.length} вариант(а) ✨`, 'ok');
   } catch(e) {
     toast('Ошибка вызова ИИ', 'err');
   } finally {
     btn.disabled = false;
     spin.style.display = 'none';
   }
+}
+
+function _epRenderVariants(variants) {
+  const wrap = document.getElementById('epVariantsWrap');
+  const grid = document.getElementById('epVariants');
+  if (!variants || !variants.length) {
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = '';
+  // Названия акцентов и их цветов для индикатора
+  const accentColors = { terracotta: 'var(--brand-terracotta)', amber: 'var(--brand-amber)', olive: 'var(--brand-olive)' };
+  const accentNames  = { terracotta: 'Терракот', amber: 'Янтарный', olive: 'Оливковый' };
+
+  grid.innerHTML = variants.map((v, i) => {
+    const activeCls = (i === _epState.activeVariantIdx) ? 'ep-variant active' : 'ep-variant';
+    return `
+      <div class="${activeCls}" onclick="pickEventPosterVariant(${i})">
+        <div class="ep-variant-mini fmt-${_epState.format}">
+          <div id="epMiniPoster_${i}"></div>
+        </div>
+        <div class="ep-variant-label">
+          <span class="accent-dot" style="background:${accentColors[v.accent]};"></span>${accentNames[v.accent]}<br>
+          «${escapeHtml(v.tagline.replace(/\*([^*]+)\*/g, '$1'))}»
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Рендерим мини-постеры — каждый со своим акцентом и подписью
+  variants.forEach((v, i) => {
+    const node = document.getElementById('epMiniPoster_' + i);
+    if (!node) return;
+    // Временно подменяем accent в state и tagline в форме, рендерим, восстанавливаем
+    const savedAccent = _epState.accent;
+    const tlField = document.getElementById('epTagline');
+    const savedTagline = tlField.value;
+    _epState.accent = v.accent;
+    tlField.value = v.tagline;
+    renderEventPoster(node);
+    _epState.accent = savedAccent;
+    tlField.value = savedTagline;
+  });
+}
+
+function pickEventPosterVariant(idx) {
+  const v = (_epState.lastVariants || [])[idx];
+  if (!v) return;
+  _epState.activeVariantIdx = idx;
+  // Применяем акцент через стандартный сеттер (он же подсветит кнопку)
+  setEventPosterAccent(v.accent);
+  // Подставляем подпись
+  document.getElementById('epTagline').value = v.tagline;
+  // Перерисовываем основной превью + обновляем рамку активного варианта
+  renderEventPoster();
+  // Обновляем active-класс в карточках
+  document.querySelectorAll('#epVariants .ep-variant').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
 }
 
 // ============================================================
