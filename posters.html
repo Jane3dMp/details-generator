@@ -1799,7 +1799,619 @@ body {
 .poster.editorial-layer.square .el-footer { font-size: 7px; padding-top: 6px; }
 
 
-/* Toast */
+/* ============================================================
+   МАКЕТ M: COLLAGE — акцентный фон + рваная бумага сверху + фото
+   (референс #1 — красный мегафон)
+   ============================================================ */
+.poster.collage {
+  background: var(--accent);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.poster.collage .collage-paper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+.poster.collage .collage-photo {
+  position: absolute;
+  bottom: 14%;
+  right: 0;
+  width: 52%;
+  aspect-ratio: 0.8;
+  background-size: cover;
+  background-position: center;
+  z-index: 2;
+  filter: grayscale(0.3) contrast(1.05);
+}
+.poster.collage.square .collage-photo { width: 44%; bottom: 12%; }
+.poster.collage .collage-content {
+  position: relative;
+  z-index: 4;
+  padding: 28px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.poster.collage.stories .collage-content { padding: 32px 28px 24px; }
+.poster.collage.square .collage-content { padding: 22px 22px 18px; }
+.poster.collage .collage-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  color: white;
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+  margin-top: auto;
+  word-break: break-word;
+  max-width: 58%;
+}
+.poster.collage.stories .collage-title { font-size: 56px; }
+.poster.collage.square .collage-title { font-size: 36px; }
+.poster.collage .collage-tagline {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: rgba(255,255,255,0.85);
+  margin-top: 10px;
+  max-width: 55%;
+}
+.poster.collage.stories .collage-tagline { font-size: 16px; }
+.poster.collage.square .collage-tagline { font-size: 12px; }
+.poster.collage .collage-meta {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  color: white;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.25);
+}
+.poster.collage.stories .collage-meta { font-size: 12px; }
+.poster.collage.square .collage-meta { font-size: 9px; margin-top: 8px; }
+.poster.collage .collage-footer {
+  font-family: 'Inter', sans-serif;
+  color: rgba(255,255,255,0.65);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+.poster.collage.stories .collage-footer { font-size: 9px; }
+.poster.collage.square .collage-footer { font-size: 7px; }
+
+/* ============================================================
+   МАКЕТ N: STACKED-SPLIT — фото слева + цветная колонка с огромными словами
+   (референс #4 — NEW ART FEST)
+   ============================================================ */
+.poster.stacked-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+.poster.stacked-split .ss-photo {
+  background-size: cover;
+  background-position: center;
+  background-color: var(--soft-dark);
+  position: relative;
+}
+/* Фото тонирует к цвету колонки на стыке */
+.poster.stacked-split .ss-photo::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 30%;
+  background: linear-gradient(to right, transparent, var(--accent));
+  pointer-events: none;
+}
+.poster.stacked-split .ss-column {
+  background: var(--accent);
+  padding: 24px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+.poster.stacked-split.square .ss-column { padding: 18px 14px 14px; }
+.poster.stacked-split .ss-brand {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.poster.stacked-split.stories .ss-brand { font-size: 9px; }
+.poster.stacked-split.square .ss-brand { font-size: 7px; margin-bottom: 8px; }
+.poster.stacked-split .ss-word {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  color: white;
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  word-break: break-word;
+}
+.poster.stacked-split.stories .ss-word { font-size: 52px; }
+.poster.stacked-split.square .ss-word { font-size: 34px; }
+.poster.stacked-split .ss-facts {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.poster.stacked-split.square .ss-facts { gap: 5px; }
+.poster.stacked-split .ss-fact {
+  border-left: 2px solid rgba(255,255,255,0.4);
+  padding-left: 8px;
+}
+.poster.stacked-split.square .ss-fact { padding-left: 5px; }
+.poster.stacked-split .ss-fact-num {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+.poster.stacked-split.stories .ss-fact-num { font-size: 20px; }
+.poster.stacked-split.square .ss-fact-num { font-size: 14px; }
+.poster.stacked-split .ss-fact-label {
+  font-family: 'Inter', sans-serif;
+  color: rgba(255,255,255,0.75);
+  margin-top: 1px;
+}
+.poster.stacked-split.stories .ss-fact-label { font-size: 10px; }
+.poster.stacked-split.square .ss-fact-label { font-size: 8px; }
+.poster.stacked-split .ss-footer {
+  font-family: 'Inter', sans-serif;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 10px;
+}
+.poster.stacked-split.stories .ss-footer { font-size: 8px; }
+.poster.stacked-split.square .ss-footer { font-size: 7px; }
+
+/* ============================================================
+   МАКЕТ O: CUTOUT — светлый фон + огромный текст + фото объект по центру
+   (референс #5 — ВСЕ ПРОСТО)
+   ============================================================ */
+.poster.cutout {
+  background: var(--cream);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.poster.cutout.stories { padding: 32px 28px 24px; }
+.poster.cutout.square { padding: 22px 22px 18px; }
+.poster.cutout .co-headline {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 0.88;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  word-break: break-word;
+}
+.poster.cutout.stories .co-headline { font-size: 72px; }
+.poster.cutout.square .co-headline { font-size: 48px; }
+.poster.cutout .co-photo {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: grayscale(0.2);
+  z-index: 2;
+}
+.poster.cutout.stories .co-photo {
+  top: 20%;
+  bottom: 30%;
+}
+.poster.cutout.square .co-photo {
+  top: 18%;
+  bottom: 28%;
+}
+.poster.cutout .co-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  color: var(--soft-dark);
+  position: relative;
+  z-index: 3;
+}
+.poster.cutout.stories .co-subtitle { font-size: 14px; margin-top: 8px; max-width: 50%; }
+.poster.cutout.square .co-subtitle { font-size: 10px; margin-top: 4px; max-width: 50%; }
+.poster.cutout .co-quote {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: var(--soft-dark);
+  text-align: right;
+  position: absolute;
+  z-index: 3;
+  right: 28px;
+  max-width: 40%;
+}
+.poster.cutout.stories .co-quote { bottom: 28%; font-size: 13px; }
+.poster.cutout.square .co-quote { bottom: 26%; font-size: 10px; }
+.poster.cutout .co-bottom {
+  margin-top: auto;
+  position: relative;
+  z-index: 3;
+  border-top: 1px solid rgba(61,43,31,0.15);
+  padding-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.poster.cutout.square .co-bottom { padding-top: 7px; }
+.poster.cutout .co-bottom-brand {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  color: var(--dark);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.poster.cutout.stories .co-bottom-brand { font-size: 13px; }
+.poster.cutout.square .co-bottom-brand { font-size: 9px; }
+.poster.cutout .co-bottom-meta {
+  font-family: 'Inter', sans-serif;
+  color: var(--soft-dark);
+  text-align: right;
+}
+.poster.cutout.stories .co-bottom-meta { font-size: 11px; }
+.poster.cutout.square .co-bottom-meta { font-size: 8px; }
+
+/* ============================================================
+   МАКЕТ P: PRODUCT — белый фон + рамка + фото + 3 колонки
+   (референс #6 — Диван)
+   ============================================================ */
+.poster.product {
+  background: white;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(61,43,31,0.12);
+}
+.poster.product.stories { padding: 22px 18px 16px; }
+.poster.product.square { padding: 16px 14px 12px; }
+.poster.product .prod-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.poster.product.square .prod-header { margin-bottom: 8px; }
+.poster.product .prod-logo {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
+  color: var(--dark);
+}
+.poster.product.stories .prod-logo { font-size: 22px; }
+.poster.product.square .prod-logo { font-size: 16px; }
+.poster.product .prod-issue {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  color: var(--muted);
+  border: 1.5px solid var(--muted);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+.poster.product.square .prod-issue { width: 26px; height: 26px; font-size: 9px; }
+.poster.product .prod-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  color: var(--dark);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 10px;
+  word-break: break-word;
+}
+.poster.product.stories .prod-title { font-size: 38px; }
+.poster.product.square .prod-title { font-size: 26px; }
+.poster.product .prod-frame {
+  border: 1px solid var(--line);
+  padding: 8px;
+  margin: 0 0 8px;
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.poster.product .prod-photo {
+  width: 100%;
+  height: 100%;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: #f5f0e8;
+}
+/* Уголки рамки */
+.poster.product .prod-frame::before,
+.poster.product .prod-frame::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--accent);
+  border-style: solid;
+}
+.poster.product .prod-frame::before {
+  top: -2px; left: -2px;
+  border-width: 2px 0 0 2px;
+}
+.poster.product .prod-frame::after {
+  bottom: -2px; right: -2px;
+  border-width: 0 2px 2px 0;
+}
+.poster.product .prod-num-badge {
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 1.5px solid var(--line);
+  border-radius: 40px;
+  padding: 2px 10px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 10px;
+  color: var(--dark);
+  white-space: nowrap;
+}
+.poster.product.square .prod-num-badge { font-size: 8px; padding: 2px 7px; }
+.poster.product .prod-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.poster.product.square .prod-cols { margin-top: 8px; padding-top: 7px; gap: 5px; }
+.poster.product .prod-col-num {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  color: var(--muted);
+  font-size: 9px;
+  margin-bottom: 3px;
+}
+.poster.product.square .prod-col-num { font-size: 7px; }
+.poster.product .prod-col-text {
+  font-family: 'Inter', sans-serif;
+  color: var(--soft-dark);
+  line-height: 1.3;
+}
+.poster.product.stories .prod-col-text { font-size: 9px; }
+.poster.product.square .prod-col-text { font-size: 7px; }
+.poster.product .prod-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.poster.product.square .prod-footer-row { margin-top: 5px; padding-top: 5px; }
+.poster.product .prod-footer-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.poster.product.square .prod-footer-text { font-size: 6px; }
+.poster.product .prod-barcode {
+  display: flex;
+  gap: 1px;
+  align-items: flex-end;
+  height: 14px;
+  opacity: 0.3;
+}
+.poster.product .prod-barcode span {
+  display: inline-block;
+  width: 2px;
+  background: var(--dark);
+}
+
+/* ============================================================
+   МАКЕТ Q: ARCH-TRIO — три арочных фото + bold заголовок сверху
+   (референс #7 — кинокультура)
+   ============================================================ */
+.poster.arch-trio {
+  background: #E8E4DC;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.poster.arch-trio.stories { padding: 28px 20px 22px; }
+.poster.arch-trio.square { padding: 18px 14px 14px; }
+.poster.arch-trio .at-header {
+  margin-bottom: 12px;
+}
+.poster.arch-trio.square .at-header { margin-bottom: 8px; }
+.poster.arch-trio .at-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  color: var(--dark);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  word-break: break-word;
+}
+.poster.arch-trio.stories .at-title { font-size: 52px; }
+.poster.arch-trio.square .at-title { font-size: 34px; }
+.poster.arch-trio .at-date-row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin-top: 4px;
+}
+.poster.arch-trio.square .at-date-row { margin-top: 2px; gap: 6px; }
+.poster.arch-trio .at-date-hand {
+  font-family: 'Caveat', cursive;
+  color: var(--accent);
+}
+.poster.arch-trio.stories .at-date-hand { font-size: 22px; }
+.poster.arch-trio.square .at-date-hand { font-size: 15px; }
+.poster.arch-trio .at-time-hand {
+  font-family: 'Caveat', cursive;
+  color: var(--accent);
+}
+.poster.arch-trio.stories .at-time-hand { font-size: 22px; }
+.poster.arch-trio.square .at-time-hand { font-size: 15px; }
+.poster.arch-trio .at-arches {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  min-height: 0;
+}
+.poster.arch-trio.square .at-arches { gap: 5px; }
+.poster.arch-trio .at-arch {
+  border-radius: 500px 500px 0 0;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center top;
+  background-color: var(--accent);
+}
+.poster.arch-trio .at-arch.empty {
+  background: var(--accent);
+  opacity: 0.4;
+}
+.poster.arch-trio .at-footer {
+  margin-top: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--soft-dark);
+}
+.poster.arch-trio.square .at-footer { font-size: 7px; margin-top: 7px; }
+
+/* ============================================================
+   МАКЕТ R: CLIPPING — текст поверх фото с mix-blend-mode overlay
+   (референсы #2, #3 — RETRO, GAZE)
+   ============================================================ */
+.poster.clipping {
+  position: relative;
+  background: var(--cream);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.poster.clipping .cl-photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+/* Полупрозрачный overlay для читаемости */
+.poster.clipping .cl-photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(250,246,238,0.35);
+  mix-blend-mode: normal;
+}
+.poster.clipping .cl-content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.poster.clipping.stories .cl-content { padding: 28px 20px 22px; }
+.poster.clipping.square .cl-content { padding: 18px 14px 14px; }
+.poster.clipping .cl-info-box {
+  background: rgba(250,246,238,0.92);
+  padding: 10px 12px;
+  display: inline-block;
+  max-width: 55%;
+  backdrop-filter: blur(4px);
+}
+.poster.clipping.square .cl-info-box { max-width: 60%; padding: 7px 9px; }
+.poster.clipping .cl-info-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: var(--dark);
+  line-height: 1.1;
+}
+.poster.clipping.stories .cl-info-title { font-size: 22px; }
+.poster.clipping.square .cl-info-title { font-size: 15px; }
+.poster.clipping .cl-info-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  color: var(--soft-dark);
+  margin-top: 3px;
+  line-height: 1.3;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  position: absolute;
+  top: 14px;
+  right: -18px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.poster.clipping.square .cl-info-sub { font-size: 7px; right: -14px; }
+.poster.clipping .cl-mega-word {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  /* Ключевой эффект: текст частично прозрачный — через него видно фото */
+  color: transparent;
+  -webkit-text-stroke: 1.5px white;
+  text-stroke: 1.5px white;
+  text-align: center;
+  margin-top: auto;
+  word-break: break-word;
+}
+.poster.clipping.stories .cl-mega-word { font-size: 120px; }
+.poster.clipping.square .cl-mega-word { font-size: 78px; }
+.poster.clipping .cl-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-top: 12px;
+  margin-top: 4px;
+}
+.poster.clipping.square .cl-bottom { padding-top: 8px; }
+.poster.clipping .cl-date-vertical {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.poster.clipping.stories .cl-date-vertical { font-size: 12px; }
+.poster.clipping.square .cl-date-vertical { font-size: 9px; }
+.poster.clipping .cl-meta-right {
+  font-family: 'Inter', sans-serif;
+  color: white;
+  text-align: right;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.poster.clipping.stories .cl-meta-right { font-size: 12px; }
+.poster.clipping.square .cl-meta-right { font-size: 9px; }
+
+
 #toast {
   position: fixed;
   bottom: 80px;
@@ -2235,45 +2847,59 @@ function pickLayoutsForEvent(e, photoCount, regenSeed) {
   let pool;
 
   if (/настолк|караоке|кино/.test(f)) {
-    // Развлечения с яркой айдентикой → bold, halftone, broken-grid, frame
     pool = photoCount >= 1
-      ? ['bold', 'frame', 'halftone', 'broken-grid', 'editorial-layer']
-      : ['bold', 'halftone', 'editorial', 'editorial-layer'];
+      ? ['bold', 'frame', 'halftone', 'broken-grid', 'editorial-layer', 'collage', 'clipping', 'arch-trio']
+      : ['bold', 'halftone', 'editorial', 'editorial-layer', 'collage', 'cutout'];
   } else if (/вечеринк|дегустац/.test(f)) {
-    // Праздничные вечера → frame, editorial-layer, bold, casual
     pool = photoCount >= 1
-      ? ['frame', 'editorial-layer', 'casual', 'bold', 'split']
-      : ['bold', 'editorial', 'editorial-layer'];
+      ? ['frame', 'editorial-layer', 'casual', 'bold', 'split', 'collage', 'stacked-split', 'clipping']
+      : ['bold', 'editorial', 'editorial-layer', 'cutout', 'collage'];
   } else if (/глина|рисов|украш|кулинар/.test(f)) {
-    // Творческие МК → scrapbook, split-elegant, grid, editorial-layer
     pool = photoCount >= 2
-      ? ['scrapbook', 'grid-layout', 'split-elegant', 'editorial-layer']
+      ? ['scrapbook', 'grid-layout', 'split-elegant', 'editorial-layer', 'product', 'arch-trio']
       : photoCount === 1
-        ? ['scrapbook', 'split-elegant', 'hero', 'editorial-layer']
-        : ['editorial', 'scrapbook', 'editorial-layer'];
+        ? ['scrapbook', 'split-elegant', 'hero', 'editorial-layer', 'product', 'stacked-split']
+        : ['editorial', 'scrapbook', 'editorial-layer', 'cutout'];
   } else if (/бьюти/.test(f)) {
-    // Бьюти → split-elegant, casual, scrapbook
     pool = photoCount >= 1
-      ? ['split-elegant', 'casual', 'scrapbook', 'hero']
-      : ['editorial', 'split-elegant'];
+      ? ['split-elegant', 'casual', 'scrapbook', 'hero', 'clipping', 'product']
+      : ['editorial', 'split-elegant', 'cutout'];
   } else if (/книжн|эксперт|разговор|встреч/.test(f)) {
-    // Разговорные → editorial, editorial-layer, frame, split-elegant
     pool = photoCount >= 1
-      ? ['editorial', 'frame', 'split-elegant', 'editorial-layer']
-      : ['editorial', 'editorial-layer'];
+      ? ['editorial', 'frame', 'split-elegant', 'editorial-layer', 'clipping', 'stacked-split']
+      : ['editorial', 'editorial-layer', 'cutout', 'product'];
   } else if (/день рождения|свидан/.test(f)) {
-    // Частные → casual, scrapbook, frame
     pool = photoCount >= 1
-      ? ['casual', 'frame', 'scrapbook', 'editorial-layer']
-      : ['editorial', 'casual'];
+      ? ['casual', 'frame', 'scrapbook', 'editorial-layer', 'collage', 'clipping']
+      : ['editorial', 'casual', 'cutout'];
+  } else if (/макраме|вышив|рукодел/.test(f)) {
+    pool = photoCount >= 1
+      ? ['product', 'arch-trio', 'split-elegant', 'scrapbook']
+      : ['product', 'cutout', 'editorial'];
   } else {
-    // Дефолт
     pool = photoCount >= 2
-      ? ['hero', 'grid-layout', 'editorial-layer', 'scrapbook']
+      ? ['hero', 'grid-layout', 'editorial-layer', 'scrapbook', 'arch-trio', 'stacked-split']
       : photoCount === 1
-        ? ['hero', 'split', 'frame', 'editorial-layer']
-        : ['editorial', 'editorial-layer'];
+        ? ['hero', 'split', 'frame', 'editorial-layer', 'collage', 'stacked-split']
+        : ['editorial', 'editorial-layer', 'cutout', 'bold'];
   }
+
+  // Фильтр по длине названия события:
+  // SCRAPBOOK и EDITORIAL-LAYER плохо работают с длинными/сложными названиями
+  const nameLen = (e.name || '').length;
+  const nameWords = (e.name || '').split(' ').length;
+  const isTitleShort = nameLen <= 20 && nameWords <= 3;
+  const isTitleMedium = nameLen <= 32 && nameWords <= 5;
+
+  if (!isTitleMedium && pool.includes('scrapbook')) {
+    pool = pool.filter(l => l !== 'scrapbook');
+    if (!pool.includes('hero')) pool.push('hero');
+  }
+  if (!isTitleShort && pool.includes('editorial-layer')) {
+    pool = pool.filter(l => l !== 'editorial-layer');
+    if (!pool.includes('split-elegant')) pool.push('split-elegant');
+  }
+  if (pool.length < 2) pool.push('hero');
 
   // Берём 2 разных макета. Псевдослучайный шафл с учётом id события + regenSeed.
   const seed = (e.id || e.date || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) + regenSeed * 17;
@@ -2345,6 +2971,26 @@ function buildVariant(id, layout, accent, tagline, photo, photos, heroWord, e) {
   } else if (layout === 'editorial-layer') {
     variant.photo = photo;
     variant.ed_subtitle = `${e.format || ''}${e.name && e.name !== e.format ? ' · ' + e.name : ''}`.trim();
+  } else if (layout === 'collage') {
+    variant.photo = photo;
+    // COLLAGE хорошо с тёмным фоном — вариант B выбивается
+    if (id === 'B') variant.accent = 'night';
+  } else if (layout === 'stacked-split') {
+    variant.photo = photo;
+  } else if (layout === 'cutout') {
+    variant.photo = photo;
+    // CUTOUT — акцент янтарь или терракот (красный текст как в реф #5)
+  } else if (layout === 'product') {
+    variant.photo = photo;
+    const descWords = (e.description || '').split(/\s+/).slice(0,8).join(' ');
+    variant.col1 = escapeHtml(e.format || 'Мастер-класс');
+    variant.col2 = descWords || (e.price ? e.price + ' руб' : 'Записаться');
+  } else if (layout === 'arch-trio') {
+    variant.photos = photos.slice(0,3);
+    variant.photo = photo;
+  } else if (layout === 'clipping') {
+    variant.photo = photo;
+    variant.hero_word = heroWord;
   }
   return variant;
 }
@@ -2551,18 +3197,12 @@ function autoFitElement(el, cssVar) {
 
 function layoutDisplayName(l) {
   return ({
-    'hero':'HERO',
-    'split':'SPLIT',
-    'grid-layout':'GRID',
-    'editorial':'EDITORIAL',
-    'bold':'BOLD',
-    'scrapbook':'SCRAPBOOK',
-    'broken-grid':'BROKEN-GRID',
-    'halftone':'HALFTONE',
-    'frame':'FRAME',
-    'casual':'CASUAL',
-    'split-elegant':'SPLIT-ELEGANT',
-    'editorial-layer':'JOURNAL'
+    'hero':'HERO', 'split':'SPLIT', 'grid-layout':'GRID',
+    'editorial':'EDITORIAL', 'bold':'BOLD', 'scrapbook':'SCRAPBOOK',
+    'broken-grid':'BROKEN-GRID', 'halftone':'HALFTONE', 'frame':'FRAME',
+    'casual':'CASUAL', 'split-elegant':'SPLIT-ELEGANT', 'editorial-layer':'JOURNAL',
+    'collage':'COLLAGE', 'stacked-split':'STACKED', 'cutout':'CUTOUT',
+    'product':'PRODUCT', 'arch-trio':'ARCH-TRIO', 'clipping':'CLIPPING'
   })[l] || l.toUpperCase();
 }
 function accentDisplayName(a) {
@@ -2612,6 +3252,12 @@ function renderPoster(day, v, format) {
   if (layoutClass === 'casual') return renderCasual(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
   if (layoutClass === 'split-elegant') return renderSplitElegant(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
   if (layoutClass === 'editorial-layer') return renderEditorialLayer(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'collage') return renderCollage(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'stacked-split') return renderStackedSplit(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'cutout') return renderCutout(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'product') return renderProduct(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'arch-trio') return renderArchTrio(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
+  if (layoutClass === 'clipping') return renderClipping(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
   return '';
 }
 
@@ -2940,6 +3586,195 @@ function renderEditorialLayer(v, day, titleHtml, dateMeta, formatMeta, dateMetaS
           <div class="el-title">${escapeHtml(titleMain)}</div>
           <div class="el-subtitle">${escapeHtml(subtitle)}</div>
           <div class="el-footer">${day.dayOfWeek} · ${day.time} · ${day.event.price || '—'} руб · Пожарный 3Б</div>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+
+/* ============================================================
+   РЕНДЕРЫ НОВЫХ МАКЕТОВ (M–R)
+   ============================================================ */
+
+// M. COLLAGE — акцентный фон + рваная бумага SVG сверху + фото объект
+function renderCollage(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const photoStyle = v.photo ? `background-image: url('${v.photo}');` : '';
+  // SVG-волна рваной бумаги — кремовый «отрыв» сверху
+  const paperSvg = `
+    <svg class="collage-paper" viewBox="0 0 405 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path d="M0,0 L405,0 L405,45
+        Q380,80 355,50 Q330,20 305,60 Q280,95 255,55
+        Q230,18 205,65 Q180,100 155,60 Q130,22 105,70
+        Q80,105 55,65 Q30,28 0,75 Z"
+        fill="#FAF6EE"/>
+    </svg>`;
+  const meta = formatClass === 'stories' ? dateMeta : dateMetaShort;
+  return `
+    <article class="poster collage ${formatClass} ${accentClass}">
+      ${paperSvg}
+      ${v.photo ? `<div class="collage-photo" style="${photoStyle}"></div>` : ''}
+      <div class="collage-content">
+        <div style="flex:1"></div>
+        <h1 class="collage-title">${escapeHtml(day.event.title || '')}</h1>
+        ${tg(v, 'collage-tagline')}
+        <div class="collage-meta">${meta}</div>
+        <div class="collage-footer">Пространство Детали · Пожарный 3Б · +375 29 315-15-83</div>
+      </div>
+    </article>
+  `;
+}
+
+// N. STACKED-SPLIT — фото слева + цветная колонка с огромными словами по строкам
+function renderStackedSplit(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const photoStyle = v.photo ? `background-image: url('${v.photo}');` : '';
+  // Разбиваем название на строки по словам
+  const words = (day.event.title || '').toUpperCase().split(' ').filter(Boolean);
+  const wordLines = words.map(w => `<div class="ss-word">${escapeHtml(w)}</div>`).join('');
+  // «Факты»: дата, формат, цена
+  const dayNum = String(d.getDate()).padStart(2,'0');
+  const monthNum = String(d.getMonth()+1).padStart(2,'0');
+  return `
+    <article class="poster stacked-split ${formatClass} ${accentClass}">
+      <div class="ss-photo" style="${photoStyle}"></div>
+      <div class="ss-column">
+        <div class="ss-brand">Пространство · Детали</div>
+        ${wordLines}
+        <div class="ss-facts">
+          <div class="ss-fact">
+            <div class="ss-fact-num">${dayNum}.${monthNum}</div>
+            <div class="ss-fact-label">${day.dayOfWeek} · ${day.time}</div>
+          </div>
+          <div class="ss-fact">
+            <div class="ss-fact-num">${day.event.price ? day.event.price + ' руб' : '—'}</div>
+            <div class="ss-fact-label">${escapeHtml(day.event.format || '')}</div>
+          </div>
+        </div>
+        <div class="ss-footer">Пожарный 3Б · +375 29 315-15-83</div>
+      </div>
+    </article>
+  `;
+}
+
+// O. CUTOUT — светлый фон + огромный текст акцентом + фото объект по центру
+function renderCutout(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const photoStyle = v.photo ? `background-image: url('${v.photo}');` : '';
+  const headline = (day.event.title || day.event.format || '').toUpperCase().split(' ').slice(0,3).join(' ');
+  const meta = formatClass === 'stories' ? dateMeta : dateMetaShort;
+  return `
+    <article class="poster cutout ${formatClass} ${accentClass}">
+      <div class="co-headline">${escapeHtml(headline)}</div>
+      <div class="co-subtitle">${escapeHtml(day.event.format || '')}</div>
+      ${v.photo ? `<div class="co-photo" style="${photoStyle}"></div>` : ''}
+      ${tg(v, 'co-quote')}
+      <div class="co-bottom">
+        <div class="co-bottom-brand">Детали</div>
+        <div class="co-bottom-meta">${meta}<br>${day.event.price ? day.event.price + ' руб' : ''}</div>
+      </div>
+    </article>
+  `;
+}
+
+// P. PRODUCT — белый фон + рамка + фото по центру + 3 колонки внизу
+function renderProduct(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const photoStyle = v.photo ? `background-image: url('${v.photo}');` : '';
+  const issueNum = String(((d.getMonth()+1)*7 + d.getDate()) % 100).padStart(2,'0');
+  // 3 колонки: что делаем, что берём, когда/стоимость
+  const col1 = v.col1 || `${escapeHtml(day.event.format || 'Мастер-класс')}`;
+  const col2 = v.col2 || (day.event.price ? `${day.event.price} руб` : 'Записаться');
+  const col3 = `${day.dayOfWeek} · ${d.getDate()} ${MONTHS[d.getMonth()]} · ${day.time}`;
+  // Псевдо-штрихкод
+  const bars = Array.from({length: 14}, (_, i) =>
+    `<span style="height:${50+Math.sin(i*1.7)*50}%"></span>`
+  ).join('');
+  return `
+    <article class="poster product ${formatClass} ${accentClass}">
+      <div class="prod-header">
+        <div class="prod-logo">${escapeHtml((day.event.format || 'Детали').split(' ')[0])}</div>
+        <div class="prod-issue">#${issueNum}</div>
+      </div>
+      <div class="prod-title">${escapeHtml(day.event.title || day.event.format || '—')}</div>
+      <div class="prod-frame">
+        <div class="prod-photo" style="${photoStyle}"></div>
+        <div class="prod-num-badge">Пространство · Детали</div>
+      </div>
+      <div class="prod-cols">
+        <div>
+          <div class="prod-col-num">(01)</div>
+          <div class="prod-col-text">${col1}</div>
+        </div>
+        <div>
+          <div class="prod-col-num">(02)</div>
+          <div class="prod-col-text">${tg(v, '', true) ? escapeHtml(v.tagline) : 'Приходите'}</div>
+        </div>
+        <div>
+          <div class="prod-col-num">(03)</div>
+          <div class="prod-col-text">${col3}</div>
+        </div>
+      </div>
+      <div class="prod-footer-row">
+        <div class="prod-footer-text">Пожарный 3Б · +375 29 315-15-83</div>
+        <div class="prod-barcode">${bars}</div>
+      </div>
+    </article>
+  `;
+}
+
+// Q. ARCH-TRIO — три арочных фото + bold заголовок + рукописная дата
+function renderArchTrio(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const photos = (v.photos || (v.photo ? [v.photo] : []));
+  const arches = [0,1,2].map(i =>
+    photos[i]
+      ? `<div class="at-arch" style="background-image: url('${photos[i]}');"></div>`
+      : `<div class="at-arch empty"></div>`
+  ).join('');
+  const dateStr = `${d.getDate()}.${String(d.getMonth()+1).padStart(2,'0')}`;
+  return `
+    <article class="poster arch-trio ${formatClass} ${accentClass}">
+      <div class="at-header">
+        <div class="at-title">${escapeHtml(day.event.title || day.event.format || '—')}</div>
+        <div class="at-date-row">
+          <span class="at-date-hand">${dateStr}</span>
+          <span class="at-time-hand">${day.time}</span>
+        </div>
+      </div>
+      <div class="at-arches">${arches}</div>
+      <div class="at-footer">
+        Пространство Детали · ${escapeHtml(day.event.format || '')} · ${day.event.price ? day.event.price + ' руб' : ''} · Пожарный 3Б
+      </div>
+    </article>
+  `;
+}
+
+// R. CLIPPING — фото на всю высоту + outline-текст + полупрозрачный бокс
+function renderClipping(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
+  const d = parseDate(day.date);
+  const photoStyle = v.photo ? `background-image: url('${v.photo}');` : '';
+  const heroWord = (v.hero_word || (day.event.title || '').split(' ')[0] || day.event.format || 'Детали').toUpperCase();
+  const dateStr = `${d.getDate()} ${MONTHS[d.getMonth()].toUpperCase()} ${d.getFullYear()}`;
+  return `
+    <article class="poster clipping ${formatClass} ${accentClass}">
+      <div class="cl-photo" style="${photoStyle}"></div>
+      <div class="cl-content">
+        <div style="position:relative; display:inline-block;">
+          <div class="cl-info-box">
+            <div class="cl-info-title">${titleHtml}</div>
+          </div>
+          <div class="cl-info-sub">${escapeHtml(day.event.format || '')}</div>
+        </div>
+        <div class="cl-mega-word">${escapeHtml(heroWord)}</div>
+        <div class="cl-bottom">
+          <div class="cl-date-vertical">${dateStr}</div>
+          <div class="cl-meta-right">
+            ${day.time}<br>
+            ${escapeHtml(day.event.format || '')}<br>
+            ${day.event.price ? day.event.price + ' руб' : ''}
+          </div>
         </div>
       </div>
     </article>
