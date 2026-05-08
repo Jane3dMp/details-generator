@@ -290,15 +290,9 @@ body {
 }
 .post-image {
   width: 100%;
-  aspect-ratio: 1;
   background-size: cover;
   background-position: center;
   background-color: var(--milk);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-size: 11px;
 }
 .post-body { padding: 12px 14px; }
 .post-handle {
@@ -331,7 +325,8 @@ body {
   align-items: center;
   justify-content: center;
   background: var(--milk);
-  padding: 10px 14px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line);
   transition: background .15s;
 }
 .post-image-noimg:hover { background: #ede5d8; }
@@ -850,44 +845,50 @@ function updatePostsFilter() {
 
 function extractInsights(p, avgLikes) {
   const text = (p.caption || '').toLowerCase();
+  const cap = p.caption || '';
   const insights = [];
 
-  // Формат МК
+  // Формат МК — расширенный список
   const formats = [
-    [/живопис|акрил|масл[оа]/,'🎨 Живопись'],
+    [/живопис|акрил|масл[оа]|холст|пишем|рисуем|напишем/,'🎨 Живопись'],
     [/акварел/,'💧 Акварель'],
-    [/глин|керамик|гонч/,'🏺 Керамика'],
-    [/рисов|набросок|скетч/,'✏️ Рисование'],
-    [/украшен|бисер|кольц|серьг|макраме/,'💎 Украшения'],
-    [/кулинар|готов|выпечк|торт/,'🍰 Кулинария'],
-    [/вечеринк|пати|праздник|день рожден/,'🎉 Праздник'],
+    [/глин|керамик|гонч|лепим|лепк/,'🏺 Керамика'],
+    [/рисов|набросок|скетч|карандаш/,'✏️ Рисование'],
+    [/украшен|бисер|кольц|серьг|макраме|вышивк/,'💎 Украшения'],
+    [/кулинар|готовим|готов|выпечк|торт|блюд|шеф|мясн/,'🍰 Кулинария'],
+    [/вечеринк|пати|праздник|день рожден|именин|др\b/,'🎉 Праздник'],
     [/кино|фильм|просмотр/,'🎬 Кино'],
-    [/книг|чтени/,'📚 Книги'],
-    [/свидан/,'💑 Свидание'],
-    [/дет|ребён|ребят|малыш/,'👧 Детский'],
+    [/книг|чтени|литератур/,'📚 Книги'],
+    [/свидан|романтик/,'💑 Свидание'],
+    [/дет|ребён|ребят|малыш|дети\b|детск/,'👧 Детский'],
+    [/арт.завтрак|завтрак/,'☕ Арт-завтрак'],
+    [/лекци|встреч|разговор|беседа/,'🎤 Лекция'],
   ];
   const fmt = formats.find(([re]) => re.test(text));
   if (fmt) insights.push({ type: 'format', text: fmt[1] });
 
-  // Цена
-  const priceMatch = text.match(/(\d+)\s*(byn|руб|р\.|\$|€)/i)
-    || (p.caption||'').match(/(\d+)\s*(BYN|руб|р\.)/);
+  // Цена — BYN, руб, р.
+  const priceMatch = cap.match(/(\d+)\s*(?:BYN|byn|руб|р\.|рублей)/i);
   if (priceMatch) insights.push({ type: 'price', text: '💰 ' + priceMatch[1] + ' BYN' });
 
-  // Популярность
-  const likes = p.likes || 0;
-  if (avgLikes > 0 && likes >= avgLikes * 1.8)
-    insights.push({ type: 'hot', text: '🔥 Топ — в ' + Math.round(likes/avgLikes) + 'x выше среднего' });
-  else if (avgLikes > 0 && likes < avgLikes * 0.5)
-    insights.push({ type: 'low', text: '📉 Ниже среднего' });
+  // Дата события в тексте
+  const dateMatch = cap.match(/(\d{1,2})\s*(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/i);
+  if (dateMatch) insights.push({ type: 'info', text: '📅 ' + dateMatch[1] + ' ' + dateMatch[2].toLowerCase() });
 
-  // Материалы включены?
-  if (/материал.{0,10}включ|всё включено/i.test(p.caption||''))
+  // Материалы включены
+  if (/материал.{0,15}включ|всё включено|все включено/i.test(cap))
     insights.push({ type: 'info', text: '✅ Материалы включены' });
 
   // Размер холста
-  const sizeMatch = (p.caption||'').match(/(\d+\s*[×x]\s*\d+)/i);
+  const sizeMatch = cap.match(/(\d+\s*[×xх]\s*\d+)/i);
   if (sizeMatch) insights.push({ type: 'info', text: '📐 ' + sizeMatch[1] });
+
+  // Популярность относительно среднего
+  const likes = p.likes || 0;
+  if (avgLikes > 0 && likes >= avgLikes * 1.8)
+    insights.push({ type: 'hot', text: '🔥 в ' + Math.round(likes/avgLikes) + 'x выше среднего' });
+  else if (avgLikes > 0 && likes < avgLikes * 0.4 && likes >= 0)
+    insights.push({ type: 'low', text: '📉 Ниже среднего' });
 
   return insights;
 }
