@@ -5674,6 +5674,9 @@ function initPreview() {
   document.body.insertAdjacentHTML('beforeend',
     `<div id="previewRoot" style="max-width:1200px;margin:0 auto;padding:24px 28px 60px;"></div>`);
 
+  // Стартовый формат превью — всегда stories
+  window._pvPreviewFormat = 'stories';
+
   loadFromStorage();
 
   // Если в URL передан eventId — открываем именно это событие
@@ -5811,16 +5814,29 @@ function renderPreview(ev) {
   const grid = document.getElementById('pvGrid');
   // Размеры в зависимости от формата превью
   const previewFormat = window._pvPreviewFormat || 'stories';
-  const SCALE = 0.48;
+  // Синхронизируем подсветку кнопок переключателя формата
+  setTimeout(() => {
+    document.querySelectorAll('.pv-fmt-btn').forEach(b => {
+      const active = b.dataset.pvfmt === previewFormat;
+      b.style.background = active ? 'var(--terracotta)' : 'transparent';
+      b.style.color = active ? 'white' : 'var(--dark)';
+      b.classList.toggle('active', active);
+    });
+  }, 0);
   const formatDims = {
-    stories:  { W: 405, H: 720 },
-    square:   { W: 540, H: 540 },
-    telegram: { W: 720, H: 405 }
+    stories:  { W: 405, H: 720, scale: 0.48 },   // → 195×346
+    square:   { W: 540, H: 540, scale: 0.40 },   // → 216×216
+    telegram: { W: 720, H: 405, scale: 0.45 }    // → 324×182
   };
   const dims = formatDims[previewFormat] || formatDims.stories;
-  const PW = dims.W, PH = dims.H;
+  const PW = dims.W, PH = dims.H, SCALE = dims.scale;
   const cardH = Math.round(PH * SCALE);
   const cardW = Math.round(PW * SCALE);
+
+  // Для telegram (горизонтального) — широкие карточки в 2-3 колонки.
+  // Для stories/square — мелкие в 4-5 колонок.
+  const minColW = previewFormat === 'telegram' ? 320 : 200;
+  grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(${minColW}px, ${cardW + 16}px))`;
 
   ALL_LAYOUTS.forEach(([layout, ac], idx) => {
     const variant = buildVariant('A', layout, ac, tagline, photo, photos, heroWord, ev);
