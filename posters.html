@@ -6074,6 +6074,7 @@ async function emExport(format) {
       const sq = zone.querySelector('.poster');
       emApplyEditsToNode(sq, editedText);
       await waitForImages(sq);
+      // Делаем зону видимой для autoFit — иначе размеры считаются неправильно
       zone.style.left = '0'; zone.style.visibility = 'hidden';
       [
         ['.frame-title','--frame-title-size'],['.bold-title','--bold-title-size'],
@@ -6081,9 +6082,13 @@ async function emExport(format) {
         ['.prod-title','--prod-title-size'],['.co-headline','--co-headline-size'],
         ['.at-title','--at-title-size'],
       ].forEach(([s,v]) => { const e = sq.querySelector(s); if(e) autoFitElement(e,v); });
-      zone.style.left = '-10000px'; zone.style.visibility = '';
+      // ВАЖНО: убираем visibility:hidden ДО рендера html2canvas (иначе чёрный фон).
+      // Зону прячем за экран, но visibility должна быть нормальной.
+      zone.style.left = '-10000px'; zone.style.visibility = 'visible';
+      await new Promise(r => setTimeout(r, 100)); // даём браузеру отрендерить
       const canvas = await html2canvas(sq, {scale:2,useCORS:true,allowTaint:true,backgroundColor:null,logging:false});
       zone.innerHTML = '';
+      zone.style.visibility = '';
       const blob = await new Promise(r => canvas.toBlob(b => r(b),'image/png',0.95));
       triggerDownload(blob, `${_em.day.date}_${_em.layout}_edited_square.png`);
     } else {
@@ -6106,10 +6111,12 @@ async function emExport(format) {
         });
       }
       await waitForImages(node);
-      zone.style.left = '0'; zone.style.visibility = 'hidden';
+      // Зона должна быть видимой (visibility) для нормального рендера, но за экраном
+      zone.style.left = '-10000px'; zone.style.visibility = 'visible';
+      await new Promise(r => setTimeout(r, 100));
       const canvas = await html2canvas(node, {scale:2,useCORS:true,allowTaint:true,backgroundColor:null,logging:false});
       zone.innerHTML = '';
-      zone.style.left = '-10000px'; zone.style.visibility = '';
+      zone.style.visibility = '';
       const blob = await new Promise(r => canvas.toBlob(b => r(b),'image/png',0.95));
       triggerDownload(blob, `${_em.day.date}_${_em.layout}_edited_stories.png`);
     }
@@ -6674,19 +6681,36 @@ async function emAddToLibrary() {
     // Генерируем превью — маленький thumbnail для библиотеки
     let thumbnailUrl = '';
     try {
-      // Скрытая зона для рендера
+      // Скрытая зона для рендера. ВАЖНО: видимая, но за экраном (left: -10000px),
+      // потому что html2canvas в visibility:hidden может вернуть чёрный фон
       const zone = document.getElementById('hiddenRenderZone');
-      zone.innerHTML = clone.outerHTML;
+      zone.innerHTML = '';
+      zone.appendChild(clone);
+      // Размещаем за пределами экрана, но видимо для рендера
+      zone.style.position = 'fixed';
+      zone.style.left = '-10000px';
+      zone.style.top = '0';
+      zone.style.visibility = 'visible';
+      zone.style.width = '500px';   // фиксированный размер для стабильности
+      zone.style.height = 'auto';
+      // Применяем размер к самому постеру (если в CSS уже задан — оставит)
+      if (!clone.style.width) clone.style.width = '500px';
+
       const node = zone.querySelector('.poster');
+      // Ждём загрузки всех картинок (включая data: и blob:)
       await waitForImages(node);
-      zone.style.left = '0'; zone.style.visibility = 'hidden';
+      // Дополнительная пауза для гарантии рендера CSS-фильтров
+      await new Promise(r => setTimeout(r, 200));
+
       const canvas = await html2canvas(node, {
         scale: 0.5, useCORS: true, allowTaint: true,
         backgroundColor: null, logging: false
       });
-      zone.innerHTML = '';
-      zone.style.left = '-10000px'; zone.style.visibility = '';
       thumbnailUrl = canvas.toDataURL('image/jpeg', 0.7); // jpeg чтобы было меньше
+
+      zone.innerHTML = '';
+      zone.style.left = '-10000px';
+      zone.style.visibility = '';
     } catch(e) {
       console.warn('thumbnail render failed', e);
     }
