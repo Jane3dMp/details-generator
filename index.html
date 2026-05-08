@@ -5473,11 +5473,11 @@ document.addEventListener('keydown', e => {
 // TELEGRAM — постинг одного события
 // =====================================================================
 async function postEventToTelegram() {
-  if (!currentEditingId) {
+  if (!state.editingEventId) {
     alert('Сначала сохрани событие, потом запости');
     return;
   }
-  const ev = state.events.find(e => e.id === currentEditingId);
+  const ev = state.events.find(e => e.id === state.editingEventId);
   if (!ev) {
     alert('Событие не найдено');
     return;
@@ -5492,7 +5492,7 @@ async function postEventToTelegram() {
   if (previewBtn) { previewBtn.disabled = true; previewBtn.textContent = '⏳ Превью…'; }
 
   try {
-    const previewRes = await apiPost({ action: 'previewTelegramPost', project: 'details', eventId: ev.id });
+    const previewRes = await apiPost('previewTelegramPost', { eventId: ev.id });
     if (!previewRes.ok) {
       alert('Ошибка превью: ' + (previewRes.error || 'неизвестная'));
       return;
@@ -5502,7 +5502,7 @@ async function postEventToTelegram() {
     if (!confirm(dlgText)) return;
 
     if (previewBtn) previewBtn.textContent = '⏳ Постим…';
-    const postRes = await apiPost({ action: 'postToTelegram', project: 'details', eventId: ev.id });
+    const postRes = await apiPost('postToTelegram', { eventId: ev.id });
     if (!postRes.ok) {
       alert('Ошибка постинга: ' + (postRes.error || 'неизвестная'));
       return;
@@ -5711,9 +5711,7 @@ async function waPostAllToTelegram() {
     }
 
     try {
-      const res = await apiPost({
-        action: 'postPhotoToTelegram',
-        project: 'details',
+      const res = await apiPost('postPhotoToTelegram', {
         photoBase64: p.base64,
         caption: caption
       });
