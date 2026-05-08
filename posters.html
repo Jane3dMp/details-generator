@@ -771,122 +771,180 @@ body {
 
 /* ============================================================
    TELEGRAM FORMAT (1280×720 → 720×405 в превью)
-   Универсальная адаптация: все макеты превращаются в горизонтальный split.
-   Фото слева 45%, контент справа 55%.
+   Отдельный макет — светлая панель справа, фото слева.
+   Не зависит от исходного layout.
    ============================================================ */
-.poster.telegram { display: flex !important; flex-direction: row !important; }
-.poster.telegram .brand { font-size: 9px; letter-spacing: 0.3em; }
-.poster.telegram .meta { font-size: 9px; }
-.poster.telegram .footer-info { font-size: 7px; }
-.poster.telegram .stamp { width: 60px; height: 60px; font-size: 7px; }
-
-/* Базовые блоки фото и контента — для любого макета */
-.poster.telegram .hero-photo,
-.poster.telegram .split-photo,
-.poster.telegram .grid-photos,
-.poster.telegram .editorial-photo,
-.poster.telegram .ed-photo,
-.poster.telegram .frame-photo,
-.poster.telegram .casual-photo,
-.poster.telegram .se-photo,
-.poster.telegram .el-photo,
-.poster.telegram .co-photo,
-.poster.telegram .ss-photo,
-.poster.telegram .cu-photo,
-.poster.telegram .prod-photo,
-.poster.telegram .at-photo,
-.poster.telegram .cl-photo,
-.poster.telegram .tk-photo,
-.poster.telegram .wf-photo,
-.poster.telegram .tl-photo,
-.poster.telegram .st-photo,
-.poster.telegram .ov-photo,
-.poster.telegram .sm-photo,
-.poster.telegram .dg-photo,
-.poster.telegram .sb-photo,
-.poster.telegram .qc-photo,
-.poster.telegram .bold-photo {
-  flex: 0 0 45% !important;
-  width: 45% !important;
-  height: 100% !important;
-  background-size: cover !important;
-  background-position: center !important;
-}
-
-.poster.telegram .hero-content,
-.poster.telegram .split-content,
-.poster.telegram .grid-card,
-.poster.telegram .editorial-content,
-.poster.telegram .ed-content,
-.poster.telegram .frame-content,
-.poster.telegram .casual-content,
-.poster.telegram .se-content,
-.poster.telegram .el-content,
-.poster.telegram .co-content,
-.poster.telegram .ss-content,
-.poster.telegram .cu-content,
-.poster.telegram .prod-content,
-.poster.telegram .at-content,
-.poster.telegram .cl-content,
-.poster.telegram .tk-content,
-.poster.telegram .wf-content,
-.poster.telegram .tl-content,
-.poster.telegram .st-content,
-.poster.telegram .ov-content,
-.poster.telegram .sm-content,
-.poster.telegram .dg-content,
-.poster.telegram .sb-content,
-.poster.telegram .qc-content,
-.poster.telegram .bold-content {
-  flex: 1 1 55% !important;
-  padding: 18px 22px !important;
+.poster.telegram {
   display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
-  gap: 6px !important;
+  flex-direction: row !important;
+  background: var(--brand-milk, #F5EFE6) !important;
+  position: relative;
+}
+.poster.telegram .tg-photo {
+  flex: 0 0 50%;
+  width: 50%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-color: #d8cfbf;
+  position: relative;
+}
+.poster.telegram .tg-photo-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  color: white;
+  text-align: center;
+  background: var(--accent);
+  letter-spacing: 0.04em;
+  padding: 20px;
+}
+.poster.telegram .tg-content {
+  flex: 1 1 50%;
+  padding: 28px 32px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  color: var(--brand-dark, #3D2B1F);
+  background: var(--brand-milk, #F5EFE6);
+  position: relative;
+  z-index: 2;
+}
+.poster.telegram .tg-brand {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.poster.telegram .tg-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--brand-dark, #3D2B1F);
+  margin: 0 0 4px;
+}
+.poster.telegram .tg-title em {
+  font-style: italic;
+  font-weight: 600;
+}
+.poster.telegram .tg-tagline {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--brand-soft-dark, #5C4636);
+  margin-bottom: 4px;
+}
+.poster.telegram .tg-divider {
+  height: 2px;
+  width: 36px;
+  background: var(--accent);
+  margin: 6px 0;
+}
+.poster.telegram .tg-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+.poster.telegram .tg-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-right: 1px solid rgba(61,43,31,.18);
+  padding-right: 14px;
+}
+.poster.telegram .tg-date-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+.poster.telegram .tg-date-month {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brand-dark, #3D2B1F);
+  margin-top: 2px;
+}
+.poster.telegram .tg-meta-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.poster.telegram .tg-day {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brand-dark, #3D2B1F);
+  font-weight: 500;
+}
+.poster.telegram .tg-format {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  color: var(--brand-soft-dark, #5C4636);
+  letter-spacing: 0.04em;
+}
+.poster.telegram .tg-foot {
+  font-family: 'Inter', sans-serif;
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brand-soft-dark, #5C4636);
+  position: absolute;
+  bottom: 14px;
+  left: 32px;
+  right: 32px;
 }
 
-/* Заголовки в Telegram — компактнее */
-.poster.telegram .title {
-  font-size: 22px !important;
-  line-height: 1.05 !important;
-  margin: 4px 0 !important;
+/* Тёмная палитра — для accent-night и тёмных постеров */
+.poster.telegram.accent-night,
+.poster.telegram.accent-coffee {
+  background: var(--brand-dark, #3D2B1F) !important;
 }
-.poster.telegram .tagline {
-  font-size: 12px !important;
-  line-height: 1.3 !important;
-  margin: 2px 0 6px !important;
+.poster.telegram.accent-night .tg-content,
+.poster.telegram.accent-coffee .tg-content {
+  background: var(--brand-dark, #3D2B1F);
+  color: var(--brand-milk, #F5EFE6);
 }
-.poster.telegram .date-large {
-  font-size: 28px !important;
-  margin: 2px 0 !important;
+.poster.telegram.accent-night .tg-title,
+.poster.telegram.accent-coffee .tg-title {
+  color: var(--brand-milk, #F5EFE6);
 }
-.poster.telegram .divider {
-  margin: 4px 0 !important;
-  width: 32px !important;
+.poster.telegram.accent-night .tg-tagline,
+.poster.telegram.accent-coffee .tg-tagline,
+.poster.telegram.accent-night .tg-day,
+.poster.telegram.accent-coffee .tg-day,
+.poster.telegram.accent-night .tg-date-month,
+.poster.telegram.accent-coffee .tg-date-month {
+  color: rgba(245,239,230,.85);
 }
-.poster.telegram .time-line {
-  font-size: 9px !important;
-  margin: 2px 0 !important;
+.poster.telegram.accent-night .tg-format,
+.poster.telegram.accent-coffee .tg-format,
+.poster.telegram.accent-night .tg-foot,
+.poster.telegram.accent-coffee .tg-foot {
+  color: rgba(245,239,230,.6);
 }
-
-/* Hero-word для редких форматов с большим словом */
-.poster.telegram .hero-word,
-.poster.telegram .frame-title,
-.poster.telegram .bold-title,
-.poster.telegram .se-title,
-.poster.telegram .casual-title,
-.poster.telegram .prod-title,
-.poster.telegram .co-headline,
-.poster.telegram .at-title {
-  font-size: 32px !important;
+.poster.telegram.accent-night .tg-date,
+.poster.telegram.accent-coffee .tg-date {
+  border-right-color: rgba(245,239,230,.2);
 }
 
-/* Скрываем декоративные элементы которые не помещаются */
-.poster.telegram .grid-cell:nth-child(n+3) { display: none; }
-.poster.telegram .grid-photos { display: block; }
-.poster.telegram .grid-photos .grid-cell:first-child { width: 100%; height: 100%; }
-
+/* Скрываем noise-фон на правой панели — он ломает контраст текста */
+.poster.telegram::before { display: none !important; }
 /* ============================================================
    КОНЕЦ TELEGRAM FORMAT
    ============================================================ */
@@ -4427,6 +4485,11 @@ function renderPoster(day, v, format) {
   const formatMeta = `${day.event.format || ''}${priceStr ? ' · ' + priceStr : ''}`;
   const dateMetaShort = `${d.getDate()} ${monthName} · ${day.time}`;
 
+  // === TELEGRAM-формат: используем универсальный шаблон 16:9, не привязанный к layout ===
+  if (formatClass === 'telegram') {
+    return renderPosterTelegram(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, monthName);
+  }
+
   if (layoutClass === 'hero') return renderHero(v, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
   if (layoutClass === 'split') return renderSplit(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName);
   if (layoutClass === 'grid-layout') return renderGrid(v, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass);
@@ -4467,6 +4530,56 @@ function tg(v, wrapClass, withQuotes = true, tagName = 'p') {
   if (v.no_tagline || !v.tagline) return '';
   const text = withQuotes ? `«${escapeHtml(v.tagline)}»` : escapeHtml(v.tagline);
   return `<${tagName} class="${wrapClass}">${text}</${tagName}>`;
+}
+
+// ============================================================
+// TELEGRAM-формат — отдельный универсальный макет 16:9
+// Светлая панель справа, фото слева. Не зависит от исходного layout.
+// ============================================================
+function renderPosterTelegram(v, day, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, monthName) {
+  const photo = (v.photos && v.photos[0]) || v.photo || '';
+  const photoStyle = photo
+    ? `background-image: url('${escapeHtml(photo)}');`
+    : '';
+
+  // Цена и лимит
+  const price = day.event.price ? `${day.event.price} руб` : '';
+  const eventFormat = day.event.format || '';
+  const d = parseDate(day.date);
+  const dayName = day.dayOfWeek || '';
+  const dayN = d.getDate();
+  const time = day.time || '';
+
+  // Tagline / italic_part — короткая фраза-подпись
+  const taglineText = v.tagline || '';
+  const taglineHtml = taglineText
+    ? `<div class="tg-tagline">«${escapeHtml(taglineText)}»</div>`
+    : '';
+
+  return `
+    <div class="poster telegram ${accentClass}" data-layout="${v.layout}">
+      <div class="tg-photo" style="${photoStyle}">
+        ${!photo ? `<div class="tg-photo-placeholder">${escapeHtml(eventFormat || 'Деталь')}</div>` : ''}
+      </div>
+      <div class="tg-content">
+        <div class="tg-brand">ПРОСТРАНСТВО · ДЕТАЛИ</div>
+        <h2 class="tg-title">${titleHtml}</h2>
+        ${taglineHtml}
+        <div class="tg-divider"></div>
+        <div class="tg-meta-row">
+          <div class="tg-date">
+            <span class="tg-date-num">${dayN}</span>
+            <span class="tg-date-month">${escapeHtml(monthName)}</span>
+          </div>
+          <div class="tg-meta-text">
+            <div class="tg-day">${escapeHtml(dayName)}${time ? ' · ' + escapeHtml(time) : ''}</div>
+            <div class="tg-format">${escapeHtml(eventFormat)}${price ? ' · ' + escapeHtml(price) : ''}</div>
+          </div>
+        </div>
+        <div class="tg-foot">Пожарный 3Б · +375 29 315-15-83</div>
+      </div>
+    </div>
+  `;
 }
 
 function renderHero(v, titleHtml, dateMeta, formatMeta, dateMetaShort, accentClass, formatClass, monthName) {
@@ -5632,6 +5745,11 @@ function renderPreview(ev) {
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
       <label style="font-size:12px;color:var(--muted);">Событие:</label>
       <select id="pvSel" style="font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:white;color:var(--dark);max-width:320px;">${evOptions}</select>
+      <div style="display:flex;gap:4px;border:1px solid var(--line);border-radius:6px;padding:2px;background:white;">
+        <button class="pv-fmt-btn active" data-pvfmt="stories" onclick="pvSetPreviewFormat('stories')" style="font-size:11px;padding:4px 10px;border:none;border-radius:4px;background:var(--terracotta);color:white;cursor:pointer;font-family:'Inter',sans-serif;">📱 9:16</button>
+        <button class="pv-fmt-btn" data-pvfmt="square" onclick="pvSetPreviewFormat('square')" style="font-size:11px;padding:4px 10px;border:none;border-radius:4px;background:transparent;color:var(--dark);cursor:pointer;font-family:'Inter',sans-serif;">⬛ 1:1</button>
+        <button class="pv-fmt-btn" data-pvfmt="telegram" onclick="pvSetPreviewFormat('telegram')" style="font-size:11px;padding:4px 10px;border:none;border-radius:4px;background:transparent;color:var(--dark);cursor:pointer;font-family:'Inter',sans-serif;">📺 16:9</button>
+      </div>
       <span style="font-size:12px;color:var(--muted);">Выбрано: <b id="pvSelCount" style="color:var(--dark);">0</b></span>
       <button class="btn" id="pvZipBtn" onclick="pvDownloadZip()" disabled style="margin-left:auto;">↓ ZIP выбранных</button>
       <button class="btn ghost" onclick="pvClearAll()">Снять выбор</button>
@@ -5691,14 +5809,22 @@ function renderPreview(ev) {
   window._pvLayouts = ALL_LAYOUTS;
 
   const grid = document.getElementById('pvGrid');
+  // Размеры в зависимости от формата превью
+  const previewFormat = window._pvPreviewFormat || 'stories';
   const SCALE = 0.48;
-  const PH = 720, PW = 405;
+  const formatDims = {
+    stories:  { W: 405, H: 720 },
+    square:   { W: 540, H: 540 },
+    telegram: { W: 720, H: 405 }
+  };
+  const dims = formatDims[previewFormat] || formatDims.stories;
+  const PW = dims.W, PH = dims.H;
   const cardH = Math.round(PH * SCALE);
   const cardW = Math.round(PW * SCALE);
 
   ALL_LAYOUTS.forEach(([layout, ac], idx) => {
     const variant = buildVariant('A', layout, ac, tagline, photo, photos, heroWord, ev);
-    const posterHtml = renderPoster(day, variant, 'stories');
+    const posterHtml = renderPoster(day, variant, previewFormat);
     const name = layoutDisplayName(layout);
     const acName = accentDisplayName(variant.accent || ac);
     const isSelected = window._pvSelected.has(layout);
@@ -5887,6 +6013,22 @@ function pvClearAll() {
   });
   document.querySelectorAll('.pv-export-btns').forEach(el => el.style.display = 'none');
   pvUpdateCount();
+}
+
+// Переключение формата превью в галерее (stories / square / telegram)
+function pvSetPreviewFormat(fmt) {
+  window._pvPreviewFormat = fmt;
+  // Обновляем подсветку кнопок
+  document.querySelectorAll('.pv-fmt-btn').forEach(b => {
+    const active = b.dataset.pvfmt === fmt;
+    b.style.background = active ? 'var(--terracotta)' : 'transparent';
+    b.style.color = active ? 'white' : 'var(--dark)';
+    b.classList.toggle('active', active);
+  });
+  // Перерисовываем галерею с тем же выбранным событием
+  if (window._pvEv) {
+    renderPreview(window._pvEv);
+  }
 }
 
 async function pvExportPNG(evt, layout, format) {
