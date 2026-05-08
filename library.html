@@ -361,11 +361,18 @@ body {
       <h2 style="font-family:'Playfair Display',serif; font-size:20px;">📢 Запостить в Telegram</h2>
       <button onclick="closeTgModal()" style="border:none; background:transparent; font-size:24px; cursor:pointer; color:var(--muted);">×</button>
     </div>
-    <div style="display:grid; grid-template-columns: 140px 1fr; gap:16px; margin-bottom:16px;">
+    <div style="display:grid; grid-template-columns: 140px 1fr; gap:16px; margin-bottom:12px;">
       <img id="tgPreviewImg" src="" alt="" style="width:140px; height:auto; border-radius:6px; border:1px solid var(--line);">
       <div>
         <div style="font-weight:600; margin-bottom:4px;" id="tgEventName">—</div>
-        <div style="font-size:12px; color:var(--muted);" id="tgEventMeta">—</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:10px;" id="tgEventMeta">—</div>
+        <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">Формат картинки:</div>
+        <div style="display:flex; gap:6px;">
+          <button class="tg-fmt-btn" data-fmt="stories" onclick="tgSetFormat('stories')"
+            style="padding:5px 10px; font-size:11px; border:1px solid var(--line); border-radius:4px; cursor:pointer; background:white;">📱 9:16</button>
+          <button class="tg-fmt-btn" data-fmt="telegram" onclick="tgSetFormat('telegram')"
+            style="padding:5px 10px; font-size:11px; border:1px solid var(--line); border-radius:4px; cursor:pointer; background:white;">📺 16:9</button>
+        </div>
       </div>
     </div>
     <label style="display:block; font-size:12px; color:var(--muted); margin-bottom:6px;">Подпись под фото (HTML-теги &lt;b&gt;, &lt;i&gt;, &lt;a&gt; работают)</label>
@@ -721,7 +728,8 @@ init();
 // ============================================================
 const tgState = {
   itemId: null,
-  allEvents: []   // подгружается лениво
+  format: 'stories',  // 'stories' | 'telegram'
+  allEvents: []
 };
 
 async function tgLoadAllEvents() {
@@ -737,13 +745,16 @@ async function tgLoadAllEvents() {
 function postToTelegram(itemId) {
   const item = state.items.find(i => i.id === itemId);
   if (!item) { toast('Постер не найден'); return; }
-  if (!item.thumbnailUrl) {
+  if (!item.thumbnailUrl && !item.thumbnailTelegramUrl) {
     toast('У этого постера нет превью — нечего постить', 'err');
     return;
   }
 
   tgState.itemId = itemId;
-  document.getElementById('tgPreviewImg').src = item.thumbnailUrl;
+  // Если есть telegram-превью (16:9) — используем его по умолчанию, иначе stories
+  tgState.format = item.thumbnailTelegramUrl ? 'telegram' : 'stories';
+  tgUpdatePreview();
+
   document.getElementById('tgEventName').textContent = item.eventName || '—';
   const layout = item.layout || '—';
   const eventDate = item.eventDate ? new Date(item.eventDate).toLocaleDateString('ru-RU', {day:'numeric',month:'long',weekday:'long'}) : '';
@@ -756,13 +767,41 @@ function postToTelegram(itemId) {
   const cap = document.getElementById('tgCaption');
   cap.value = ''; // пока пусто
   tgLoadAllEvents().then(() => {
-    // Если пользователь ещё не начал редактировать вручную — подставляем шаблон
     if (!cap.value && tgState.itemId === itemId) {
       tgInsertDefaultCaption();
     }
   });
 
   document.getElementById('tgModal').style.display = 'flex';
+}
+
+function tgSetFormat(fmt) {
+  tgState.format = fmt;
+  tgUpdatePreview();
+}
+
+function tgUpdatePreview() {
+  const item = state.items.find(i => i.id === tgState.itemId);
+  if (!item) return;
+  const useUrl = (tgState.format === 'telegram' && item.thumbnailTelegramUrl)
+    ? item.thumbnailTelegramUrl
+    : item.thumbnailUrl;
+  document.getElementById('tgPreviewImg').src = useUrl;
+
+  // Подсветка кнопок формата
+  document.querySelectorAll('.tg-fmt-btn').forEach(b => {
+    b.style.background = b.dataset.fmt === tgState.format ? 'var(--terracotta)' : 'white';
+    b.style.color = b.dataset.fmt === tgState.format ? 'white' : 'var(--dark)';
+  });
+  // Кнопку telegram дизейблим если нет соответствующего превью
+  const tgBtn = document.querySelector('.tg-fmt-btn[data-fmt="telegram"]');
+  if (tgBtn) {
+    tgBtn.disabled = !item.thumbnailTelegramUrl;
+    tgBtn.title = item.thumbnailTelegramUrl
+      ? 'Горизонтальный 16:9 — лучше выглядит в Telegram'
+      : 'У этого постера нет 16:9 превью. Пересохрани его в редакторе ★ В библиотеку';
+    tgBtn.style.opacity = item.thumbnailTelegramUrl ? '1' : '.5';
+  }
 }
 
 function closeTgModal() {
@@ -851,8 +890,12 @@ async function tgConfirmPost() {
   status.innerHTML = '<span style="color:var(--muted);">Отправка…</span>';
 
   try {
+    const photoToSend = (tgState.format === 'telegram' && item.thumbnailTelegramUrl)
+      ? item.thumbnailTelegramUrl
+      : item.thumbnailUrl;
+
     const res = await api('postPhotoToTelegram', {
-      photoBase64: item.thumbnailUrl,
+      photoBase64: photoToSend,
       caption: caption
     }, true /* isPost */);
 

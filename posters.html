@@ -6811,35 +6811,66 @@ async function emAddToLibrary() {
       });
     }
 
-    // Генерируем превью — маленький thumbnail для библиотеки
+    // Генерируем превью — маленький thumbnail для библиотеки (формат stories по умолчанию)
     let thumbnailUrl = '';
+    let thumbnailTelegramUrl = '';
     try {
       // Скрытая зона для рендера. ВАЖНО: видимая, но за экраном (left: -10000px),
       // потому что html2canvas в visibility:hidden может вернуть чёрный фон
       const zone = document.getElementById('hiddenRenderZone');
       zone.innerHTML = '';
       zone.appendChild(clone);
-      // Размещаем за пределами экрана, но видимо для рендера
       zone.style.position = 'fixed';
       zone.style.left = '-10000px';
       zone.style.top = '0';
       zone.style.visibility = 'visible';
-      zone.style.width = '500px';   // фиксированный размер для стабильности
+      zone.style.width = '500px';
       zone.style.height = 'auto';
-      // Применяем размер к самому постеру (если в CSS уже задан — оставит)
       if (!clone.style.width) clone.style.width = '500px';
 
       const node = zone.querySelector('.poster');
-      // Ждём загрузки всех картинок (включая data: и blob:)
       await waitForImages(node);
-      // Дополнительная пауза для гарантии рендера CSS-фильтров
       await new Promise(r => setTimeout(r, 200));
 
       const canvas = await html2canvas(node, {
         scale: 1.5, useCORS: true, allowTaint: true,
         backgroundColor: null, logging: false
       });
-      thumbnailUrl = canvas.toDataURL('image/jpeg', 0.85); // jpeg покрупнее качество для Telegram
+      thumbnailUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+      zone.innerHTML = '';
+
+      // Дополнительно — рендерим то же событие в TELEGRAM-формате
+      // через renderPoster (с теми же правками текста)
+      try {
+        const editedText = emCollectEdits(clone);
+        zone.innerHTML = renderPoster(_em.day, _em.variant, 'telegram');
+        const tgNode = zone.querySelector('.poster');
+        if (tgNode) {
+          emApplyEditsToNode(tgNode, editedText);
+          // Применяем то же фото-позиционирование и фильтры что и к stories
+          if (_em.variant && _em.variant.photo) {
+            const x = _em.variant.photoX ?? 50;
+            const y = _em.variant.photoY ?? 50;
+            const sc = (_em.variant.photoScale ?? 100) / 100;
+            const filterStr = emGetFilters();
+            tgNode.querySelectorAll('[style*="background-image"]').forEach(el => {
+              el.style.backgroundPosition = `${x}% ${y}%`;
+              el.style.backgroundSize = sc === 1 ? 'cover' : `${sc * 100}%`;
+              if (filterStr) el.style.filter = filterStr;
+            });
+          }
+          await waitForImages(tgNode);
+          await new Promise(r => setTimeout(r, 200));
+          const tgCanvas = await html2canvas(tgNode, {
+            scale: 1.5, useCORS: true, allowTaint: true,
+            backgroundColor: null, logging: false
+          });
+          thumbnailTelegramUrl = tgCanvas.toDataURL('image/jpeg', 0.85);
+        }
+      } catch(e2) {
+        console.warn('telegram thumbnail render failed', e2);
+      }
 
       zone.innerHTML = '';
       zone.style.left = '-10000px';
@@ -6859,8 +6890,8 @@ async function emAddToLibrary() {
       layout:     _em.layout,
       accent:     _em.variant.accent || '',
       thumbnailUrl,
+      thumbnailTelegramUrl, // НОВОЕ: отдельное превью в формате 16:9 для Telegram
       payload: {
-        // Всё нужное для восстановления
         variant: _em.variant,
         day: _em.day,
         editedHtml: clone.outerHTML,
