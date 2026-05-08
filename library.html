@@ -752,12 +752,15 @@ function postToTelegram(itemId) {
   document.getElementById('tgPostBtn').disabled = false;
   document.getElementById('tgPostBtn').textContent = '📢 Запостить';
 
-  // Подгрузим события для умной шаблонной подписи
-  tgLoadAllEvents();
-
-  // Заполним подпись — шаблонной или пустой
+  // Подгружаем события для умной шаблонной подписи и сразу её вставляем
   const cap = document.getElementById('tgCaption');
-  cap.value = ''; // начинаем с пустой — пользователь нажмёт "Шаблонная" если хочет
+  cap.value = ''; // пока пусто
+  tgLoadAllEvents().then(() => {
+    // Если пользователь ещё не начал редактировать вручную — подставляем шаблон
+    if (!cap.value && tgState.itemId === itemId) {
+      tgInsertDefaultCaption();
+    }
+  });
 
   document.getElementById('tgModal').style.display = 'flex';
 }
@@ -775,7 +778,7 @@ function tgInsertDefaultCaption() {
   const dows = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
   let cap = '<b>' + (item.eventName || 'Событие') + '</b>';
 
-  // Пробуем найти полное событие в allEvents — там есть price/time/alfaGroupId
+  // Пробуем найти полное событие в allEvents — там есть price/time/alfaGroupId/description
   let fullEv = null;
   if (item.eventDate && item.eventName) {
     fullEv = (tgState.allEvents || []).find(e =>
@@ -784,11 +787,11 @@ function tgInsertDefaultCaption() {
     );
   }
   if (!fullEv && item.eventDate) {
-    // Попробуем найти просто по дате (если событий на эту дату немного)
     const sameDate = (tgState.allEvents || []).filter(e => e.date === item.eventDate);
     if (sameDate.length === 1) fullEv = sameDate[0];
   }
 
+  // Дата + время
   if (item.eventDate) {
     const d = new Date(item.eventDate + 'T00:00:00');
     const dStr = d.getDate() + ' ' + months[d.getMonth()] + ', ' + dows[d.getDay()];
@@ -797,19 +800,43 @@ function tgInsertDefaultCaption() {
       cap += ' · ' + (fullEv.time || fullEv.timeStart);
     }
   }
+
+  // Педагог
   if (fullEv && fullEv.teacher) cap += '\n👤 ' + fullEv.teacher;
 
+  // Описание — короткое (Telegram caption max 1024 символов, поэтому ужимаем)
+  if (fullEv && fullEv.description) {
+    let desc = String(fullEv.description).trim();
+    // Если описание длиннее ~400 символов — обрезаем по концу предложения
+    if (desc.length > 450) {
+      const cut = desc.slice(0, 450);
+      const lastDot = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '), cut.lastIndexOf('\n'));
+      desc = (lastDot > 200 ? cut.slice(0, lastDot + 1) : cut) + '…';
+    }
+    cap += '\n\n' + tgEscapeHtml(desc);
+  }
+
+  // Цена + лимит
   const moneyParts = [];
   if (fullEv && fullEv.price) moneyParts.push('💰 ' + fullEv.price + ' руб.');
   if (fullEv && fullEv.limit) moneyParts.push('🪑 до ' + fullEv.limit + ' мест');
   if (moneyParts.length > 0) cap += '\n\n' + moneyParts.join(' · ');
 
+  // Ссылка на запись
   if (fullEv && fullEv.alfaGroupId) {
     cap += '\n\n👉 <a href="https://proznanie4eee.s20.online/common/2/lead/create?gid=' +
            fullEv.alfaGroupId + '">Записаться</a>';
   }
 
   document.getElementById('tgCaption').value = cap;
+}
+
+// Экранируем HTML-спецсимволы в описании, оставляя <b>,<i>,<a>,<br> и т.п. от пользователя
+function tgEscapeHtml(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 async function tgConfirmPost() {
