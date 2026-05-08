@@ -659,6 +659,11 @@ main {
   height: 540px;
   padding: 22px 26px;
 }
+.week-poster.fmt-telegram {
+  width: 720px;
+  height: 405px;
+  padding: 18px 28px;
+}
 
 .week-poster .wp-head {
   text-align: center;
@@ -683,6 +688,9 @@ main {
 .week-poster.fmt-square .wp-brand { font-size: 11px; }
 .week-poster.fmt-square .wp-title { font-size: 17px; }
 .week-poster.fmt-square .wp-head { padding-bottom: 10px; margin-bottom: 12px; }
+.week-poster.fmt-telegram .wp-brand { font-size: 10px; }
+.week-poster.fmt-telegram .wp-title { font-size: 16px; }
+.week-poster.fmt-telegram .wp-head { padding-bottom: 8px; margin-bottom: 10px; }
 
 .week-poster .wp-intro {
   line-height: 1.5;
@@ -865,6 +873,14 @@ main {
   width: 540px;
   height: 540px;
 }
+.event-poster.fmt-telegram {
+  width: 720px;
+  height: 405px;
+  flex-direction: row !important;
+}
+.event-poster.fmt-telegram .ep-hero { width: 45%; height: 100% !important; }
+.event-poster.fmt-telegram .ep-hero-deco { width: 45%; height: 100% !important; }
+.event-poster.fmt-telegram .ep-body { flex: 1 1 55%; padding: 20px 26px !important; }
 .event-poster.accent-terracotta { --ep-accent: var(--brand-terracotta); }
 .event-poster.accent-amber { --ep-accent: var(--brand-amber); }
 .event-poster.accent-olive { --ep-accent: var(--brand-olive); }
@@ -1861,6 +1877,7 @@ main {
           <div class="wp-fmt-toggle">
             <button type="button" class="wp-fmt-btn active" data-fmt="stories" onclick="setWeekPosterFormat('stories')">📱 Сторис · 9:16</button>
             <button type="button" class="wp-fmt-btn" data-fmt="square" onclick="setWeekPosterFormat('square')">⬛ Квадрат · 1:1</button>
+            <button type="button" class="wp-fmt-btn" data-fmt="telegram" onclick="setWeekPosterFormat('telegram')">📺 Telegram · 16:9</button>
           </div>
         </div>
       </div>
@@ -1922,6 +1939,7 @@ main {
           <div class="wp-fmt-toggle">
             <button type="button" class="wp-fmt-btn active" data-fmt="stories" onclick="setEventPosterFormat('stories')">📱 Сторис · 9:16</button>
             <button type="button" class="wp-fmt-btn" data-fmt="square" onclick="setEventPosterFormat('square')">⬛ Квадрат · 1:1</button>
+            <button type="button" class="wp-fmt-btn" data-fmt="telegram" onclick="setEventPosterFormat('telegram')">📺 Telegram · 16:9</button>
           </div>
         </div>
         <div>

@@ -692,6 +692,7 @@ body {
 .poster > * { position: relative; z-index: 2; }
 .poster.stories { width: 405px; height: 720px; }
 .poster.square { width: 540px; height: 540px; }
+.poster.telegram { width: 720px; height: 405px; }  /* 16:9 для Telegram */
 
 .poster .brand {
   font-family: 'Inter', sans-serif;
@@ -767,6 +768,128 @@ body {
   line-height: 1.2;
 }
 .poster.square .stamp { width: 80px; height: 80px; font-size: 8px; }
+
+/* ============================================================
+   TELEGRAM FORMAT (1280×720 → 720×405 в превью)
+   Универсальная адаптация: все макеты превращаются в горизонтальный split.
+   Фото слева 45%, контент справа 55%.
+   ============================================================ */
+.poster.telegram { display: flex !important; flex-direction: row !important; }
+.poster.telegram .brand { font-size: 9px; letter-spacing: 0.3em; }
+.poster.telegram .meta { font-size: 9px; }
+.poster.telegram .footer-info { font-size: 7px; }
+.poster.telegram .stamp { width: 60px; height: 60px; font-size: 7px; }
+
+/* Базовые блоки фото и контента — для любого макета */
+.poster.telegram .hero-photo,
+.poster.telegram .split-photo,
+.poster.telegram .grid-photos,
+.poster.telegram .editorial-photo,
+.poster.telegram .ed-photo,
+.poster.telegram .frame-photo,
+.poster.telegram .casual-photo,
+.poster.telegram .se-photo,
+.poster.telegram .el-photo,
+.poster.telegram .co-photo,
+.poster.telegram .ss-photo,
+.poster.telegram .cu-photo,
+.poster.telegram .prod-photo,
+.poster.telegram .at-photo,
+.poster.telegram .cl-photo,
+.poster.telegram .tk-photo,
+.poster.telegram .wf-photo,
+.poster.telegram .tl-photo,
+.poster.telegram .st-photo,
+.poster.telegram .ov-photo,
+.poster.telegram .sm-photo,
+.poster.telegram .dg-photo,
+.poster.telegram .sb-photo,
+.poster.telegram .qc-photo,
+.poster.telegram .bold-photo {
+  flex: 0 0 45% !important;
+  width: 45% !important;
+  height: 100% !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+.poster.telegram .hero-content,
+.poster.telegram .split-content,
+.poster.telegram .grid-card,
+.poster.telegram .editorial-content,
+.poster.telegram .ed-content,
+.poster.telegram .frame-content,
+.poster.telegram .casual-content,
+.poster.telegram .se-content,
+.poster.telegram .el-content,
+.poster.telegram .co-content,
+.poster.telegram .ss-content,
+.poster.telegram .cu-content,
+.poster.telegram .prod-content,
+.poster.telegram .at-content,
+.poster.telegram .cl-content,
+.poster.telegram .tk-content,
+.poster.telegram .wf-content,
+.poster.telegram .tl-content,
+.poster.telegram .st-content,
+.poster.telegram .ov-content,
+.poster.telegram .sm-content,
+.poster.telegram .dg-content,
+.poster.telegram .sb-content,
+.poster.telegram .qc-content,
+.poster.telegram .bold-content {
+  flex: 1 1 55% !important;
+  padding: 18px 22px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+/* Заголовки в Telegram — компактнее */
+.poster.telegram .title {
+  font-size: 22px !important;
+  line-height: 1.05 !important;
+  margin: 4px 0 !important;
+}
+.poster.telegram .tagline {
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  margin: 2px 0 6px !important;
+}
+.poster.telegram .date-large {
+  font-size: 28px !important;
+  margin: 2px 0 !important;
+}
+.poster.telegram .divider {
+  margin: 4px 0 !important;
+  width: 32px !important;
+}
+.poster.telegram .time-line {
+  font-size: 9px !important;
+  margin: 2px 0 !important;
+}
+
+/* Hero-word для редких форматов с большим словом */
+.poster.telegram .hero-word,
+.poster.telegram .frame-title,
+.poster.telegram .bold-title,
+.poster.telegram .se-title,
+.poster.telegram .casual-title,
+.poster.telegram .prod-title,
+.poster.telegram .co-headline,
+.poster.telegram .at-title {
+  font-size: 32px !important;
+}
+
+/* Скрываем декоративные элементы которые не помещаются */
+.poster.telegram .grid-cell:nth-child(n+3) { display: none; }
+.poster.telegram .grid-photos { display: block; }
+.poster.telegram .grid-photos .grid-cell:first-child { width: 100%; height: 100%; }
+
+/* ============================================================
+   КОНЕЦ TELEGRAM FORMAT
+   ============================================================ */
 
 /* HERO */
 .poster.hero { display: flex; flex-direction: column; }
@@ -3409,6 +3532,7 @@ body {
       <div class="em-format-row">
         <button class="em-btn em-btn-primary" onclick="emExport('stories')">↓ Stories</button>
         <button class="em-btn em-btn-primary" onclick="emExport('square')">↓ Square</button>
+        <button class="em-btn em-btn-primary" onclick="emExport('telegram')">↓ Telegram</button>
       </div>
       <div class="em-sep"></div>
       <button class="em-btn em-btn-secondary" id="emLibraryBtn" onclick="emAddToLibrary()" style="background:rgba(192,109,84,0.25);">☆ Добавить в библиотеку</button>
@@ -4102,6 +4226,7 @@ function renderWorkspace(dayKey) {
             onchange="handlePhotoUpload(event, '${dayKey}', '${v.id}')">
           <button class="btn-export" onclick="exportPNG(event, '${dayKey}', '${v.id}', 'stories')">↓ Stories</button>
           <button class="btn-export" onclick="exportPNG(event, '${dayKey}', '${v.id}', 'square')">↓ Square</button>
+          <button class="btn-export" onclick="exportPNG(event, '${dayKey}', '${v.id}', 'telegram')">↓ Telegram</button>
         </div>
       </div>
     `;
@@ -5598,6 +5723,7 @@ function renderPreview(ev) {
         <div class="pv-export-btns" style="display:${isSelected?'flex':'none'};gap:6px;justify-content:center;margin-top:6px;">
           <button onclick="pvExportPNG(event,'${layout}','stories')" style="font-size:11px;padding:5px 10px;background:var(--milk);border:1px solid rgba(61,43,31,.2);border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;">↓ Stories</button>
           <button onclick="pvExportPNG(event,'${layout}','square')" style="font-size:11px;padding:5px 10px;background:var(--milk);border:1px solid rgba(61,43,31,.2);border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;">↓ Square</button>
+          <button onclick="pvExportPNG(event,'${layout}','telegram')" style="font-size:11px;padding:5px 10px;background:var(--milk);border:1px solid rgba(61,43,31,.2);border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;">↓ Telegram</button>
         </div>
       </div>
     `;
@@ -6075,10 +6201,10 @@ async function emExport(format) {
 
     // Клонируем постер для экспорта в нужном формате
     const zone = document.getElementById('hiddenRenderZone');
-    if (format === 'square') {
-      // Перерендерим в square-формате с текущими правками
+    if (format === 'square' || format === 'telegram') {
+      // Перерендерим в square/telegram-формате с текущими правками
       const editedText = emCollectEdits(poster);
-      zone.innerHTML = renderPoster(_em.day, _em.variant, 'square');
+      zone.innerHTML = renderPoster(_em.day, _em.variant, format);
       const sq = zone.querySelector('.poster');
       emApplyEditsToNode(sq, editedText);
       await waitForImages(sq);
@@ -6091,14 +6217,13 @@ async function emExport(format) {
         ['.at-title','--at-title-size'],
       ].forEach(([s,v]) => { const e = sq.querySelector(s); if(e) autoFitElement(e,v); });
       // ВАЖНО: убираем visibility:hidden ДО рендера html2canvas (иначе чёрный фон).
-      // Зону прячем за экран, но visibility должна быть нормальной.
       zone.style.left = '-10000px'; zone.style.visibility = 'visible';
-      await new Promise(r => setTimeout(r, 100)); // даём браузеру отрендерить
+      await new Promise(r => setTimeout(r, 100));
       const canvas = await html2canvas(sq, {scale:2,useCORS:true,allowTaint:true,backgroundColor:null,logging:false});
       zone.innerHTML = '';
       zone.style.visibility = '';
       const blob = await new Promise(r => canvas.toBlob(b => r(b),'image/png',0.95));
-      triggerDownload(blob, `${_em.day.date}_${_em.layout}_edited_square.png`);
+      triggerDownload(blob, `${_em.day.date}_${_em.layout}_edited_${format}.png`);
     } else {
       // Stories — копируем текущий видимый постер
       zone.innerHTML = poster.outerHTML;
