@@ -326,8 +326,44 @@ body {
   padding-top: 10px;
   border-top: 1px solid var(--line);
 }
-.post-meta-item { display: flex; align-items: center; gap: 4px; }
-.post-meta-item.likes { color: var(--terracotta); font-weight: 600; }
+.post-image-noimg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--milk);
+  aspect-ratio: 1;
+  gap: 6px;
+  transition: background .15s;
+}
+.post-image-noimg:hover { background: #ede5d8; }
+.post-image-icon { font-size: 28px; opacity: 0.4; }
+.post-image-open {
+  font-size: 11px;
+  color: var(--terracotta);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.post-insights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 8px 0 4px;
+}
+.insight-tag {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.insight-format { background: #EEF0E6; color: #4A5A2A; }
+.insight-price  { background: #FFF3DC; color: #7A5000; }
+.insight-hot    { background: #FAECE7; color: #8A2E10; }
+.insight-low    { background: #F0F0F0; color: #888; }
+.insight-info   { background: #EAF0F8; color: #2A5080; }
+
 
 /* АНАЛИТИКА */
 .analytics-row {
@@ -814,6 +850,50 @@ function updatePostsFilter() {
     handles.map(h => `<option value="${h}">@${h}</option>`).join('');
 }
 
+function extractInsights(p, avgLikes) {
+  const text = (p.caption || '').toLowerCase();
+  const insights = [];
+
+  // Формат МК
+  const formats = [
+    [/живопис|акрил|масл[оа]/,'🎨 Живопись'],
+    [/акварел/,'💧 Акварель'],
+    [/глин|керамик|гонч/,'🏺 Керамика'],
+    [/рисов|набросок|скетч/,'✏️ Рисование'],
+    [/украшен|бисер|кольц|серьг|макраме/,'💎 Украшения'],
+    [/кулинар|готов|выпечк|торт/,'🍰 Кулинария'],
+    [/вечеринк|пати|праздник|день рожден/,'🎉 Праздник'],
+    [/кино|фильм|просмотр/,'🎬 Кино'],
+    [/книг|чтени/,'📚 Книги'],
+    [/свидан/,'💑 Свидание'],
+    [/дет|ребён|ребят|малыш/,'👧 Детский'],
+  ];
+  const fmt = formats.find(([re]) => re.test(text));
+  if (fmt) insights.push({ type: 'format', text: fmt[1] });
+
+  // Цена
+  const priceMatch = text.match(/(\d+)\s*(byn|руб|р\.|\$|€)/i)
+    || (p.caption||'').match(/(\d+)\s*(BYN|руб|р\.)/);
+  if (priceMatch) insights.push({ type: 'price', text: '💰 ' + priceMatch[1] + ' BYN' });
+
+  // Популярность
+  const likes = p.likes || 0;
+  if (avgLikes > 0 && likes >= avgLikes * 1.8)
+    insights.push({ type: 'hot', text: '🔥 Топ — в ' + Math.round(likes/avgLikes) + 'x выше среднего' });
+  else if (avgLikes > 0 && likes < avgLikes * 0.5)
+    insights.push({ type: 'low', text: '📉 Ниже среднего' });
+
+  // Материалы включены?
+  if (/материал.{0,10}включ|всё включено/i.test(p.caption||''))
+    insights.push({ type: 'info', text: '✅ Материалы включены' });
+
+  // Размер холста
+  const sizeMatch = (p.caption||'').match(/(\d+\s*[×x]\s*\d+)/i);
+  if (sizeMatch) insights.push({ type: 'info', text: '📐 ' + sizeMatch[1] });
+
+  return insights;
+}
+
 function renderPosts() {
   const filter = document.getElementById('postsFilter').value;
   const filtered = filter ? state.posts.filter(p => p.handle === filter) : state.posts;
@@ -827,17 +907,33 @@ function renderPosts() {
     return;
   }
 
+  // Считаем средние лайки по всей ленте для сравнения
+  const postsWithLikes = filtered.filter(p => p.likes != null);
+  const avgLikes = postsWithLikes.length
+    ? Math.round(postsWithLikes.reduce((s, p) => s + p.likes, 0) / postsWithLikes.length)
+    : 0;
+
   container.innerHTML = '<div class="posts-grid">' + filtered.slice(0, 50).map(p => {
-    const img = p.media_urls && p.media_urls[0];
     const date = p.posted_at ? new Date(p.posted_at).toLocaleDateString('ru-RU') : '';
+    const insights = extractInsights(p, avgLikes);
+
+    const insightsHtml = insights.length ? `
+      <div class="post-insights">
+        ${insights.map(i => `<span class="insight-tag insight-${i.type}">${i.text}</span>`).join('')}
+      </div>` : '';
+
     return `
       <div class="post-card">
         <a href="${p.post_url}" target="_blank" style="text-decoration:none;color:inherit;">
-          <div class="post-image" style="${img ? `background-image:url('${img}');` : ''}">${img ? '' : '🖼 нет фото'}</div>
+          <div class="post-image post-image-noimg">
+            <div class="post-image-icon">📷</div>
+            <div class="post-image-open">Открыть в Instagram ↗</div>
+          </div>
         </a>
         <div class="post-body">
           <div class="post-handle">@${escapeHtml(p.handle)}<span style="color:var(--muted);font-weight:400;float:right;">${date}</span></div>
           <div class="post-caption">${escapeHtml(p.caption || '—')}</div>
+          ${insightsHtml}
           <div class="post-meta">
             <span class="post-meta-item likes">♥ ${p.likes != null ? p.likes : '—'}</span>
             <span class="post-meta-item">💬 ${p.comments_count != null ? p.comments_count : '—'}</span>
