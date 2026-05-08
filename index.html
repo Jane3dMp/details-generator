@@ -1459,7 +1459,7 @@ main {
       <button onclick="window.open('team.html', '_blank')" title="Открыть страницу для промо/SMM в новой вкладке">📣 Как промо</button>
       <button onclick="openWeekPoster()" title="Сделать афишу на неделю — текст для Telegram + картинка для Instagram">🗓 Афиша недели</button>
       <button onclick="openPostersStudio()" title="Открыть генератор афиш на каждое событие — выбираешь дни, агент собирает 2 варианта на каждый">🎨 Афиши событий</button>
-      <button onclick="window.open('week-poster.html?v=' + Date.now(), '_blank')" title="Постер недели — все события в одном макете">🗓 Афиша недели</button>
+      <button onclick="openWeekAgentModal()" title="Афиша недели через агента в Claude.ai: выгрузка JSON → агент рисует 7 афиш → загрузить PNG → запостить в Telegram">🤖 Через агента</button>
       <button onclick="openTemplatesGallery()" title="Посмотреть все 18 шаблонов на одном событии">🖼 Галерея шаблонов</button>
       <button onclick="window.open('library.html?v=' + Date.now(), '_blank')" title="Все сохранённые афиши — открыть и продолжить редактирование">📚 Библиотека</button>
       <button onclick="window.open('competitors.html?v=' + Date.now(), '_blank')" title="Аналитика и парсинг IG-аккаунтов конкурентов">🔍 Конкуренты</button>
@@ -1726,6 +1726,7 @@ main {
       <div class="right">
         <button onclick="closeModal('eventModal')">Отмена</button>
         <button class="ghost" onclick="openEventPoster()">🖼 Афиша события</button>
+        <button class="ghost" onclick="postEventToTelegram()" title="Запостить это событие в Telegram-канал (текстом + ссылка на запись)">📢 В Telegram</button>
         <button class="ghost" onclick="saveAsTemplate()">💾 В шаблоны</button>
         <button class="primary" onclick="saveEvent()">Сохранить</button>
       </div>
@@ -2016,6 +2017,69 @@ main {
       <div class="right">
         <button onclick="closeModal('teacherModal')">Отмена</button>
         <button class="primary" onclick="addTeacher()">Добавить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- МОДАЛКА: АФИША НЕДЕЛИ ЧЕРЕЗ АГЕНТА В CLAUDE.AI                         -->
+<!-- ===================================================================== -->
+<div class="modal-bg" id="weekAgentModal">
+  <div class="modal" style="max-width: 760px;">
+    <div class="modal-head">
+      <h2>🤖 Афиша недели через агента</h2>
+      <button class="x" onclick="closeModal('weekAgentModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background: var(--hover); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 13px; color: var(--ink);">
+        <b>Как это работает:</b><br>
+        1️⃣ Выбираешь неделю → копируешь JSON событий<br>
+        2️⃣ Открываешь агента в Claude.ai → вставляешь JSON → агент рисует 7 афиш<br>
+        3️⃣ Скачиваешь PNG из агента → загружаешь сюда → постишь в Telegram в один клик
+      </div>
+
+      <!-- ШАГ 1: выбор недели и выгрузка JSON -->
+      <div style="border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+        <div style="font-weight: 600; margin-bottom: 10px;">Шаг 1 · Выбрать неделю и выгрузить JSON</div>
+        <div style="display: flex; gap: 10px; align-items: end; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 180px;">
+            <label>Понедельник недели</label>
+            <input type="date" id="waMondayInput">
+          </div>
+          <button class="primary" type="button" onclick="waLoadWeek()">📥 Загрузить события</button>
+        </div>
+        <div id="waEventsList" style="margin-top: 12px;"></div>
+        <div id="waJsonActions" style="display:none; margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" onclick="waCopyJson()">📋 Скопировать JSON</button>
+          <button type="button" onclick="waDownloadJson()">↓ Скачать как файл</button>
+          <button type="button" onclick="waOpenAgent()" style="margin-left: auto;">🚀 Открыть агента в Claude.ai →</button>
+        </div>
+      </div>
+
+      <!-- ШАГ 2: загрузка готовых PNG -->
+      <div style="border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+        <div style="font-weight: 600; margin-bottom: 10px;">Шаг 2 · Загрузить готовые афиши (PNG)</div>
+        <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">Можно загрузить несколько PNG сразу — для каждого дня</div>
+        <input type="file" id="waPngInput" accept="image/png,image/jpeg" multiple onchange="waOnPngSelected(event)">
+        <div id="waPngsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 12px;"></div>
+      </div>
+
+      <!-- ШАГ 3: постинг в Telegram -->
+      <div style="border: 1px solid var(--line); border-radius: 8px; padding: 14px;">
+        <div style="font-weight: 600; margin-bottom: 10px;">Шаг 3 · Запостить в Telegram</div>
+        <div style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">К каждой PNG добавится подпись с датой и ссылками на запись. Каждая афиша = отдельный пост.</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" onclick="waTestTelegram()" title="Проверить что бот работает">🔍 Тест связи</button>
+          <button type="button" class="primary" onclick="waPostAllToTelegram()">📢 Запостить ВСЕ выбранные</button>
+        </div>
+        <div id="waPostResult" style="margin-top: 12px; font-size: 13px;"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div class="right">
+        <button onclick="closeModal('weekAgentModal')">Закрыть</button>
       </div>
     </div>
   </div>
@@ -5404,6 +5468,275 @@ document.querySelectorAll('.modal-bg').forEach(bg => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show'));
 });
+
+// =====================================================================
+// TELEGRAM — постинг одного события
+// =====================================================================
+async function postEventToTelegram() {
+  if (!currentEditingId) {
+    alert('Сначала сохрани событие, потом запости');
+    return;
+  }
+  const ev = state.events.find(e => e.id === currentEditingId);
+  if (!ev) {
+    alert('Событие не найдено');
+    return;
+  }
+  if (!ev.alfaGroupId) {
+    if (!confirm('У события нет группы в Альфе — без неё в посте не будет ссылки на запись. Запостить всё равно?')) return;
+  }
+
+  // Превью
+  const previewBtn = document.querySelector('[onclick="postEventToTelegram()"]');
+  const oldText = previewBtn ? previewBtn.textContent : '';
+  if (previewBtn) { previewBtn.disabled = true; previewBtn.textContent = '⏳ Превью…'; }
+
+  try {
+    const previewRes = await apiPost({ action: 'previewTelegramPost', project: 'details', eventId: ev.id });
+    if (!previewRes.ok) {
+      alert('Ошибка превью: ' + (previewRes.error || 'неизвестная'));
+      return;
+    }
+    // Показываем превью и просим подтверждения
+    const dlgText = `Запостить в Telegram (chat ${previewRes.chatId})?\n\n────────────\n${stripHtmlTags(previewRes.text)}\n────────────`;
+    if (!confirm(dlgText)) return;
+
+    if (previewBtn) previewBtn.textContent = '⏳ Постим…';
+    const postRes = await apiPost({ action: 'postToTelegram', project: 'details', eventId: ev.id });
+    if (!postRes.ok) {
+      alert('Ошибка постинга: ' + (postRes.error || 'неизвестная'));
+      return;
+    }
+    let msg = '✅ Запостил! message_id=' + postRes.messageId;
+    if (postRes.postUrl) msg += '\n\nСсылка: ' + postRes.postUrl;
+    alert(msg);
+  } catch(e) {
+    alert('Ошибка: ' + (e.message || e));
+  } finally {
+    if (previewBtn) { previewBtn.disabled = false; previewBtn.textContent = oldText; }
+  }
+}
+
+function stripHtmlTags(s) {
+  return String(s || '').replace(/<\/?[^>]+(>|$)/g, '');
+}
+
+// =====================================================================
+// АФИША НЕДЕЛИ ЧЕРЕЗ АГЕНТА
+// =====================================================================
+const waState = {
+  weekJson: null,        // последний загруженный JSON недели
+  pngs: []               // [{ name, base64, eventId, caption, selected, status }]
+};
+
+function openWeekAgentModal() {
+  // По умолчанию — ближайший понедельник
+  const today = new Date();
+  const dow = today.getDay(); // 0=вс, 1=пн ...
+  const offsetToMonday = dow === 0 ? -6 : (1 - dow);
+  const monday = new Date(today.getTime() + offsetToMonday * 86400000);
+  document.getElementById('waMondayInput').value = monday.toISOString().slice(0, 10);
+  document.getElementById('waEventsList').innerHTML = '';
+  document.getElementById('waJsonActions').style.display = 'none';
+  document.getElementById('waPngsGrid').innerHTML = '';
+  document.getElementById('waPostResult').innerHTML = '';
+  waState.weekJson = null;
+  waState.pngs = [];
+  document.getElementById('weekAgentModal').classList.add('show');
+}
+
+async function waLoadWeek() {
+  const monday = document.getElementById('waMondayInput').value;
+  if (!monday) { alert('Выбери понедельник'); return; }
+  const list = document.getElementById('waEventsList');
+  list.innerHTML = '<div style="color:var(--muted); padding:10px 0;">⏳ Загружаю события…</div>';
+  try {
+    const url = CONFIG.APPS_SCRIPT_URL + '?action=weekJson&project=details&weekStart=' + encodeURIComponent(monday);
+    const res = await fetch(url).then(r => r.json());
+    if (!res.ok) {
+      list.innerHTML = '<div style="color:var(--red);">Ошибка: ' + (res.error || 'неизвестная') + '</div>';
+      return;
+    }
+    waState.weekJson = res;
+    if (!res.events || res.events.length === 0) {
+      list.innerHTML = '<div style="color:var(--muted); padding:10px 0;">На этой неделе нет событий для афиш.</div>';
+      document.getElementById('waJsonActions').style.display = 'none';
+      return;
+    }
+    let html = '<div style="font-size:12px; color:var(--muted); margin-bottom:6px;">Найдено событий: <b>' + res.events.length + '</b> (с ' + res.weekStart + ' по ' + res.weekEnd + ')</div>';
+    html += '<div style="max-height: 220px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px;">';
+    res.events.forEach(ev => {
+      const refsBadge = ev.references && ev.references.length ? ` · 📎 ${ev.references.length}` : '';
+      const descBadge = ev.description ? ' · 📝 описание' : '';
+      html += `<div style="padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 13px;">
+        <b>${escapeHtml(ev.dayOfWeek)}, ${escapeHtml(ev.date)}, ${escapeHtml(ev.time || '')}</b>
+        — ${escapeHtml(ev.format || '')} «${escapeHtml(ev.name || '')}»
+        <span style="color:var(--muted); font-size:11px;">${refsBadge}${descBadge}</span>
+      </div>`;
+    });
+    html += '</div>';
+    list.innerHTML = html;
+    document.getElementById('waJsonActions').style.display = 'flex';
+  } catch(e) {
+    list.innerHTML = '<div style="color:var(--red);">Сетевая ошибка: ' + (e.message || e) + '</div>';
+  }
+}
+
+function waCopyJson() {
+  if (!waState.weekJson) { alert('Сначала загрузи неделю'); return; }
+  const text = JSON.stringify(waState.weekJson, null, 2);
+  navigator.clipboard.writeText(text).then(() => {
+    alert('✅ JSON скопирован в буфер. Открой агента в Claude.ai и вставь его в чат.');
+  }).catch(e => {
+    alert('Не удалось скопировать: ' + e + '\n\nПопробуй кнопку «Скачать как файл».');
+  });
+}
+
+function waDownloadJson() {
+  if (!waState.weekJson) { alert('Сначала загрузи неделю'); return; }
+  const text = JSON.stringify(waState.weekJson, null, 2);
+  const blob = new Blob([text], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'week_' + waState.weekJson.weekStart + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function waOpenAgent() {
+  // Открываем Claude.ai — пользователь сам перейдёт в свой агент
+  window.open('https://claude.ai/projects', '_blank');
+}
+
+async function waOnPngSelected(event) {
+  const files = Array.from(event.target.files || []);
+  if (files.length === 0) return;
+  for (const file of files) {
+    if (!file.type.startsWith('image/')) continue;
+    const base64 = await fileToBase64(file);
+    waState.pngs.push({
+      name: file.name,
+      base64: base64,
+      eventId: '',
+      caption: '',
+      selected: true,
+      status: ''
+    });
+  }
+  waRenderPngs();
+  // Чистим input — чтобы можно было загрузить тот же файл повторно
+  event.target.value = '';
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+function waRenderPngs() {
+  const grid = document.getElementById('waPngsGrid');
+  if (waState.pngs.length === 0) {
+    grid.innerHTML = '';
+    return;
+  }
+  // Список событий недели для привязки
+  const evOptions = waState.weekJson && waState.weekJson.events
+    ? waState.weekJson.events.map(e => `<option value="${e.id}">${e.dayOfWeek} ${e.date.slice(5)} · ${escapeHtml((e.name || e.format || '').slice(0, 30))}</option>`).join('')
+    : '';
+  grid.innerHTML = waState.pngs.map((p, i) => `
+    <div style="border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--card);">
+      <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
+        <input type="checkbox" ${p.selected ? 'checked' : ''} onchange="waState.pngs[${i}].selected = this.checked" style="width: auto;">
+        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
+      </label>
+      <img src="${p.base64}" style="width:100%; height:140px; object-fit:cover; border-radius:4px; margin:6px 0;">
+      <select onchange="waState.pngs[${i}].eventId = this.value" style="width:100%; font-size:11px; padding:4px;">
+        <option value="">— Без привязки к событию —</option>
+        ${evOptions}
+      </select>
+      <textarea placeholder="Подпись под фото (опционально)" oninput="waState.pngs[${i}].caption = this.value" style="width:100%; min-height:50px; margin-top:6px; font-size:11px; padding:4px; resize:vertical;">${escapeHtml(p.caption || '')}</textarea>
+      <div style="font-size:11px; margin-top:4px; min-height:14px;">${p.status || ''}</div>
+      <button type="button" onclick="waState.pngs.splice(${i},1); waRenderPngs();" style="font-size:11px; padding:3px 8px; margin-top:4px; width:100%;">🗑 Убрать</button>
+    </div>
+  `).join('');
+}
+
+async function waTestTelegram() {
+  try {
+    const url = CONFIG.APPS_SCRIPT_URL + '?action=testTelegramConnection&project=details';
+    const res = await fetch(url).then(r => r.json());
+    if (res.ok) {
+      alert('✅ Связь работает!\n\nБот: @' + (res.bot && res.bot.username || '?') +
+            '\nЧат: ' + (res.chat && (res.chat.title || res.chat.id) || '?') + ' (' + (res.chat && res.chat.type || '?') + ')');
+    } else {
+      alert('❌ ' + (res.error || 'неизвестная ошибка'));
+    }
+  } catch(e) {
+    alert('Сетевая ошибка: ' + (e.message || e));
+  }
+}
+
+async function waPostAllToTelegram() {
+  const selected = waState.pngs.filter(p => p.selected);
+  if (selected.length === 0) {
+    alert('Выбери хотя бы одну афишу галочкой');
+    return;
+  }
+  if (!confirm(`Запостить ${selected.length} афиш(и) в Telegram? Каждая будет отдельным постом.`)) return;
+
+  const result = document.getElementById('waPostResult');
+  result.innerHTML = '<div style="color:var(--muted);">⏳ Постим…</div>';
+  let okCount = 0, errCount = 0;
+  const log = [];
+
+  for (let i = 0; i < waState.pngs.length; i++) {
+    const p = waState.pngs[i];
+    if (!p.selected) continue;
+    p.status = '⏳ постим…';
+    waRenderPngs();
+
+    let caption = p.caption || '';
+    // Если привязано к событию и подпись пустая — собираем дефолтную
+    if (!caption && p.eventId && waState.weekJson) {
+      const ev = waState.weekJson.events.find(e => e.id === p.eventId);
+      if (ev) {
+        caption = `<b>${escapeHtml(ev.format)}: ${escapeHtml(ev.name)}</b>\n${escapeHtml(ev.dayOfWeek)}, ${ev.time}`;
+        if (ev.price) caption += ` · ${ev.price} руб.`;
+      }
+    }
+
+    try {
+      const res = await apiPost({
+        action: 'postPhotoToTelegram',
+        project: 'details',
+        photoBase64: p.base64,
+        caption: caption
+      });
+      if (res.ok) {
+        p.status = '✅ запостил';
+        okCount++;
+        log.push(`✅ ${p.name} → message_id=${res.messageId}`);
+      } else {
+        p.status = '❌ ' + (res.error || '').slice(0, 40);
+        errCount++;
+        log.push(`❌ ${p.name}: ${res.error}`);
+      }
+    } catch(e) {
+      p.status = '❌ ' + (e.message || e).slice(0, 40);
+      errCount++;
+      log.push(`❌ ${p.name}: ${e.message || e}`);
+    }
+    waRenderPngs();
+  }
+
+  result.innerHTML = `<div><b>Готово.</b> Успешно: ${okCount}, ошибок: ${errCount}</div>` +
+    (log.length ? `<div style="margin-top:6px; font-family: monospace; font-size:11px; color:var(--muted); max-height:120px; overflow-y:auto;">${log.map(l => escapeHtml(l)).join('<br>')}</div>` : '');
+}
 </script>
 </body>
 </html>
