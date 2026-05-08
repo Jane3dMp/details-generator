@@ -5438,8 +5438,16 @@ function initPreview() {
 
   loadFromStorage();
 
-  const evWithPhoto = state.allEvents.find(e => (e.references||[]).some(r=>r.thumb));
-  const ev = evWithPhoto || state.allEvents[0];
+  // Если в URL передан eventId — открываем именно это событие
+  const presetId = (new URLSearchParams(location.search)).get('eventId');
+  let ev = null;
+  if (presetId) {
+    ev = state.allEvents.find(e => e.id === presetId);
+  }
+  if (!ev) {
+    const evWithPhoto = state.allEvents.find(e => (e.references||[]).some(r=>r.thumb));
+    ev = evWithPhoto || state.allEvents[0];
+  }
 
   if (!ev) {
     document.getElementById('previewRoot').innerHTML = `

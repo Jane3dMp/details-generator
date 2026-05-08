@@ -1725,7 +1725,7 @@ main {
       <button class="danger" onclick="deleteCurrentEvent()" id="evDeleteBtn" style="display:none">🗑 Удалить</button>
       <div class="right">
         <button onclick="closeModal('eventModal')">Отмена</button>
-        <button class="ghost" onclick="openEventPoster()">🖼 Афиша события</button>
+        <button class="ghost" onclick="openTemplatesGalleryForCurrent()">🖼 Афиша события</button>
         <button class="ghost" onclick="postEventToTelegram()" title="Запостить это событие в Telegram-канал (текстом + ссылка на запись)">📢 В Telegram</button>
         <button class="ghost" onclick="saveAsTemplate()">💾 В шаблоны</button>
         <button class="primary" onclick="saveEvent()">Сохранить</button>
@@ -4293,6 +4293,87 @@ function openTemplatesGallery() {
     window.open('posters.html?mode=preview&v=' + Date.now(), '_blank');
   } catch(e) {
     toast('Не удалось открыть галерею: ' + e.message, 'err');
+  }
+}
+
+// Открыть галерею шаблонов сразу с тем событием, которое сейчас редактируется
+function openTemplatesGalleryForCurrent() {
+  // Сначала сохраним текущие изменения формы в state.events (или создадим временное событие)
+  let eventId = state.editingEventId;
+  let snapshot = null;
+
+  // Если редактируем существующее событие — сохраним актуальные значения формы
+  if (eventId) {
+    const idx = state.events.findIndex(e => e.id === eventId);
+    if (idx >= 0) {
+      // Считаем обновлённые данные из формы
+      const updated = _readEventFormToObject();
+      if (updated) {
+        // Обновляем in-place чтобы галерея получила свежие данные
+        Object.assign(state.events[idx], updated);
+      }
+    }
+  } else {
+    // Новое несохранённое событие — соберём из формы и временно добавим в state.events
+    snapshot = _readEventFormToObject();
+    if (!snapshot || (!snapshot.name && !snapshot.format)) {
+      toast('Сначала заполните формат и название', 'err');
+      return;
+    }
+    eventId = 'tmp_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+    snapshot.id = eventId;
+    state.events.push(snapshot);
+  }
+
+  try {
+    const payload = {
+      timestamp: new Date().toISOString(),
+      editorName: state.editorName || '',
+      apiUrl: CONFIG.APPS_SCRIPT_URL,
+      project: CONFIG.PROJECT,
+      events: state.events.map(e => ({
+        id: e.id, date: e.date, timeStart: e.timeStart || '',
+        duration: e.duration || null, format: e.format || '',
+        name: e.name || '', teacher: e.teacher || '',
+        price: e.price || null, limit: e.limit || null,
+        description: e.description || '',
+        publishedToClients: e.publishedToClients !== false,
+        status: e.status || 'draft',
+        references: Array.isArray(e.references) ? e.references.map(r => ({
+          url: r.url||'', thumb: r.thumb||'', domain: r.domain||'', note: r.note||''
+        })).filter(r => r.url) : []
+      }))
+    };
+    localStorage.setItem('detali_posters_payload', JSON.stringify(payload));
+    window.open('posters.html?mode=preview&eventId=' + encodeURIComponent(eventId) + '&v=' + Date.now(), '_blank');
+  } catch(e) {
+    toast('Не удалось открыть галерею: ' + e.message, 'err');
+  }
+}
+
+// Считать данные события из формы редактора в объект (как saveEvent, но без сохранения)
+function _readEventFormToObject() {
+  try {
+    return {
+      id: state.editingEventId || '',
+      date: document.getElementById('evDate').value,
+      timeStart: document.getElementById('evTime').value,
+      duration: parseFloat(document.getElementById('evDuration').value) || null,
+      format: document.getElementById('evFormat').value,
+      name: document.getElementById('evName').value.trim(),
+      teacher: document.getElementById('evTeacher').value,
+      price: parseFloat(document.getElementById('evPrice').value) || null,
+      limit: parseInt(document.getElementById('evLimit').value, 10) || null,
+      costPerPerson: parseFloat(document.getElementById('evCostPerPerson')?.value) || null,
+      description: document.getElementById('evDescr').value.trim(),
+      references: (state.editingRefs || []).map(r => ({
+        url: r.url || '', thumb: r.thumb || '', domain: r.domain || '', note: r.note || ''
+      })),
+      status: 'draft'
+    };
+  } catch(e) {
+    console.warn('_readEventFormToObject failed', e);
+    return null;
   }
 }
 
