@@ -5686,8 +5686,29 @@ function initPreview() {
     ev = state.allEvents.find(e => e.id === presetId);
   }
   if (!ev) {
-    const evWithPhoto = state.allEvents.find(e => (e.references||[]).some(r=>r.thumb));
-    ev = evWithPhoto || state.allEvents[0];
+    // Иначе — выбираем сегодняшнее или ближайшее БУДУЩЕЕ событие
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().slice(0, 10); // YYYY-MM-DD
+
+    // Сортируем все события по дате
+    const sorted = state.allEvents.slice().sort((a, b) =>
+      (a.date + (a.timeStart || '')).localeCompare(b.date + (b.timeStart || ''))
+    );
+
+    // Сначала ищем сегодняшнее или будущее (date >= today)
+    ev = sorted.find(e => e.date && e.date >= todayStr);
+
+    // Если будущих нет — берём последнее прошлое
+    if (!ev) {
+      ev = sorted.length > 0 ? sorted[sorted.length - 1] : null;
+    }
+
+    // Если и так нет — fallback на старую логику (первое с фото)
+    if (!ev) {
+      const evWithPhoto = state.allEvents.find(e => (e.references||[]).some(r=>r.thumb));
+      ev = evWithPhoto || state.allEvents[0];
+    }
   }
 
   if (!ev) {
