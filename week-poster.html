@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Афиша недели · Детали</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+:root {
+  --milk: #F5EFE6;
+  --cream: #FAF6EE;
+  --paper: #faf8f5;
+  --paper-cream: #F0E6D2;
+  --warm-gray: #E8E4DC;
+  --dark: #3D2B1F;
+  --soft-dark: #5C4636;
+  --line: #ece6dd;
+  --muted: #8a8580;
+  --terracotta: #C06D54;
+  --terracotta-deep: #A8543E;
+  --amber: #EF9F27;
+  --olive: #6B7A4A;
+  --night: #2C2320;
+  --mint: #5B8A7A;
+  --bordeaux: #722F37;
+  --ochra: #C47A35;
+  --scarlet: #C94444;
+  --graphite: #4A5568;
+  --coffee: #8B7355;
+  --forest: #2D4A3E;
+  --green: #5b8a4e;
+  --red: #c45a5a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--paper);
+  color: var(--dark);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.page { max-width: 1240px; margin: 0 auto; padding: 24px 28px 60px; }
+.app-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.app-header h1 { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; }
+.subtitle { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-left: 14px; }
+.btn {
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+  padding: 9px 16px; border: 1px solid var(--line); border-radius: 6px;
+  background: white; color: var(--dark); cursor: pointer; transition: all .15s;
+}
+.btn:hover { background: var(--milk); border-color: var(--terracotta); }
+.btn.primary { background: var(--terracotta); color: white; border-color: var(--terracotta); }
+.btn.primary:hover { background: var(--terracotta-deep); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Контролы периода */
+.controls {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 14px 20px;
+  align-items: end;
+}
+.ctrl-block { display: flex; flex-direction: column; gap: 6px; }
+.ctrl-label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.ctrl-row { display: flex; gap: 6px; align-items: center; }
+.ctrl-row input[type="date"] {
+  font-family: 'Inter', sans-serif; font-size: 13px; padding: 7px 9px;
+  border: 1px solid var(--line); border-radius: 5px; color: var(--dark);
+}
+.ctrl-row input[type="date"]:focus { outline: none; border-color: var(--terracotta); }
+.preset-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.preset-pill {
+  font-size: 11px; padding: 5px 10px; border-radius: 4px;
+  background: var(--milk); border: 1px solid transparent; color: var(--soft-dark);
+  cursor: pointer; transition: all .12s;
+}
+.preset-pill:hover { background: white; border-color: var(--terracotta); }
+.preset-pill.active { background: #FAEEDA; color: #854F0B; border-color: #BA7517; font-weight: 500; }
+
+/* Подсчёт и акцент */
+.summary {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.summary-item { font-size: 13px; }
+.summary-label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+.summary-value { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--dark); }
+.summary-warn { color: var(--terracotta-deep); font-size: 12px; }
+
+/* Селектор акцента */
+.accent-row { display: flex; gap: 6px; align-items: center; }
+.accent-swatch {
+  width: 22px; height: 22px; border-radius: 4px; cursor: pointer;
+  border: 2px solid transparent; transition: all .12s;
+}
+.accent-swatch:hover { transform: scale(1.15); }
+.accent-swatch.active { border-color: var(--dark); transform: scale(1.1); }
+
+/* Сетка трёх макетов */
+.layouts-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+@media (max-width: 1100px) { .layouts-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 760px)  { .layouts-row { grid-template-columns: 1fr; } }
+
+.layout-card {
+  background: white;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all .15s;
+}
+.layout-card.selected { border-color: var(--terracotta); }
+.layout-head { display: flex; justify-content: space-between; align-items: center; }
+.layout-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--dark);
+}
+.layout-tag {
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); padding: 3px 8px; background: var(--milk); border-radius: 3px;
+}
+.poster-frame {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  background: var(--milk);
+  cursor: pointer;
+}
+.poster-frame .poster-scale-wrap {
+  position: absolute;
+  top: 0; left: 0;
+  transform-origin: top left;
+}
+.layout-actions { display: flex; gap: 6px; }
+.layout-actions .btn { flex: 1; font-size: 12px; padding: 7px 8px; text-align: center; }
+
+/* Если 2 постера (split) — показываем оба */
+.split-info {
+  display: inline-block;
+  font-size: 10px; padding: 2px 8px; border-radius: 3px;
+  background: var(--terracotta); color: white;
+  letter-spacing: 0.06em; margin-left: 6px;
+}
+.split-pages { display: flex; gap: 8px; }
+.split-pages > div { flex: 1; }
+.split-page-label {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); text-align: center; margin-bottom: 4px;
+}
+
+/* ========================================================
+   ПОСТЕР — общие стили (формат stories 405×720, ratio 9:16)
+   ======================================================== */
+.poster {
+  width: 405px;
+  height: 720px;
+  background: var(--cream);
+  position: relative;
+  overflow: hidden;
+}
+.poster.square { width: 405px; height: 405px; }
+
+/* МАКЕТ A — СПИСОК */
+.poster.list-poster {
+  display: flex;
+  flex-direction: column;
+  padding: 36px 32px 28px;
+}
+.poster.list-poster .lp-header {
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+.poster.list-poster .lp-eyebrow {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.poster.list-poster .lp-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--dark);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.poster.list-poster .lp-period {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--soft-dark);
+}
+.poster.list-poster .lp-events { flex: 1; display: flex; flex-direction: column; }
+.poster.list-poster .lp-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+}
+.poster.list-poster .lp-row:last-child { border-bottom: none; }
+.poster.list-poster .lp-day {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+.poster.list-poster .lp-day-num {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+.poster.list-poster .lp-event-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--dark);
+  line-height: 1.2;
+}
+.poster.list-poster .lp-event-meta {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+.poster.list-poster .lp-time {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--soft-dark);
+  text-align: right;
+}
+.poster.list-poster .lp-price {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 500;
+}
+.poster.list-poster .lp-footer {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* МАКЕТ B — СЕТКА ПЛИТКАМИ */
+.poster.tiles-poster {
+  display: flex;
+  flex-direction: column;
+  padding: 28px 22px 22px;
+  background: var(--cream);
+}
+.poster.tiles-poster .tp-head {
+  text-align: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.poster.tiles-poster .tp-eyebrow {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+.poster.tiles-poster .tp-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--dark);
+  line-height: 1;
+}
+.poster.tiles-poster .tp-period {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--soft-dark);
+  font-weight: 500;
+  margin-top: 6px;
+}
+.poster.tiles-poster .tp-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.poster.tiles-poster .tp-tile {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px 12px 11px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+.poster.tiles-poster .tp-tile-day {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 1px;
+}
+.poster.tiles-poster .tp-tile-dow {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.poster.tiles-poster .tp-tile-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dark);
+  line-height: 1.2;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.poster.tiles-poster .tp-tile-meta {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  color: var(--soft-dark);
+  letter-spacing: 0.04em;
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 0.5px solid var(--line);
+}
+.poster.tiles-poster .tp-tile-price {
+  color: var(--accent);
+  font-weight: 600;
+}
+.poster.tiles-poster .tp-footer {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* МАКЕТ C — TIMELINE */
+.poster.timeline-poster {
+  display: flex;
+  flex-direction: column;
+  padding: 36px 28px 28px;
+  background: var(--cream);
+}
+.poster.timeline-poster .lp-header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+.poster.timeline-poster .tlp-eyebrow {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.poster.timeline-poster .tlp-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--dark);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.poster.timeline-poster .tlp-period {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--soft-dark);
+  font-weight: 500;
+}
+.poster.timeline-poster .tlp-line {
+  flex: 1;
+  position: relative;
+  padding-left: 36px;
+  border-left: 2px solid var(--accent);
+  margin-left: 14px;
+}
+.poster.timeline-poster .tlp-item {
+  position: relative;
+  padding: 12px 0;
+  margin-bottom: 4px;
+}
+.poster.timeline-poster .tlp-item:last-child { margin-bottom: 0; }
+.poster.timeline-poster .tlp-item::before {
+  content: '';
+  position: absolute;
+  left: -45px;
+  top: 18px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--cream);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.poster.timeline-poster .tlp-day {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.poster.timeline-poster .tlp-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dark);
+  line-height: 1.25;
+  margin-bottom: 3px;
+}
+.poster.timeline-poster .tlp-meta {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.poster.timeline-poster .tlp-meta .price { color: var(--accent); font-weight: 600; }
+.poster.timeline-poster .tlp-footer {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Эмпти-стейт */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.empty h3 { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--dark); margin-bottom: 8px; font-weight: 700; }
+
+#hiddenRender {
+  position: absolute;
+  left: -10000px;
+  top: 0;
+  pointer-events: none;
+}
+
+#toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  z-index: 100;
+  display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+#toast.show { display: block; }
+#toast.err { background: var(--red); }
+#toast.ok { background: var(--green); }
+
+/* Акценты — переменная --accent применяется по классу */
+.accent-terracotta { --accent: #C06D54; }
+.accent-amber      { --accent: #EF9F27; }
+.accent-olive      { --accent: #6B7A4A; }
+.accent-night      { --accent: #2C2320; }
+.accent-mint       { --accent: #5B8A7A; }
+.accent-bordeaux   { --accent: #722F37; }
+.accent-ochra      { --accent: #C47A35; }
+.accent-scarlet    { --accent: #C94444; }
+.accent-graphite   { --accent: #4A5568; }
+.accent-coffee     { --accent: #8B7355; }
+.accent-forest     { --accent: #2D4A3E; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="app-header">
+    <div>
+      <h1 style="display:inline-block;">Афиша недели</h1>
+      <span class="subtitle">3 макета · автоматически из расписания</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn" onclick="window.close()">✕ Закрыть</button>
+    </div>
+  </header>
+
+  <!-- Контролы периода -->
+  <div class="controls">
+    <div class="ctrl-block">
+      <span class="ctrl-label">Период</span>
+      <div class="preset-pills">
+        <div class="preset-pill" data-preset="thisWeek" onclick="setPreset('thisWeek')">Эта неделя</div>
+        <div class="preset-pill" data-preset="nextWeek" onclick="setPreset('nextWeek')">Следующая</div>
+        <div class="preset-pill" data-preset="next7" onclick="setPreset('next7')">Ближайшие 7 дней</div>
+      </div>
+    </div>
+    <div class="ctrl-block">
+      <span class="ctrl-label">Свой диапазон</span>
+      <div class="ctrl-row">
+        <input type="date" id="dateFrom" oninput="updateRange()">
+        <span style="color:var(--muted);">—</span>
+        <input type="date" id="dateTo" oninput="updateRange()">
+      </div>
+    </div>
+    <div class="ctrl-block">
+      <span class="ctrl-label">Цвет</span>
+      <div class="accent-row" id="accentRow"></div>
+    </div>
+  </div>
+
+  <!-- Сводка -->
+  <div class="summary" id="summary" style="display:none;"></div>
+
+  <!-- Три макета -->
+  <div id="layoutsRow" class="layouts-row" style="display:none;"></div>
+
+  <!-- Эмпти-стейт -->
+  <div id="emptyState" class="empty">
+    <h3>Выберите период</h3>
+    <p>На указанном диапазоне появятся постеры в трёх вариантах оформления.</p>
+  </div>
+
+</div>
+
+<div id="hiddenRender"></div>
+<div id="toast"></div>
+
+<script>
+const CONFIG = {
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyHrfjsxMyN2TGfAw-JH8MN0KW8QdUUy-bIQSlgjtEIciAw_FnbrL8ay5CrEcqrcQrF/exec',
+  PROJECT: 'details'
+};
+
+const MONTHS_SHORT = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const MONTHS_LONG  = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const DOWS_SHORT   = ['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
+const DOWS_FULL    = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+
+const ACCENTS = [
+  { key: 'terracotta', color: '#C06D54' },
+  { key: 'amber',      color: '#EF9F27' },
+  { key: 'olive',      color: '#6B7A4A' },
+  { key: 'night',      color: '#2C2320' },
+  { key: 'mint',       color: '#5B8A7A' },
+  { key: 'bordeaux',   color: '#722F37' },
+  { key: 'ochra',      color: '#C47A35' },
+  { key: 'scarlet',    color: '#C94444' },
+  { key: 'graphite',   color: '#4A5568' },
+  { key: 'coffee',     color: '#8B7355' },
+  { key: 'forest',     color: '#2D4A3E' },
+];
+
+const state = {
+  events: [],
+  filteredEvents: [],
+  dateFrom: null,
+  dateTo: null,
+  accent: 'terracotta',
+};
+
+const MAX_PER_POSTER = {
+  list: 8,
+  tiles: 6,
+  timeline: 7
+};
+
+// ============================================================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+async function init() {
+  renderAccentSwatches();
+  await loadEvents();
+  setPreset('thisWeek');
+}
+
+async function loadEvents() {
+  try {
+    const url = new URL(CONFIG.APPS_SCRIPT_URL);
+    url.searchParams.set('project', CONFIG.PROJECT);
+    url.searchParams.set('action', 'all');
+    const res = await fetch(url);
+    const data = await res.json();
+    state.events = (data.events || data.items || []).filter(e => e.date);
+  } catch(e) {
+    console.error(e);
+    toast('Не удалось загрузить события: ' + e.message, 'err');
+  }
+}
+
+// ============================================================
+// АКЦЕНТЫ
+// ============================================================
+function renderAccentSwatches() {
+  const row = document.getElementById('accentRow');
+  row.innerHTML = ACCENTS.map(a => `
+    <div class="accent-swatch ${a.key === state.accent ? 'active' : ''}"
+         style="background:${a.color};"
+         data-accent="${a.key}"
+         onclick="setAccent('${a.key}')"
+         title="${a.key}"></div>
+  `).join('');
+}
+
+function setAccent(key) {
+  state.accent = key;
+  document.querySelectorAll('.accent-swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.accent === key);
+  });
+  renderAll();
+}
+
+// ============================================================
+// ПЕРИОД
+// ============================================================
+function setPreset(preset) {
+  document.querySelectorAll('.preset-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.preset === preset);
+  });
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dow = today.getDay() === 0 ? 6 : today.getDay() - 1; // Пн = 0, Вс = 6
+  let from, to;
+
+  if (preset === 'thisWeek') {
+    from = new Date(today); from.setDate(today.getDate() - dow);
+    to = new Date(from); to.setDate(from.getDate() + 6);
+  } else if (preset === 'nextWeek') {
+    from = new Date(today); from.setDate(today.getDate() - dow + 7);
+    to = new Date(from); to.setDate(from.getDate() + 6);
+  } else if (preset === 'next7') {
+    from = new Date(today);
+    to = new Date(today); to.setDate(today.getDate() + 6);
+  }
+
+  state.dateFrom = from;
+  state.dateTo = to;
+  document.getElementById('dateFrom').value = isoDate(from);
+  document.getElementById('dateTo').value = isoDate(to);
+  renderAll();
+}
+
+function updateRange() {
+  document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('active'));
+  const from = document.getElementById('dateFrom').value;
+  const to = document.getElementById('dateTo').value;
+  if (!from || !to) return;
+  state.dateFrom = new Date(from);
+  state.dateTo = new Date(to);
+  if (state.dateFrom > state.dateTo) {
+    toast('Дата «от» позже даты «до»', 'err');
+    return;
+  }
+  renderAll();
+}
+
+function isoDate(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+// ============================================================
+// ФИЛЬТРАЦИЯ И РЕНДЕР
+// ============================================================
+function renderAll() {
+  if (!state.dateFrom || !state.dateTo) return;
+
+  // Фильтруем события
+  const fromTs = state.dateFrom.getTime();
+  const toTs = new Date(state.dateTo); toTs.setHours(23,59,59);
+  const toTsMs = toTs.getTime();
+
+  state.filteredEvents = state.events.filter(ev => {
+    const d = new Date(ev.date).getTime();
+    return d >= fromTs && d <= toTsMs;
+  }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // Сводка
+  const summaryEl = document.getElementById('summary');
+  const layoutsEl = document.getElementById('layoutsRow');
+  const emptyEl = document.getElementById('emptyState');
+
+  if (!state.filteredEvents.length) {
+    summaryEl.style.display = 'none';
+    layoutsEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+    emptyEl.innerHTML = `
+      <h3>Событий нет</h3>
+      <p>В выбранном диапазоне ${formatPeriodHuman()} событий не найдено. Попробуй изменить период.</p>
+    `;
+    return;
+  }
+
+  emptyEl.style.display = 'none';
+  summaryEl.style.display = 'flex';
+  layoutsEl.style.display = 'grid';
+
+  const n = state.filteredEvents.length;
+  const splitInfo = [];
+  if (n > MAX_PER_POSTER.list) splitInfo.push(`Список → 2 постера (по ${Math.ceil(n/2)})`);
+  if (n > MAX_PER_POSTER.tiles) splitInfo.push(`Сетка → 2 постера (по ${Math.ceil(n/2)})`);
+  if (n > MAX_PER_POSTER.timeline) splitInfo.push(`Timeline → 2 постера (по ${Math.ceil(n/2)})`);
+
+  summaryEl.innerHTML = `
+    <div class="summary-item">
+      <div class="summary-label">Период</div>
+      <div class="summary-value">${formatPeriodHuman()}</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">Событий</div>
+      <div class="summary-value">${n}</div>
+    </div>
+    ${splitInfo.length ? `<div class="summary-warn">⚡ ${splitInfo.join(' · ')}</div>` : ''}
+  `;
+
+  renderLayouts();
+}
+
+function formatPeriodHuman() {
+  const f = state.dateFrom, t = state.dateTo;
+  if (!f || !t) return '';
+  const sameMonth = f.getMonth() === t.getMonth();
+  if (sameMonth) {
+    return `${f.getDate()}—${t.getDate()} ${MONTHS_LONG[f.getMonth()]}`;
+  }
+  return `${f.getDate()} ${MONTHS_SHORT[f.getMonth()]} — ${t.getDate()} ${MONTHS_SHORT[t.getMonth()]}`;
+}
+
+function renderLayouts() {
+  const container = document.getElementById('layoutsRow');
+
+  // Каждый макет отдаёт массив страниц (если событий мало — 1, если много — 2)
+  const variants = [
+    { key: 'list',     name: 'Список',   pages: chunkEvents(MAX_PER_POSTER.list) },
+    { key: 'tiles',    name: 'Сетка',    pages: chunkEvents(MAX_PER_POSTER.tiles) },
+    { key: 'timeline', name: 'Timeline', pages: chunkEvents(MAX_PER_POSTER.timeline) },
+  ];
+
+  container.innerHTML = variants.map(v => renderLayoutCard(v)).join('');
+
+  // Применяем масштаб для превью
+  setTimeout(() => {
+    document.querySelectorAll('.poster-frame').forEach(frame => {
+      const wrap = frame.querySelector('.poster-scale-wrap');
+      if (!wrap) return;
+      const fw = frame.clientWidth;
+      const scale = fw / 405;
+      wrap.style.transform = `scale(${scale})`;
+    });
+  }, 0);
+}
+
+function chunkEvents(maxPerPage) {
+  const evs = state.filteredEvents;
+  if (evs.length <= maxPerPage) return [evs];
+  // Разбиваем поровну: первая половина и вторая
+  const half = Math.ceil(evs.length / 2);
+  return [evs.slice(0, half), evs.slice(half)];
+}
+
+function renderLayoutCard(variant) {
+  const isMulti = variant.pages.length > 1;
+  const accentClass = 'accent-' + state.accent;
+
+  // Превью — первая страница
+  const firstPage = variant.pages[0];
+  const posterHtml = renderPoster(variant.key, firstPage, accentClass, 0, variant.pages.length);
+
+  // Если две страницы — рендерим обе превью
+  let previewHtml;
+  if (isMulti) {
+    previewHtml = `
+      <div class="split-pages">
+        <div>
+          <div class="split-page-label">1 из 2</div>
+          <div class="poster-frame">
+            <div class="poster-scale-wrap">${posterHtml}</div>
+          </div>
+        </div>
+        <div>
+          <div class="split-page-label">2 из 2</div>
+          <div class="poster-frame">
+            <div class="poster-scale-wrap">${renderPoster(variant.key, variant.pages[1], accentClass, 1, variant.pages.length)}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    previewHtml = `
+      <div class="poster-frame" style="width:60%;margin:0 auto;">
+        <div class="poster-scale-wrap">${posterHtml}</div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="layout-card" data-layout="${variant.key}">
+      <div class="layout-head">
+        <div class="layout-name">${variant.name}${isMulti ? '<span class="split-info">2 постера</span>' : ''}</div>
+        <span class="layout-tag">${firstPage.length}${isMulti ? '+' + variant.pages[1].length : ''} соб.</span>
+      </div>
+      ${previewHtml}
+      <div class="layout-actions">
+        <button class="btn primary" onclick="exportPoster('${variant.key}', 'all')">↓ Скачать ${isMulti ? 'оба' : 'PNG'}</button>
+        ${isMulti ? `
+          <button class="btn" onclick="exportPoster('${variant.key}', 0)" title="Только первый постер">1</button>
+          <button class="btn" onclick="exportPoster('${variant.key}', 1)" title="Только второй постер">2</button>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// РЕНДЕР ПОСТЕРОВ
+// ============================================================
+function renderPoster(layoutKey, events, accentClass, pageIdx, totalPages) {
+  if (layoutKey === 'list') return renderListPoster(events, accentClass, pageIdx, totalPages);
+  if (layoutKey === 'tiles') return renderTilesPoster(events, accentClass, pageIdx, totalPages);
+  if (layoutKey === 'timeline') return renderTimelinePoster(events, accentClass, pageIdx, totalPages);
+  return '';
+}
+
+function periodLabel(pageIdx, totalPages) {
+  let label = formatPeriodHuman();
+  if (totalPages > 1) label += ' · ' + (pageIdx + 1) + '/' + totalPages;
+  return label;
+}
+
+function renderListPoster(events, accentClass, pageIdx, totalPages) {
+  const rows = events.map(ev => {
+    const d = new Date(ev.date);
+    const eventName = ev.name || ev.title || ev.event_name || '—';
+    const time = ev.timeStart || ev.time || '';
+    const price = ev.price ? `${ev.price}₽` : '';
+    const format = ev.format || ev.category || '';
+    return `
+      <div class="lp-row">
+        <div>
+          <div class="lp-day">${DOWS_SHORT[d.getDay()]}</div>
+          <div class="lp-day-num">${d.getDate()}.${String(d.getMonth()+1).padStart(2,'0')}</div>
+        </div>
+        <div>
+          <div class="lp-event-name">${escapeHtml(eventName)}</div>
+          <div class="lp-event-meta">${escapeHtml(format)}</div>
+        </div>
+        <div>
+          <div class="lp-time">${time}</div>
+          ${price ? `<div class="lp-price">${price}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="poster list-poster ${accentClass}">
+      <div class="lp-header">
+        <div class="lp-eyebrow">Пространство Детали</div>
+        <div class="lp-title">Афиша недели</div>
+        <div class="lp-period">${periodLabel(pageIdx, totalPages)}</div>
+      </div>
+      <div class="lp-events">${rows}</div>
+      <div class="lp-footer">Пожарный 3Б · +375 29 315-15-83</div>
+    </div>
+  `;
+}
+
+function renderTilesPoster(events, accentClass, pageIdx, totalPages) {
+  const tiles = events.map(ev => {
+    const d = new Date(ev.date);
+    const eventName = ev.name || ev.title || ev.event_name || '—';
+    const time = ev.timeStart || ev.time || '';
+    const price = ev.price ? ` · ${ev.price}₽` : '';
+    return `
+      <div class="tp-tile">
+        <div class="tp-tile-day">${d.getDate()}</div>
+        <div class="tp-tile-dow">${DOWS_SHORT[d.getDay()]} · ${MONTHS_SHORT[d.getMonth()]}</div>
+        <div class="tp-tile-name">${escapeHtml(eventName)}</div>
+        <div class="tp-tile-meta">${time}<span class="tp-tile-price">${price}</span></div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="poster tiles-poster ${accentClass}">
+      <div class="tp-head">
+        <div class="tp-eyebrow">Пространство Детали</div>
+        <div class="tp-title">Афиша недели</div>
+        <div class="tp-period">${periodLabel(pageIdx, totalPages)}</div>
+      </div>
+      <div class="tp-grid">${tiles}</div>
+      <div class="tp-footer">Пожарный 3Б · +375 29 315-15-83</div>
+    </div>
+  `;
+}
+
+function renderTimelinePoster(events, accentClass, pageIdx, totalPages) {
+  const items = events.map(ev => {
+    const d = new Date(ev.date);
+    const eventName = ev.name || ev.title || ev.event_name || '—';
+    const time = ev.timeStart || ev.time || '';
+    const price = ev.price ? `<span class="price"> · ${ev.price}₽</span>` : '';
+    return `
+      <div class="tlp-item">
+        <div class="tlp-day">${DOWS_SHORT[d.getDay()]} · ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}</div>
+        <div class="tlp-name">${escapeHtml(eventName)}</div>
+        <div class="tlp-meta">${time}${price}</div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="poster timeline-poster ${accentClass}">
+      <div class="lp-header">
+        <div class="tlp-eyebrow">Пространство Детали</div>
+        <div class="tlp-title">Афиша недели</div>
+        <div class="tlp-period">${periodLabel(pageIdx, totalPages)}</div>
+      </div>
+      <div class="tlp-line">${items}</div>
+      <div class="tlp-footer">Пожарный 3Б · +375 29 315-15-83</div>
+    </div>
+  `;
+}
+
+// ============================================================
+// ЭКСПОРТ
+// ============================================================
+async function exportPoster(layoutKey, pageOrAll) {
+  const accentClass = 'accent-' + state.accent;
+  const pages = chunkEvents(MAX_PER_POSTER[layoutKey]);
+
+  const targetPages = pageOrAll === 'all' ? pages : [pages[pageOrAll]];
+  const startIdx = pageOrAll === 'all' ? 0 : pageOrAll;
+
+  for (let i = 0; i < targetPages.length; i++) {
+    const page = targetPages[i];
+    const idx = pageOrAll === 'all' ? i : startIdx;
+    await renderAndDownload(layoutKey, page, accentClass, idx, pages.length);
+  }
+  toast(targetPages.length > 1 ? `Скачано ${targetPages.length} постера` : 'PNG скачан', 'ok');
+}
+
+async function renderAndDownload(layoutKey, events, accentClass, pageIdx, totalPages) {
+  const zone = document.getElementById('hiddenRender');
+  zone.innerHTML = renderPoster(layoutKey, events, accentClass, pageIdx, totalPages);
+  const node = zone.querySelector('.poster');
+  await new Promise(r => requestAnimationFrame(r));
+  const canvas = await html2canvas(node, {
+    scale: 2, useCORS: true, allowTaint: false,
+    backgroundColor: null, logging: false,
+    width: 405, height: 720
+  });
+  zone.innerHTML = '';
+  const blob = await new Promise(r => canvas.toBlob(b => r(b), 'image/png', 0.95));
+  if (!blob) return;
+
+  const fromStr = isoDate(state.dateFrom);
+  const toStr = isoDate(state.dateTo);
+  const pageStr = totalPages > 1 ? `_${pageIdx + 1}of${totalPages}` : '';
+  const filename = `week_${fromStr}_${toStr}_${layoutKey}${pageStr}.png`;
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// УТИЛИТЫ
+// ============================================================
+function escapeHtml(s) {
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = (type || '') + ' show';
+  setTimeout(() => t.className = '', 3000);
+}
+
+init();
+</script>
+
+</body>
+</html>

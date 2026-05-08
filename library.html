@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Библиотека постеров · Детали</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --milk: #F5EFE6;
+  --cream: #FAF6EE;
+  --paper: #faf8f5;
+  --dark: #3D2B1F;
+  --soft-dark: #5C4636;
+  --line: #ece6dd;
+  --muted: #8a8580;
+  --terracotta: #C06D54;
+  --terracotta-deep: #A8543E;
+  --green: #5b8a4e;
+  --red: #c45a5a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--paper);
+  color: var(--dark);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.page { max-width: 1240px; margin: 0 auto; padding: 24px 28px 60px; }
+.app-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.app-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 700;
+}
+.subtitle {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-left: 14px;
+}
+.btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--dark);
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn:hover { background: var(--milk); border-color: var(--terracotta); }
+.btn.primary {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+.btn.primary:hover { background: var(--terracotta-deep); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.danger { color: var(--red); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.header-actions { display: flex; gap: 8px; }
+
+.stats {
+  display: flex;
+  gap: 28px;
+  margin-bottom: 22px;
+  padding: 14px 18px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.stat-block { flex-shrink: 0; }
+.stat-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.stat-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--dark);
+}
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: white;
+  border: 1px solid var(--line);
+  color: var(--soft-dark);
+  cursor: pointer;
+  transition: all .15s;
+}
+.filter:hover { border-color: var(--terracotta); }
+.filter.active {
+  background: #FAEEDA;
+  color: #854F0B;
+  border-color: #BA7517;
+  font-weight: 500;
+}
+.search-input {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  width: 240px;
+  margin-left: auto;
+}
+.search-input:focus { outline: none; border-color: var(--terracotta); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all .15s;
+  position: relative;
+}
+.card:hover {
+  border-color: var(--terracotta);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+.thumb {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--milk);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+.card-body { padding: 11px 14px 13px; }
+.card-event {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dark);
+  line-height: 1.3;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.card-meta {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 5px;
+}
+.card-tag {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--milk);
+  color: var(--soft-dark);
+}
+.card-actions {
+  display: flex;
+  gap: 4px;
+  padding: 0 10px 10px;
+}
+.card-btn {
+  flex: 1;
+  font-size: 11px;
+  padding: 6px 4px;
+  background: var(--milk);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  color: var(--dark);
+  transition: all .12s;
+}
+.card-btn:hover {
+  background: white;
+  border-color: var(--terracotta);
+}
+.card-btn.danger:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--muted);
+}
+.empty h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  color: var(--dark);
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+.empty p { font-size: 13px; max-width: 420px; margin: 0 auto 18px; line-height: 1.6; }
+
+#toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  z-index: 100;
+  display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+#toast.err { background: var(--red); }
+#toast.ok { background: var(--green); }
+#toast.show { display: block; }
+
+.cloud-status {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.cloud-status .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--muted);
+}
+.cloud-status.ok .dot { background: var(--green); }
+.cloud-status.err .dot { background: var(--red); }
+.cloud-status.syncing .dot { background: var(--terracotta); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* Превью на весь экран */
+#previewModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(30,20,14,0.85);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+#previewModal.open { display: flex; }
+#previewModal img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+#previewModal .close-hint {
+  position: absolute;
+  top: 30px; right: 30px;
+  color: rgba(255,255,255,0.6);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="app-header">
+    <div>
+      <h1 style="display:inline-block;">Библиотека постеров</h1>
+      <span class="subtitle">все сохранённые афиши</span>
+    </div>
+    <div class="header-actions">
+      <span class="cloud-status" id="cloudStatus" title="Синхронизация с облаком">
+        <span class="dot"></span><span id="cloudStatusText">локально</span>
+      </span>
+      <button class="btn ghost" onclick="exportAllJSON()" title="Скачать всю библиотеку файлом">↓ Бэкап</button>
+      <button class="btn ghost" onclick="restoreFromCloud()" title="Загрузить недостающие из Google Sheets">⟲ Из облака</button>
+      <button class="btn" onclick="window.close()">✕ Закрыть</button>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat-block">
+      <div class="stat-label">Всего</div>
+      <div class="stat-value" id="statTotal">—</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-label">За неделю</div>
+      <div class="stat-value" id="statWeek">—</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-label">За месяц</div>
+      <div class="stat-value" id="statMonth">—</div>
+    </div>
+    <div class="stat-block" style="margin-left:auto;text-align:right;">
+      <div class="stat-label">Хранится до</div>
+      <div class="stat-value" style="font-size:13px;font-weight:500;font-family:'Inter',sans-serif;color:var(--soft-dark);">6 месяцев</div>
+      <div class="stat-sub">старее удаляется</div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <div class="filter active" data-filter="all" onclick="setFilter('all')">Все</div>
+    <div class="filter" data-filter="week" onclick="setFilter('week')">Неделя</div>
+    <div class="filter" data-filter="month" onclick="setFilter('month')">Месяц</div>
+    <div class="filter" data-filter="layout" id="layoutFilter">Все макеты ▾</div>
+    <input class="search-input" id="search" placeholder="Поиск по событию…" oninput="render()">
+  </div>
+
+  <div id="grid"></div>
+</div>
+
+<div id="previewModal" onclick="closePreview()">
+  <div class="close-hint">Кликни чтобы закрыть</div>
+  <img id="previewImg" src="" alt="">
+</div>
+
+<div id="toast"></div>
+
+<script>
+const CONFIG = {
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyHrfjsxMyN2TGfAw-JH8MN0KW8QdUUy-bIQSlgjtEIciAw_FnbrL8ay5CrEcqrcQrF/exec',
+  PROJECT: 'details'
+};
+const POSTER_LIB_KEY = 'detali_poster_library';
+const POSTER_LIB_TTL_MS = 180 * 24 * 60 * 60 * 1000;
+
+const state = {
+  items: [],
+  filter: 'all',
+  layoutFilter: null,
+  search: ''
+};
+
+// ============================================================
+// API
+// ============================================================
+async function api(action, params, isPost) {
+  const url = new URL(CONFIG.APPS_SCRIPT_URL);
+  url.searchParams.set('project', CONFIG.PROJECT);
+  url.searchParams.set('action', action);
+  if (!isPost && params) {
+    Object.keys(params).forEach(k => params[k] != null && url.searchParams.set(k, params[k]));
+  }
+  if (isPost) {
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ project: CONFIG.PROJECT, action, ...params })
+    });
+    return res.json();
+  } else {
+    const res = await fetch(url);
+    return res.json();
+  }
+}
+
+// ============================================================
+// LOCAL STORAGE
+// ============================================================
+function libGetAll() {
+  try {
+    const raw = localStorage.getItem(POSTER_LIB_KEY);
+    if (!raw) return [];
+    const items = JSON.parse(raw);
+    if (!Array.isArray(items)) return [];
+    // Авто-чистка старше 6 месяцев
+    const cutoff = Date.now() - POSTER_LIB_TTL_MS;
+    const filtered = items.filter(it => {
+      const ts = it.savedAt ? new Date(it.savedAt).getTime() : 0;
+      return ts >= cutoff;
+    });
+    if (filtered.length !== items.length) {
+      localStorage.setItem(POSTER_LIB_KEY, JSON.stringify(filtered));
+    }
+    return filtered;
+  } catch(e) { return []; }
+}
+
+function libSave(items) {
+  try {
+    localStorage.setItem(POSTER_LIB_KEY, JSON.stringify(items));
+  } catch(e) {
+    console.error('save failed', e);
+    toast('Не удалось сохранить — место в браузере закончилось', 'err');
+  }
+}
+
+function libDelete(id) {
+  const items = libGetAll().filter(i => i.id !== id);
+  libSave(items);
+  // Также удаляем из облака
+  api('posterDelete', { id }, true).catch(e => console.warn('cloud delete', e));
+}
+
+// ============================================================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+async function init() {
+  state.items = libGetAll();
+
+  if (!state.items.length) {
+    // Локально пусто — пытаемся подгрузить из облака
+    setCloudStatus('syncing', 'загружаю из облака…');
+    await restoreFromCloud(true);
+  }
+
+  render();
+}
+
+function setCloudStatus(type, text) {
+  const el = document.getElementById('cloudStatus');
+  const txt = document.getElementById('cloudStatusText');
+  el.className = 'cloud-status ' + type;
+  txt.textContent = text;
+}
+
+async function restoreFromCloud(silent) {
+  if (!silent) setCloudStatus('syncing', 'синхронизирую…');
+  try {
+    const r = await api('postersList');
+    if (!r.ok) throw new Error(r.error || 'Ошибка облака');
+
+    const local = libGetAll();
+    const localIds = new Set(local.map(i => i.id));
+    const cloudOnly = r.items.filter(c => !localIds.has(c.id));
+
+    let loaded = 0;
+    // Подгружаем недостающие
+    for (const meta of cloudOnly) {
+      const full = await api('posterGet', { id: meta.id });
+      if (full.ok && full.item) {
+        local.push({
+          id: full.item.id,
+          savedAt: full.item.saved_at,
+          eventName: full.item.event_name,
+          eventDate: full.item.event_date,
+          layout: full.item.layout,
+          accent: full.item.accent,
+          thumbnailUrl: full.item.thumbnail_url || '',
+          payload: full.item.payload
+        });
+        loaded++;
+      }
+    }
+
+    if (loaded > 0) {
+      // сортировка по дате сохранения (новые сверху)
+      local.sort((a, b) => (a.savedAt < b.savedAt) ? 1 : -1);
+      libSave(local);
+      state.items = local;
+      render();
+      setCloudStatus('ok', 'синхронизировано · +' + loaded);
+      if (!silent) toast('Загружено из облака: ' + loaded, 'ok');
+    } else {
+      setCloudStatus('ok', 'синхронизировано');
+      if (!silent) toast('Всё уже на месте', 'ok');
+    }
+  } catch(e) {
+    console.error(e);
+    setCloudStatus('err', 'облако недоступно');
+    if (!silent) toast('Ошибка: ' + e.message, 'err');
+  }
+}
+
+// ============================================================
+// РЕНДЕР
+// ============================================================
+function render() {
+  // Статистика
+  const items = state.items;
+  document.getElementById('statTotal').textContent = items.length;
+
+  const now = Date.now();
+  const week = now - 7 * 24 * 60 * 60 * 1000;
+  const month = now - 30 * 24 * 60 * 60 * 1000;
+  const inWeek = items.filter(i => new Date(i.savedAt).getTime() > week).length;
+  const inMonth = items.filter(i => new Date(i.savedAt).getTime() > month).length;
+  document.getElementById('statWeek').textContent = inWeek;
+  document.getElementById('statMonth').textContent = inMonth;
+
+  // Уникальные макеты для фильтра
+  const layouts = [...new Set(items.map(i => i.layout))].filter(Boolean).sort();
+  const layoutFilterEl = document.getElementById('layoutFilter');
+  if (state.layoutFilter) {
+    layoutFilterEl.textContent = state.layoutFilter + ' ✕';
+    layoutFilterEl.classList.add('active');
+    layoutFilterEl.onclick = () => { state.layoutFilter = null; render(); };
+  } else {
+    layoutFilterEl.textContent = 'Все макеты ▾';
+    layoutFilterEl.classList.remove('active');
+    layoutFilterEl.onclick = () => {
+      const choice = prompt('Введи макет: ' + layouts.join(', '));
+      if (choice && layouts.includes(choice)) {
+        state.layoutFilter = choice;
+        render();
+      }
+    };
+  }
+
+  // Применяем фильтры
+  let filtered = items;
+  if (state.filter === 'week') filtered = filtered.filter(i => new Date(i.savedAt).getTime() > week);
+  else if (state.filter === 'month') filtered = filtered.filter(i => new Date(i.savedAt).getTime() > month);
+  if (state.layoutFilter) filtered = filtered.filter(i => i.layout === state.layoutFilter);
+
+  // Поиск
+  const q = state.search.toLowerCase().trim();
+  if (q) filtered = filtered.filter(i => (i.eventName || '').toLowerCase().includes(q));
+
+  // Рендер сетки
+  const grid = document.getElementById('grid');
+  if (!filtered.length) {
+    grid.innerHTML = `
+      <div class="empty" style="grid-column:1/-1;">
+        ${items.length === 0 ? `
+          <h2>Библиотека пуста</h2>
+          <p>Открой генератор афиш, отредактируй постер и нажми «☆ Добавить в библиотеку» — появится здесь.</p>
+          <button class="btn primary" onclick="window.location.href='posters.html'">→ Открыть генератор</button>
+        ` : `
+          <h2>Ничего не найдено</h2>
+          <p>Попробуй изменить фильтры или поисковый запрос.</p>
+        `}
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = '<div class="grid">' + filtered.map(item => {
+    const dateStr = item.savedAt ? new Date(item.savedAt).toLocaleDateString('ru-RU', {day:'numeric',month:'short'}) : '';
+    const eventDateStr = item.eventDate ? new Date(item.eventDate).toLocaleDateString('ru-RU', {day:'numeric',month:'short'}) : '';
+    const thumb = item.thumbnailUrl || '';
+
+    return `
+      <div class="card">
+        <div class="thumb" style="${thumb ? `background-image:url('${thumb}');` : ''}" onclick="showPreview('${item.id}')">
+          ${thumb ? '' : '🖼 без превью'}
+        </div>
+        <div class="card-body">
+          <div class="card-event" title="${escapeHtml(item.eventName || '—')}">${escapeHtml(item.eventName || '—')}</div>
+          <div class="card-meta">
+            <span class="card-tag">${escapeHtml(item.layout || '')}</span>
+            <span>${eventDateStr || dateStr}</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="card-btn" onclick="openInEditor('${item.id}')" title="Открыть в редакторе">✏️ Редактировать</button>
+          <button class="card-btn" onclick="downloadThumb('${item.id}')" title="Скачать превью">↓</button>
+          <button class="card-btn danger" onclick="confirmDelete('${item.id}')" title="Удалить">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('') + '</div>';
+}
+
+// ============================================================
+// ДЕЙСТВИЯ
+// ============================================================
+function setFilter(f) {
+  state.filter = f;
+  document.querySelectorAll('.filter').forEach(el => {
+    el.classList.toggle('active', el.dataset.filter === f);
+  });
+  render();
+}
+
+document.getElementById('search').addEventListener('input', e => {
+  state.search = e.target.value;
+  render();
+});
+
+function showPreview(id) {
+  const item = state.items.find(i => i.id === id);
+  if (!item || !item.thumbnailUrl) {
+    toast('Превью недоступно', 'err');
+    return;
+  }
+  document.getElementById('previewImg').src = item.thumbnailUrl;
+  document.getElementById('previewModal').classList.add('open');
+}
+
+function closePreview() {
+  document.getElementById('previewModal').classList.remove('open');
+}
+
+function openInEditor(id) {
+  const item = state.items.find(i => i.id === id);
+  if (!item) return;
+  // Передаём id через localStorage — posters.html подхватит и откроет в редакторе
+  localStorage.setItem('detali_open_from_library', JSON.stringify({
+    id: item.id,
+    payload: item.payload
+  }));
+  window.location.href = 'posters.html?openLibrary=' + encodeURIComponent(item.id);
+}
+
+function downloadThumb(id) {
+  const item = state.items.find(i => i.id === id);
+  if (!item || !item.thumbnailUrl) {
+    toast('Превью отсутствует — открой в редакторе чтобы скачать PNG', 'err');
+    return;
+  }
+  const link = document.createElement('a');
+  link.href = item.thumbnailUrl;
+  const safe = (item.eventName || 'poster').replace(/[^а-яА-ЯёЁa-zA-Z0-9]+/g, '_').slice(0, 30);
+  link.download = `${item.eventDate || 'event'}_${item.layout}_${safe}_thumb.png`;
+  link.click();
+}
+
+function confirmDelete(id) {
+  const item = state.items.find(i => i.id === id);
+  if (!item) return;
+  if (!confirm('Удалить «' + (item.eventName || 'этот постер') + '»?\n\nУдалится из библиотеки и из облака.')) return;
+  libDelete(id);
+  state.items = libGetAll();
+  render();
+  toast('Удалено', 'ok');
+}
+
+function exportAllJSON() {
+  if (!state.items.length) { toast('Нечего экспортировать', 'err'); return; }
+  const blob = new Blob([JSON.stringify(state.items, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `posters_library_${new Date().toISOString().slice(0,10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  toast('Бэкап скачан · ' + state.items.length + ' постеров', 'ok');
+}
+
+// ============================================================
+// УТИЛИТЫ
+// ============================================================
+function escapeHtml(s) {
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = (type || '') + ' show';
+  setTimeout(() => t.className = '', 3000);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePreview();
+});
+
+init();
+</script>
+</body>
+</html>

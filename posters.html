@@ -3110,6 +3110,26 @@ body {
   outline-color: rgba(61,43,31,0.9);
 }
 /* hint убран — подсказка в сайдбаре */
+
+#editModal .em-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+#editModal .em-filter-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  width: 68px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+#editModal .em-filter-val {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  min-width: 24px;
+  text-align: right;
+}
 #editModal .em-sidebar {
   width: 200px;
   display: flex;
@@ -3318,9 +3338,71 @@ body {
       </label>
       <button class="em-btn em-btn-ghost" id="emRemovePhotoBtn" onclick="emRemovePhoto()" style="display:none">✕ Убрать фото</button>
 
+      <div id="emPhotoControls" style="display:none;margin-top:8px;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:6px;letter-spacing:.06em;">
+          Тяни фото · колёсико для зума
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:rgba(255,255,255,0.4);">🔍</span>
+          <input type="range" id="emPhotoScale" min="100" max="300" value="100" step="5"
+            style="flex:1;accent-color:var(--terracotta);"
+            oninput="emSetPhotoScale(this.value)">
+          <span id="emPhotoScaleVal" style="font-size:11px;color:rgba(255,255,255,0.55);min-width:34px;text-align:right;">100%</span>
+        </div>
+        <button class="em-btn em-btn-ghost" onclick="emResetPhotoPos()" style="margin-top:4px;font-size:11px;padding:5px 8px;">↺ По центру</button>
+
+        <!-- Фильтры -->
+        <div style="margin-top:10px;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:10px;color:rgba(255,255,255,0.35);letter-spacing:.06em;">ФИЛЬТРЫ</span>
+            <button onclick="emResetFilters()" style="font-size:10px;color:rgba(255,255,255,0.3);background:none;border:none;cursor:pointer;padding:0;letter-spacing:.04em;">↺ сброс</button>
+          </div>
+          <div class="em-filter-row">
+            <span class="em-filter-label">☀️ Яркость</span>
+            <input type="range" id="emFilterBrightness" min="50" max="150" value="100" step="2"
+              style="flex:1;accent-color:var(--terracotta);"
+              oninput="emFilterChanged()">
+            <span class="em-filter-val" id="emFilterBrightnessVal">100</span>
+          </div>
+          <div class="em-filter-row">
+            <span class="em-filter-label">◑ Контраст</span>
+            <input type="range" id="emFilterContrast" min="50" max="150" value="100" step="2"
+              style="flex:1;accent-color:var(--terracotta);"
+              oninput="emFilterChanged()">
+            <span class="em-filter-val" id="emFilterContrastVal">100</span>
+          </div>
+          <div class="em-filter-row">
+            <span class="em-filter-label">🎨 Насыщ.</span>
+            <input type="range" id="emFilterSaturate" min="0" max="200" value="100" step="5"
+              style="flex:1;accent-color:var(--terracotta);"
+              oninput="emFilterChanged()">
+            <span class="em-filter-val" id="emFilterSaturateVal">100</span>
+          </div>
+          <div class="em-filter-row">
+            <span class="em-filter-label">🌡 Тон</span>
+            <input type="range" id="emFilterWarmth" min="-40" max="40" value="0" step="2"
+              style="flex:1;accent-color:var(--terracotta);"
+              oninput="emFilterChanged()">
+            <span class="em-filter-val" id="emFilterWarmthVal">0</span>
+          </div>
+        </div>
+      </div>
+
       <div class="em-sep"></div>
       <div class="em-label">Цветовое решение</div>
       <div class="em-palette" id="emPalette"></div>
+
+      <div class="em-sep"></div>
+      <div style="display:flex;gap:6px;">
+        <button class="em-btn em-btn-secondary" id="emUndoBtn" onclick="emUndo()" disabled
+          style="flex:1;text-align:center;font-size:11px;padding:8px 6px;" title="Ctrl+Z">
+          ↶ Отменить <span id="emHistoryCount" style="opacity:0.5;font-size:10px;"></span>
+        </button>
+        <button class="em-btn em-btn-secondary" id="emRedoBtn" onclick="emRedo()" disabled
+          style="flex:1;text-align:center;font-size:11px;padding:8px 6px;" title="Ctrl+Shift+Z">
+          ↷ Вернуть
+        </button>
+      </div>
 
       <div class="em-sep"></div>
       <div class="em-label">Скачать</div>
@@ -3329,6 +3411,7 @@ body {
         <button class="em-btn em-btn-primary" onclick="emExport('square')">↓ Square</button>
       </div>
       <div class="em-sep"></div>
+      <button class="em-btn em-btn-secondary" id="emLibraryBtn" onclick="emAddToLibrary()" style="background:rgba(192,109,84,0.25);">☆ Добавить в библиотеку</button>
       <button class="em-btn em-btn-secondary" onclick="emSaveAndClose()">✓ Сохранить и закрыть</button>
       <button class="em-btn em-btn-ghost" onclick="emClose()">Закрыть без сохранения</button>
       <div class="em-sep"></div>
@@ -5742,6 +5825,9 @@ const _em = {
   sourceWrap: null,  // DOM-элемент карточки в галерее/генераторе
   onSave: null,      // callback при сохранении
   context: null,     // 'preview' | 'generator'
+  history: [],       // стек снимков для undo
+  future: [],        // стек снимков для redo
+  historyMax: 30,    // максимум снимков
 };
 
 // Текстовые элементы которые делаем редактируемыми
@@ -5815,12 +5901,25 @@ function openEditModal({ layout, variant, day, sourceWrap, onSave, context }) {
   // Кнопка выбора
   emUpdateSelectBtn();
 
+  // Очищаем историю — каждый постер начинается с чистого листа
+  emClearHistory();
+
   // Инициализируем палитру с текущим акцентом
   emInitPalette(variant.accent || 'terracotta');
 
-  // Показываем кнопку «убрать фото» если фото есть
+  // Показываем кнопки и контролы фото если фото есть
   const removeBtn = document.getElementById('emRemovePhotoBtn');
+  const photoControls = document.getElementById('emPhotoControls');
   if (removeBtn) removeBtn.style.display = variant.photo ? 'block' : 'none';
+  if (photoControls) photoControls.style.display = variant.photo ? 'block' : 'none';
+  if (variant.photo) {
+    emSyncPhotoSlider();
+    emSyncFilters();
+    requestAnimationFrame(() => {
+      emApplyPhotoTransform();
+      emInitPhotoDrag();
+    });
+  }
 
   // Закрытие по клику на оверлей
   modal.addEventListener('mousedown', emOverlayClose);
@@ -5845,15 +5944,37 @@ function emMakeEditable(poster) {
 
     el.contentEditable = 'true';
     el.spellcheck = false;
+    el.dataset.emOriginalText = el.textContent;
+
+    // При получении фокуса — снимок ДО изменений
+    el.addEventListener('focus', () => {
+      el.dataset.emOriginalText = el.textContent;
+    });
 
     // Enter = подтвердить (blur), Escape = отмена
     el.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
-      if (e.key === 'Escape') { el.blur(); }
+      if (e.key === 'Escape') {
+        // Откат к исходному тексту до начала редактирования
+        if (el.dataset.emOriginalText !== undefined) {
+          el.textContent = el.dataset.emOriginalText;
+        }
+        el.blur();
+      }
     });
 
-    // При потере фокуса — авто-подгон шрифта
+    // При потере фокуса — авто-подгон + history если изменилось
     el.addEventListener('blur', () => {
+      // Фиксируем в истории если текст изменился
+      if (el.dataset.emOriginalText !== undefined &&
+          el.textContent !== el.dataset.emOriginalText) {
+        // Откатываем на момент, делаем snapshot, возвращаем
+        const newText = el.textContent;
+        el.textContent = el.dataset.emOriginalText;
+        emPushHistory();
+        el.textContent = newText;
+        el.dataset.emOriginalText = newText;
+      }
       const autoFitMap = {
         'frame-title':   '--frame-title-size',
         'bold-title':    '--bold-title-size',
@@ -5949,8 +6070,21 @@ async function emExport(format) {
       // Stories — копируем текущий видимый постер
       zone.innerHTML = poster.outerHTML;
       const node = zone.querySelector('.poster');
-      // Убираем contenteditable для чистого рендера
+      // Убираем contenteditable и drag-оверлей для чистого рендера
       node.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
+      node.querySelectorAll('.em-photo-drag-overlay').forEach(e => e.remove());
+      // Применяем позицию и фильтры фото
+      if (_em.variant && _em.variant.photo) {
+        const x = _em.variant.photoX ?? 50;
+        const y = _em.variant.photoY ?? 50;
+        const scale = (_em.variant.photoScale ?? 100) / 100;
+        const filterStr = emGetFilters();
+        node.querySelectorAll('[style*="background-image"]').forEach(el => {
+          el.style.backgroundPosition = `${x}% ${y}%`;
+          el.style.backgroundSize = scale === 1 ? 'cover' : `${scale * 100}%`;
+          if (filterStr) el.style.filter = filterStr;
+        });
+      }
       await waitForImages(node);
       zone.style.left = '0'; zone.style.visibility = 'hidden';
       const canvas = await html2canvas(node, {scale:2,useCORS:true,allowTaint:false,backgroundColor:null,logging:false});
@@ -5995,26 +6129,218 @@ function emApplyEditsToNode(node, editsMap) {
 }
 
 // ============================================================
-// ФОТО В МОДАЛЕ
+// ФОТО В МОДАЛЕ — загрузка, drag, zoom
 // ============================================================
+
+// Стейт перетаскивания
+const _emDrag = { active: false, startX: 0, startY: 0, baseX: 0, baseY: 0 };
+
 function emLoadPhoto(evt) {
   const file = evt.target.files[0];
   if (!file) return;
+  emPushHistory();
   const reader = new FileReader();
   reader.onload = e => {
-    const url = e.target.result;
-    _em.variant = Object.assign({}, _em.variant, { photo: url });
+    _em.variant = Object.assign({}, _em.variant, {
+      photo: e.target.result,
+      photoX: 50, photoY: 50, photoScale: 100
+    });
     emRerender();
     document.getElementById('emRemovePhotoBtn').style.display = 'block';
+    document.getElementById('emPhotoControls').style.display = 'block';
+    emSyncPhotoSlider();
   };
   reader.readAsDataURL(file);
 }
 
 function emRemovePhoto() {
-  _em.variant = Object.assign({}, _em.variant, { photo: null });
+  emPushHistory();
+  _em.variant = Object.assign({}, _em.variant, { photo: null, photoX: 50, photoY: 50, photoScale: 100 });
   emRerender();
   document.getElementById('emRemovePhotoBtn').style.display = 'none';
+  document.getElementById('emPhotoControls').style.display = 'none';
 }
+
+// Применяет позицию/масштаб ко всем фото-элементам постера в модале
+function emApplyPhotoTransform() {
+  const poster = document.querySelector('#emPosterWrap .poster');
+  if (!poster || !_em.variant.photo) return;
+  const x = _em.variant.photoX ?? 50;
+  const y = _em.variant.photoY ?? 50;
+  const scale = (_em.variant.photoScale ?? 100) / 100;
+
+  // Все элементы с фоновым фото
+  poster.querySelectorAll('[style*="background-image"]').forEach(el => {
+    el.style.backgroundPosition = `${x}% ${y}%`;
+    el.style.backgroundSize = scale === 1 ? 'cover' : `${scale * 100}%`;
+  });
+}
+
+// Навешиваем drag + wheel на фото-элементы постера в модале
+function emInitPhotoDrag() {
+  const poster = document.querySelector('#emPosterWrap .poster');
+  if (!poster || !_em.variant.photo) return;
+
+  const photoEls = [...poster.querySelectorAll('[style*="background-image"]')];
+  if (!photoEls.length) return;
+
+  // Overlay для перехвата событий (чтобы не мешать contenteditable)
+  let overlay = poster.querySelector('.em-photo-drag-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.className = 'em-photo-drag-overlay';
+    overlay.style.cssText = `
+      position:absolute;inset:0;z-index:10;cursor:grab;
+      background:transparent;pointer-events:none;
+    `;
+    poster.style.position = 'relative';
+    poster.appendChild(overlay);
+  }
+
+  // Включаем overlay только над фото-зонами
+  photoEls.forEach(el => {
+    el.style.cursor = 'grab';
+    el.style.userSelect = 'none';
+
+    // Mousedown — начало drag
+    el.addEventListener('mousedown', emPhotoDragStart);
+    // Wheel — зум
+    el.addEventListener('wheel', emPhotoWheel, { passive: false });
+  });
+}
+
+function emPhotoDragStart(e) {
+  if (e.button !== 0) return;
+  e.preventDefault();
+  emPushHistory();
+  _emDrag.active = true;
+  _emDrag.startX = e.clientX;
+  _emDrag.startY = e.clientY;
+  _emDrag.baseX = _em.variant.photoX ?? 50;
+  _emDrag.baseY = _em.variant.photoY ?? 50;
+  e.currentTarget.style.cursor = 'grabbing';
+
+  const onMove = ev => {
+    if (!_emDrag.active) return;
+    // Чем больше масштаб — тем меньше чувствительность перетаскивания
+    const scale = (_em.variant.photoScale ?? 100) / 100;
+    const sens = 30 / scale; // пикселей на 1% смещения
+    const dx = (ev.clientX - _emDrag.startX) / sens;
+    const dy = (ev.clientY - _emDrag.startY) / sens;
+    _em.variant.photoX = Math.max(0, Math.min(100, _emDrag.baseX - dx));
+    _em.variant.photoY = Math.max(0, Math.min(100, _emDrag.baseY - dy));
+    emApplyPhotoTransform();
+  };
+
+  const onUp = ev => {
+    _emDrag.active = false;
+    document.querySelectorAll('#emPosterWrap [style*="background-image"]')
+      .forEach(el => el.style.cursor = 'grab');
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+  };
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function emPhotoWheel(e) {
+  e.preventDefault();
+  emDebouncedSnapshot();
+  const delta = e.deltaY > 0 ? -5 : 5;
+  const newScale = Math.max(100, Math.min(300, (_em.variant.photoScale ?? 100) + delta));
+  _em.variant.photoScale = newScale;
+  emApplyPhotoTransform();
+  emSyncPhotoSlider();
+}
+
+function emSetPhotoScale(val) {
+  emDebouncedSnapshot();
+  _em.variant.photoScale = parseInt(val, 10);
+  emApplyPhotoTransform();
+  emSyncPhotoSlider();
+}
+
+function emSyncPhotoSlider() {
+  const scale = _em.variant.photoScale ?? 100;
+  const slider = document.getElementById('emPhotoScale');
+  const label = document.getElementById('emPhotoScaleVal');
+  if (slider) slider.value = scale;
+  if (label) label.textContent = scale + '%';
+}
+
+function emResetPhotoPos() {
+  _em.variant.photoX = 50;
+  _em.variant.photoY = 50;
+  _em.variant.photoScale = 100;
+  emApplyPhotoTransform();
+  emSyncPhotoSlider();
+}
+
+// ============================================================
+// ФИЛЬТРЫ ФОТО
+// ============================================================
+function emGetFilters() {
+  const brightness = document.getElementById('emFilterBrightness')?.value ?? 100;
+  const contrast   = document.getElementById('emFilterContrast')?.value ?? 100;
+  const saturate   = document.getElementById('emFilterSaturate')?.value ?? 100;
+  const warmth     = parseInt(document.getElementById('emFilterWarmth')?.value ?? 0, 10);
+
+  // Тон: warm/cold через hue-rotate + sepia-приближение
+  // warm > 0 → лёгкий sepia + насыщенность
+  // cold < 0 → hue-rotate в синюю сторону
+  let warmthFilter = '';
+  if (warmth > 0) {
+    const w = warmth / 40; // 0..1
+    warmthFilter = `sepia(${w * 0.35}) saturate(${1 + w * 0.3})`;
+  } else if (warmth < 0) {
+    const c = Math.abs(warmth) / 40; // 0..1
+    warmthFilter = `hue-rotate(${c * 30}deg) saturate(${1 - c * 0.2})`;
+  }
+
+  return `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) ${warmthFilter}`.trim();
+}
+
+function emApplyFilters() {
+  // Обновляем подписи
+  ['Brightness','Contrast','Saturate','Warmth'].forEach(name => {
+    const el = document.getElementById('emFilter' + name);
+    const val = document.getElementById('emFilter' + name + 'Val');
+    if (el && val) val.textContent = el.value;
+  });
+
+  // Применяем filter ко всем фото-элементам постера
+  const poster = document.querySelector('#emPosterWrap .poster');
+  if (!poster) return;
+  const filterStr = emGetFilters();
+  poster.querySelectorAll('[style*="background-image"]').forEach(el => {
+    el.style.filter = filterStr;
+  });
+}
+
+function emResetFilters() {
+  emPushHistory();
+  ['emFilterBrightness','emFilterContrast','emFilterSaturate','emFilterWarmth'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.value = id === 'emFilterWarmth' ? 0 : 100;
+    }
+  });
+  emApplyFilters();
+}
+
+// Вызывается из слайдеров фильтров (с дебаунсом для истории)
+function emFilterChanged() {
+  emDebouncedSnapshot();
+  emApplyFilters();
+}
+
+function emSyncFilters() {
+  // При открытии модала — сбрасываем слайдеры к нейтральным
+  emResetFilters();
+}
+
+
 
 // ============================================================
 // ПАЛИТРА АКЦЕНТОВ В МОДАЛЕ
@@ -6045,6 +6371,7 @@ function emInitPalette(currentAccent) {
 }
 
 function emChangeAccent(accentKey) {
+  emPushHistory();
   // Обновляем variant
   _em.variant = Object.assign({}, _em.variant, { accent: accentKey });
   // Обновляем активный свотч
@@ -6084,7 +6411,324 @@ function emRerender() {
       ['.at-title',    el => autoFitElement(el,'--at-title-size')],
     ].forEach(([sel, fn]) => { const el = newPoster.querySelector(sel); if (el) fn(el); });
     emMakeEditable(newPoster);
+    // Применяем позицию/масштаб фото и drag
+    if (_em.variant && _em.variant.photo) {
+      emApplyPhotoTransform();
+      emInitPhotoDrag();
+      emApplyFilters();
+    }
   });
+}
+
+// ============================================================
+// ИСТОРИЯ ВЕРСИЙ — UNDO/REDO
+// ============================================================
+
+// Делаем снимок текущего состояния
+function emSnapshot() {
+  const poster = document.querySelector('#emPosterWrap .poster');
+  if (!poster) return null;
+  // Клон без drag-оверлея и без contenteditable=true
+  const clone = poster.cloneNode(true);
+  clone.querySelectorAll('.em-photo-drag-overlay').forEach(e => e.remove());
+  return {
+    html: clone.outerHTML,
+    variant: JSON.parse(JSON.stringify(_em.variant)),
+    filters: emReadFilterValues(),
+  };
+}
+
+function emReadFilterValues() {
+  return {
+    brightness: parseInt(document.getElementById('emFilterBrightness')?.value ?? 100, 10),
+    contrast:   parseInt(document.getElementById('emFilterContrast')?.value ?? 100, 10),
+    saturate:   parseInt(document.getElementById('emFilterSaturate')?.value ?? 100, 10),
+    warmth:     parseInt(document.getElementById('emFilterWarmth')?.value ?? 0, 10),
+  };
+}
+
+function emWriteFilterValues(filters) {
+  if (!filters) return;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  set('emFilterBrightness', filters.brightness);
+  set('emFilterContrast',   filters.contrast);
+  set('emFilterSaturate',   filters.saturate);
+  set('emFilterWarmth',     filters.warmth);
+}
+
+// Сохранить текущее состояние в историю (вызывается ПЕРЕД изменением)
+function emPushHistory() {
+  const snap = emSnapshot();
+  if (!snap) return;
+  _em.history.push(snap);
+  if (_em.history.length > _em.historyMax) _em.history.shift();
+  _em.future = []; // новое действие — стираем redo-стек
+  emUpdateUndoButtons();
+}
+
+// Откатиться на шаг назад
+function emUndo() {
+  if (!_em.history.length) return;
+  // Сохраняем текущее в future для redo
+  const current = emSnapshot();
+  if (current) _em.future.push(current);
+  // Применяем последний снимок из истории
+  const snap = _em.history.pop();
+  emRestoreSnapshot(snap);
+  emUpdateUndoButtons();
+  toast('↶ Отменено', 'ok');
+}
+
+// Вернуть отменённое действие
+function emRedo() {
+  if (!_em.future.length) return;
+  const current = emSnapshot();
+  if (current) _em.history.push(current);
+  const snap = _em.future.pop();
+  emRestoreSnapshot(snap);
+  emUpdateUndoButtons();
+  toast('↷ Возвращено', 'ok');
+}
+
+// Восстановить состояние из снимка
+function emRestoreSnapshot(snap) {
+  if (!snap) return;
+  _em.variant = snap.variant;
+  emWriteFilterValues(snap.filters);
+
+  // Заменяем постер
+  const wrap = document.getElementById('emPosterWrap');
+  wrap.innerHTML = snap.html;
+  const poster = wrap.querySelector('.poster');
+  if (!poster) return;
+
+  // Переинициализируем редактируемость и фото-инструменты
+  requestAnimationFrame(() => {
+    emMakeEditable(poster);
+    emApplyFilters(); // обновит подписи и применит filter
+    emSyncPhotoSlider();
+    if (_em.variant && _em.variant.photo) {
+      emApplyPhotoTransform();
+      emInitPhotoDrag();
+    }
+    emInitPalette(_em.variant.accent || 'terracotta');
+
+    // Показываем правильные контролы
+    const removeBtn = document.getElementById('emRemovePhotoBtn');
+    const photoControls = document.getElementById('emPhotoControls');
+    if (removeBtn) removeBtn.style.display = _em.variant.photo ? 'block' : 'none';
+    if (photoControls) photoControls.style.display = _em.variant.photo ? 'block' : 'none';
+  });
+}
+
+function emUpdateUndoButtons() {
+  const u = document.getElementById('emUndoBtn');
+  const r = document.getElementById('emRedoBtn');
+  const counter = document.getElementById('emHistoryCount');
+  if (u) u.disabled = _em.history.length === 0;
+  if (r) r.disabled = _em.future.length === 0;
+  if (counter) counter.textContent = _em.history.length ? _em.history.length : '';
+}
+
+// Очистить историю (при открытии нового постера)
+function emClearHistory() {
+  _em.history = [];
+  _em.future = [];
+  emUpdateUndoButtons();
+}
+
+// Дебаунс для серий быстрых изменений (слайдеры, колёсико)
+let _emDebounceTimer = null;
+let _emDebounceLock = false;
+function emDebouncedSnapshot() {
+  if (_emDebounceLock) {
+    clearTimeout(_emDebounceTimer);
+    _emDebounceTimer = setTimeout(() => { _emDebounceLock = false; }, 500);
+    return;
+  }
+  emPushHistory();
+  _emDebounceLock = true;
+  _emDebounceTimer = setTimeout(() => { _emDebounceLock = false; }, 500);
+}
+
+// Глобальный обработчик клавиш
+function emHandleKeyboard(e) {
+  // Только когда модал открыт
+  if (!document.getElementById('editModal').classList.contains('open')) return;
+  // Не перехватываем клавиши когда фокус в редактируемом тексте — кроме Ctrl
+  if (!e.ctrlKey && !e.metaKey) return;
+
+  const key = e.key.toLowerCase();
+  if (key === 'z' && !e.shiftKey) {
+    e.preventDefault();
+    emUndo();
+  } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+    e.preventDefault();
+    emRedo();
+  }
+}
+// Привязываем глобально один раз
+document.addEventListener('keydown', emHandleKeyboard);
+
+// ============================================================
+// БИБЛИОТЕКА ПОСТЕРОВ
+// ============================================================
+// Конфиг для запросов в Google Sheets backend (используется библиотекой)
+const CONFIG = {
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyHrfjsxMyN2TGfAw-JH8MN0KW8QdUUy-bIQSlgjtEIciAw_FnbrL8ay5CrEcqrcQrF/exec'
+};
+
+const POSTER_LIB_KEY = 'detali_poster_library';
+const POSTER_LIB_TTL_MS = 180 * 24 * 60 * 60 * 1000; // 6 месяцев
+
+function _libGetAll() {
+  try {
+    const raw = localStorage.getItem(POSTER_LIB_KEY);
+    if (!raw) return [];
+    const items = JSON.parse(raw);
+    if (!Array.isArray(items)) return [];
+    // Авто-чистка старше 6 месяцев
+    const cutoff = Date.now() - POSTER_LIB_TTL_MS;
+    const filtered = items.filter(it => {
+      const ts = it.savedAt ? new Date(it.savedAt).getTime() : 0;
+      return ts >= cutoff;
+    });
+    if (filtered.length !== items.length) {
+      localStorage.setItem(POSTER_LIB_KEY, JSON.stringify(filtered));
+    }
+    return filtered;
+  } catch(e) {
+    return [];
+  }
+}
+
+function _libSaveLocal(item) {
+  try {
+    const items = _libGetAll();
+    // Если такой id уже есть — обновляем, иначе добавляем
+    const idx = items.findIndex(i => i.id === item.id);
+    if (idx >= 0) items[idx] = item;
+    else items.unshift(item);
+    localStorage.setItem(POSTER_LIB_KEY, JSON.stringify(items));
+    return true;
+  } catch(e) {
+    console.error('localStorage save failed', e);
+    return false;
+  }
+}
+
+async function emAddToLibrary() {
+  const btn = document.getElementById('emLibraryBtn');
+  if (!_em.layout || !_em.variant || !_em.day) {
+    toast('Нечего сохранить', 'err');
+    return;
+  }
+
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Сохраняю…';
+
+  try {
+    // Получаем текущий HTML постера с правками
+    const poster = document.querySelector('#emPosterWrap .poster');
+    if (!poster) throw new Error('Постер не найден');
+
+    // Клонируем, убираем drag-overlay и contenteditable
+    const clone = poster.cloneNode(true);
+    clone.querySelectorAll('.em-photo-drag-overlay').forEach(e => e.remove());
+    clone.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
+
+    // Применяем фото-трансформации и фильтры в инлайн-стили
+    if (_em.variant.photo) {
+      const x = _em.variant.photoX ?? 50;
+      const y = _em.variant.photoY ?? 50;
+      const scale = (_em.variant.photoScale ?? 100) / 100;
+      const filterStr = emGetFilters();
+      clone.querySelectorAll('[style*="background-image"]').forEach(el => {
+        el.style.backgroundPosition = `${x}% ${y}%`;
+        el.style.backgroundSize = scale === 1 ? 'cover' : `${scale * 100}%`;
+        if (filterStr) el.style.filter = filterStr;
+      });
+    }
+
+    // Генерируем превью — маленький thumbnail для библиотеки
+    let thumbnailUrl = '';
+    try {
+      // Скрытая зона для рендера
+      const zone = document.getElementById('hiddenRenderZone');
+      zone.innerHTML = clone.outerHTML;
+      const node = zone.querySelector('.poster');
+      await waitForImages(node);
+      zone.style.left = '0'; zone.style.visibility = 'hidden';
+      const canvas = await html2canvas(node, {
+        scale: 0.5, useCORS: true, allowTaint: false,
+        backgroundColor: null, logging: false
+      });
+      zone.innerHTML = '';
+      zone.style.left = '-10000px'; zone.style.visibility = '';
+      thumbnailUrl = canvas.toDataURL('image/jpeg', 0.7); // jpeg чтобы было меньше
+    } catch(e) {
+      console.warn('thumbnail render failed', e);
+    }
+
+    const savedId = (_em.variant.libraryId || ('p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)));
+    const savedAt = new Date().toISOString();
+
+    const item = {
+      id: savedId,
+      savedAt,
+      eventName:  _em.day.event && _em.day.event.title || '',
+      eventDate:  _em.day.date || '',
+      layout:     _em.layout,
+      accent:     _em.variant.accent || '',
+      thumbnailUrl,
+      payload: {
+        // Всё нужное для восстановления
+        variant: _em.variant,
+        day: _em.day,
+        editedHtml: clone.outerHTML,
+      }
+    };
+
+    // 1. Сохраняем локально
+    _libSaveLocal(item);
+    _em.variant.libraryId = savedId; // запоминаем id чтобы при следующем сохранении обновить
+
+    // 2. Отправляем в Google Sheets фоном
+    const fullPayload = JSON.parse(JSON.stringify(item));
+    // payload.day и payload.variant могут быть тяжёлыми — отправляем без editedHtml
+    delete fullPayload.payload.editedHtml; // в облаке не храним HTML — только данные
+    fullPayload.payload.editedHtmlSize = item.payload.editedHtml.length;
+
+    fetch(CONFIG.APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        project: 'details',
+        action: 'posterSave',
+        id: savedId,
+        savedAt,
+        eventName: item.eventName,
+        eventDate: item.eventDate,
+        layout: item.layout,
+        accent: item.accent,
+        thumbnailUrl: '', // в облаке без thumbnail (тяжёлый)
+        payload: fullPayload.payload,
+      })
+    }).then(r => r.json()).then(r => {
+      if (!r.ok) console.warn('cloud save failed', r.error);
+    }).catch(e => console.warn('cloud save error', e));
+
+    btn.textContent = '★ В библиотеке';
+    setTimeout(() => { btn.disabled = false; btn.textContent = orig; }, 1800);
+    toast('★ Добавлено в библиотеку', 'ok');
+
+  } catch(e) {
+    console.error(e);
+    btn.disabled = false;
+    btn.textContent = orig;
+    toast('Ошибка: ' + e.message, 'err');
+  }
 }
 
 function emToggleSelect() {
@@ -6119,11 +6763,66 @@ function emUpdateSelectBtn() {
 }
 
 // Запуск
-const _urlMode = new URLSearchParams(location.search).get('mode');
+const _urlParams = new URLSearchParams(location.search);
+const _urlMode = _urlParams.get('mode');
+const _urlOpenLibrary = _urlParams.get('openLibrary');
+
 if (_urlMode === 'preview') {
   initPreview();
+} else if (_urlOpenLibrary) {
+  // Открыть редактор библиотечного постера
+  initFromLibrary(_urlOpenLibrary);
 } else {
   init();
+}
+
+async function initFromLibrary(libraryId) {
+  // Запускаем обычную инициализацию для базы
+  await init();
+
+  // Достаём payload из localStorage
+  let item = null;
+  try {
+    const raw = localStorage.getItem('detali_open_from_library');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.id === libraryId) item = parsed;
+    }
+  } catch(e) {}
+
+  // Альтернатива — ищем в общей библиотеке
+  if (!item) {
+    try {
+      const lib = JSON.parse(localStorage.getItem('detali_poster_library') || '[]');
+      const found = lib.find(i => i.id === libraryId);
+      if (found) item = { id: found.id, payload: found.payload };
+    } catch(e) {}
+  }
+
+  if (!item || !item.payload) {
+    toast('Постер не найден в библиотеке', 'err');
+    return;
+  }
+
+  // Открываем редактор с восстановленным состоянием
+  const variant = item.payload.variant;
+  const day = item.payload.day;
+  if (!variant || !day) {
+    toast('Данные повреждены', 'err');
+    return;
+  }
+  variant.libraryId = libraryId; // чтобы при «Добавить в библиотеку» обновить, а не дублировать
+
+  setTimeout(() => {
+    openEditModal({
+      layout: variant.layout,
+      variant,
+      day,
+      sourceWrap: null,
+      context: 'library',
+      onSave: () => {} // ничего не делаем при сохранении-закрытии
+    });
+  }, 300);
 }
 </script>
 
