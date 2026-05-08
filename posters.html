@@ -5209,7 +5209,7 @@ async function renderPosterToBlob(dayKey, variantId, format) {
   const canvas = await html2canvas(node, {
     scale: 2,
     useCORS: true,
-    allowTaint: false,
+    allowTaint: true,
     backgroundColor: null,
     logging: false
   });
@@ -5222,20 +5222,40 @@ async function renderPosterToBlob(dayKey, variantId, format) {
 
 function waitForImages(node) {
   const els = [node, ...node.querySelectorAll('*')];
-  const urls = [];
+  const promises = [];
+
+  // 1. Все картинки в background-image (включая data:, blob:, https:)
   els.forEach(el => {
     const bg = window.getComputedStyle(el).backgroundImage;
-    const m = bg.match(/url\("?(https?:\/\/[^")]+)"?\)/);
-    if (m) urls.push(m[1]);
+    // Ловим любые url(...) — http, https, data, blob
+    const matches = bg.matchAll(/url\("?([^")]+)"?\)/g);
+    for (const m of matches) {
+      const url = m[1];
+      // Пропускаем встроенные SVG-noise и прочие data:image/svg
+      if (url.startsWith('data:image/svg+xml')) continue;
+      promises.push(new Promise(resolve => {
+        const img = new Image();
+        // Для внешних — просим CORS
+        if (url.startsWith('http')) img.crossOrigin = 'anonymous';
+        img.onload = resolve;
+        img.onerror = resolve;
+        img.src = url;
+        setTimeout(resolve, 8000);
+      }));
+    }
   });
-  return Promise.all(urls.map(url => new Promise(resolve => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = resolve;
-    img.onerror = resolve;
-    img.src = url;
-    setTimeout(resolve, 8000);
-  })));
+
+  // 2. Все <img> теги внутри постера
+  node.querySelectorAll('img').forEach(img => {
+    if (img.complete && img.naturalHeight > 0) return; // уже загружено
+    promises.push(new Promise(resolve => {
+      img.onload = resolve;
+      img.onerror = resolve;
+      setTimeout(resolve, 8000);
+    }));
+  });
+
+  return Promise.all(promises);
 }
 
 function makeFilename(day, variantId, format) {
@@ -5806,7 +5826,7 @@ async function pvRenderBlob(day, variant, format) {
   ].forEach(([sel, fn]) => { const el = node.querySelector(sel); if (el) fn(el); });
   zone.style.left = '-10000px';
   zone.style.visibility = '';
-  const canvas = await html2canvas(node, {scale:2, useCORS:true, allowTaint:false, backgroundColor:null, logging:false});
+  const canvas = await html2canvas(node, {scale:2, useCORS:true, allowTaint:true, backgroundColor:null, logging:false});
   zone.innerHTML = '';
   return new Promise(r => canvas.toBlob(b => r(b), 'image/png', 0.95));
 }
@@ -6062,7 +6082,7 @@ async function emExport(format) {
         ['.at-title','--at-title-size'],
       ].forEach(([s,v]) => { const e = sq.querySelector(s); if(e) autoFitElement(e,v); });
       zone.style.left = '-10000px'; zone.style.visibility = '';
-      const canvas = await html2canvas(sq, {scale:2,useCORS:true,allowTaint:false,backgroundColor:null,logging:false});
+      const canvas = await html2canvas(sq, {scale:2,useCORS:true,allowTaint:true,backgroundColor:null,logging:false});
       zone.innerHTML = '';
       const blob = await new Promise(r => canvas.toBlob(b => r(b),'image/png',0.95));
       triggerDownload(blob, `${_em.day.date}_${_em.layout}_edited_square.png`);
@@ -6087,7 +6107,7 @@ async function emExport(format) {
       }
       await waitForImages(node);
       zone.style.left = '0'; zone.style.visibility = 'hidden';
-      const canvas = await html2canvas(node, {scale:2,useCORS:true,allowTaint:false,backgroundColor:null,logging:false});
+      const canvas = await html2canvas(node, {scale:2,useCORS:true,allowTaint:true,backgroundColor:null,logging:false});
       zone.innerHTML = '';
       zone.style.left = '-10000px'; zone.style.visibility = '';
       const blob = await new Promise(r => canvas.toBlob(b => r(b),'image/png',0.95));
@@ -6661,7 +6681,7 @@ async function emAddToLibrary() {
       await waitForImages(node);
       zone.style.left = '0'; zone.style.visibility = 'hidden';
       const canvas = await html2canvas(node, {
-        scale: 0.5, useCORS: true, allowTaint: false,
+        scale: 0.5, useCORS: true, allowTaint: true,
         backgroundColor: null, logging: false
       });
       zone.innerHTML = '';
