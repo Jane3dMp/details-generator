@@ -3109,22 +3109,7 @@ body {
 #editModal .em-poster-wrap .poster:not(.bold):not(.collage):not(.quote-card) [contenteditable]:focus {
   outline-color: rgba(61,43,31,0.9);
 }
-/* Hint-оверлей при первом открытии */
-#editModal .em-hint {
-  position: absolute;
-  bottom: 12px;
-  left: 0; right: 0;
-  text-align: center;
-  font-family: 'Inter', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: rgba(255,255,255,0.75);
-  background: rgba(0,0,0,0.38);
-  padding: 6px 0;
-  pointer-events: none;
-  transition: opacity .4s;
-}
+/* hint убран — подсказка в сайдбаре */
 #editModal .em-sidebar {
   width: 200px;
   display: flex;
@@ -3192,6 +3177,38 @@ body {
   text-transform: uppercase;
   color: rgba(255,255,255,0.4);
   margin-bottom: 2px;
+}
+/* Палитра акцентов */
+#editModal .em-palette {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 4px;
+}
+#editModal .em-swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 5px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform .12s, border-color .12s;
+  position: relative;
+}
+#editModal .em-swatch:hover { transform: scale(1.12); }
+#editModal .em-swatch.active {
+  border-color: white;
+  transform: scale(1.08);
+}
+#editModal .em-swatch.active::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 </style>
@@ -3288,12 +3305,23 @@ body {
 <!-- Модал редактирования постера -->
 <div id="editModal">
   <div class="em-dialog">
-    <div class="em-poster-wrap" id="emPosterWrap">
-      <div class="em-hint" id="emHint">Кликни на любой текст чтобы редактировать</div>
-    </div>
+    <div class="em-poster-wrap" id="emPosterWrap"></div>
     <div class="em-sidebar">
       <div class="em-title" id="emLayoutName">HERO</div>
       <div class="em-subtitle">Кликай на текст — редактируй прямо на постере</div>
+
+      <div class="em-sep"></div>
+      <div class="em-label">Фото</div>
+      <label class="em-btn em-btn-secondary" style="cursor:pointer;text-align:center;" title="Загрузить своё фото">
+        📎 Загрузить фото
+        <input type="file" accept="image/*" style="display:none" onchange="emLoadPhoto(event)">
+      </label>
+      <button class="em-btn em-btn-ghost" id="emRemovePhotoBtn" onclick="emRemovePhoto()" style="display:none">✕ Убрать фото</button>
+
+      <div class="em-sep"></div>
+      <div class="em-label">Цветовое решение</div>
+      <div class="em-palette" id="emPalette"></div>
+
       <div class="em-sep"></div>
       <div class="em-label">Скачать</div>
       <div class="em-format-row">
@@ -5718,7 +5746,12 @@ const _em = {
 
 // Текстовые элементы которые делаем редактируемыми
 const EDITABLE_SELECTORS = [
-  // Заголовки
+  // Общие (hero, split, editorial, grid, scrapbook и др.)
+  '.title', '.tagline', '.meta', '.brand', '.footer-info',
+  '.ed-issue-line', '.date-large', '.time-line',
+  // Frame-специфичные
+  '.frame-date-big', '.frame-time', '.frame-subtitle', '.frame-meta',
+  // Заголовки по макетам
   '.hero-word', '.hero-title', '.split-title', '.frame-title',
   '.bold-title', '.casual-title', '.se-title', '.editorial-title',
   '.co-headline', '.at-title', '.ss-word', '.cl-mega-word',
@@ -5731,7 +5764,7 @@ const EDITABLE_SELECTORS = [
   '.ss-tagline', '.at-tagline', '.cl-sub', '.str-tagline',
   '.ov-tagline', '.diag-tagline', '.sb-tagline', '.band-tagline',
   '.mg-tagline', '.tkt-tagline', '.scrap-tagline', '.scrap-title',
-  '.qc-text', '.qc-title', '.corners-title',
+  '.qc-text', '.qc-title',
   // Дата / мета
   '.hero-date', '.split-date', '.hero-meta', '.split-meta',
   '.frame-meta', '.bold-meta', '.ed-meta', '.at-date-row',
@@ -5756,10 +5789,8 @@ function openEditModal({ layout, variant, day, sourceWrap, onSave, context }) {
   nameEl.textContent = layoutDisplayName(layout);
   modal.classList.add('open');
 
-  // Рендерим постер в модале
-  wrap.innerHTML = `<div class="em-hint" id="emHint">Кликни на любой текст чтобы редактировать</div>`;
-  const posterHtml = renderPoster(day, variant, 'stories');
-  wrap.insertAdjacentHTML('afterbegin', posterHtml);
+  // Рендерим постер в модале — без hint оверлея (он блокирует клики снизу)
+  wrap.innerHTML = renderPoster(day, variant, 'stories');
 
   const poster = wrap.querySelector('.poster');
   if (!poster) return;
@@ -5781,54 +5812,83 @@ function openEditModal({ layout, variant, day, sourceWrap, onSave, context }) {
     emMakeEditable(poster);
   });
 
-  // Скрываем hint после первого клика
-  wrap.addEventListener('click', () => {
-    const hint = document.getElementById('emHint');
-    if (hint) hint.style.opacity = '0';
-  }, { once: true });
-
   // Кнопка выбора
   emUpdateSelectBtn();
+
+  // Инициализируем палитру с текущим акцентом
+  emInitPalette(variant.accent || 'terracotta');
+
+  // Показываем кнопку «убрать фото» если фото есть
+  const removeBtn = document.getElementById('emRemovePhotoBtn');
+  if (removeBtn) removeBtn.style.display = variant.photo ? 'block' : 'none';
 
   // Закрытие по клику на оверлей
   modal.addEventListener('mousedown', emOverlayClose);
 }
 
 function emMakeEditable(poster) {
-  // Находим все текстовые узлы по селекторам
   poster.querySelectorAll(EDITABLE_SELECTORS).forEach(el => {
-    // Не делаем редактируемыми контейнеры с другими блочными детьми
-    const hasBlockChildren = [...el.children].some(c =>
-      window.getComputedStyle(c).display !== 'inline' &&
-      window.getComputedStyle(c).display !== 'inline-block'
-    );
-    if (hasBlockChildren) return;
+    // Если у элемента есть дочерние элементы (не текстовые узлы) —
+    // делаем редактируемыми их рекурсивно, а не сам контейнер
+    const childEls = [...el.children];
+    if (childEls.length > 0) {
+      // Проверяем: если все дети — инлайновые (span, b, i, em) — редактируем сам элемент
+      const allInline = childEls.every(c => {
+        const d = window.getComputedStyle(c).display;
+        return d === 'inline' || d === 'inline-block' || d === 'inline-flex';
+      });
+      if (!allInline) return; // блочные дети — пропускаем контейнер
+    }
+
+    // Уже contenteditable — не трогаем
+    if (el.contentEditable === 'true') return;
 
     el.contentEditable = 'true';
     el.spellcheck = false;
 
-    // Запрещаем перенос строк (Enter = blur)
+    // Enter = подтвердить (blur), Escape = отмена
     el.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
       if (e.key === 'Escape') { el.blur(); }
     });
 
-    // При потере фокуса — запускаем авто-подгон если нужно
+    // При потере фокуса — авто-подгон шрифта
     el.addEventListener('blur', () => {
       const autoFitMap = {
-        'frame-title': '--frame-title-size',
-        'bold-title': '--bold-title-size',
-        'se-title': '--se-title-size',
-        'casual-title': '--casual-title-size',
-        'prod-title': '--prod-title-size',
-        'co-headline': '--co-headline-size',
-        'at-title': '--at-title-size',
+        'frame-title':   '--frame-title-size',
+        'bold-title':    '--bold-title-size',
+        'se-title':      '--se-title-size',
+        'casual-title':  '--casual-title-size',
+        'prod-title':    '--prod-title-size',
+        'co-headline':   '--co-headline-size',
+        'at-title':      '--at-title-size',
+        'str-head-title':'--stripe-head-size',
       };
       for (const [cls, varName] of Object.entries(autoFitMap)) {
         if (el.classList.contains(cls)) { autoFitElement(el, varName); break; }
       }
       if (el.classList.contains('hero-word')) autoFitHeroWord(el);
     });
+  });
+
+  // Дополнительно — ищем все текстовые узлы внутри элементов
+  // которые не попали в EDITABLE_SELECTORS (прямой текст в контейнере)
+  // Это покрывает случаи типа editorial где текст в div без спец-класса
+  poster.querySelectorAll(EDITABLE_SELECTORS).forEach(container => {
+    if (container.contentEditable === 'true') return;
+    // Если контейнер содержит только текстовые узлы + инлайн — делаем редактируемым
+    const hasOnlyText = [...container.childNodes].every(n =>
+      n.nodeType === 3 || // текстовый узел
+      (n.nodeType === 1 && ['SPAN','B','I','EM','STRONG','BR'].includes(n.tagName))
+    );
+    if (hasOnlyText && container.textContent.trim()) {
+      container.contentEditable = 'true';
+      container.spellcheck = false;
+      container.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); container.blur(); }
+        if (e.key === 'Escape') { container.blur(); }
+      });
+    }
   });
 }
 
@@ -5931,6 +5991,99 @@ function emApplyEditsToNode(node, editsMap) {
     const idx = parseInt(idxStr, 10);
     const els = node.querySelectorAll('.'+cls);
     if (els[idx]) els[idx].textContent = text;
+  });
+}
+
+// ============================================================
+// ФОТО В МОДАЛЕ
+// ============================================================
+function emLoadPhoto(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const url = e.target.result;
+    _em.variant = Object.assign({}, _em.variant, { photo: url });
+    emRerender();
+    document.getElementById('emRemovePhotoBtn').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function emRemovePhoto() {
+  _em.variant = Object.assign({}, _em.variant, { photo: null });
+  emRerender();
+  document.getElementById('emRemovePhotoBtn').style.display = 'none';
+}
+
+// ============================================================
+// ПАЛИТРА АКЦЕНТОВ В МОДАЛЕ
+// ============================================================
+const EM_ACCENTS = [
+  { key: 'terracotta', color: '#C06D54', label: 'Терракот' },
+  { key: 'amber',      color: '#EF9F27', label: 'Янтарь' },
+  { key: 'olive',      color: '#6B7A4A', label: 'Олива' },
+  { key: 'night',      color: '#2C2320', label: 'Ночь' },
+  { key: 'mint',       color: '#5B8A7A', label: 'Мята' },
+  { key: 'bordeaux',   color: '#722F37', label: 'Бордо' },
+  { key: 'ochra',      color: '#C47A35', label: 'Охра' },
+  { key: 'scarlet',    color: '#C94444', label: 'Алый' },
+  { key: 'graphite',   color: '#4A5568', label: 'Графит' },
+  { key: 'coffee',     color: '#8B7355', label: 'Кофе' },
+  { key: 'forest',     color: '#2D4A3E', label: 'Лес' },
+];
+
+function emInitPalette(currentAccent) {
+  const palette = document.getElementById('emPalette');
+  if (!palette) return;
+  palette.innerHTML = EM_ACCENTS.map(a => `
+    <div class="em-swatch ${a.key === currentAccent ? 'active' : ''}"
+         style="background:${a.color};"
+         title="${a.label}"
+         onclick="emChangeAccent('${a.key}')"></div>
+  `).join('');
+}
+
+function emChangeAccent(accentKey) {
+  // Обновляем variant
+  _em.variant = Object.assign({}, _em.variant, { accent: accentKey });
+  // Обновляем активный свотч
+  document.querySelectorAll('#emPalette .em-swatch').forEach(s => {
+    s.classList.toggle('active', s.title === EM_ACCENTS.find(a => a.key === accentKey)?.label);
+  });
+  // Перерендериваем постер с новым акцентом
+  emRerender();
+}
+
+// Перерендер постера с сохранением правок текста
+function emRerender() {
+  const wrap = document.getElementById('emPosterWrap');
+  const poster = wrap.querySelector('.poster');
+
+  // Собираем текущие правки текста
+  const edits = poster ? emCollectEdits(poster) : new Map();
+
+  // Рендерим заново
+  wrap.innerHTML = renderPoster(_em.day, _em.variant, 'stories');
+  const newPoster = wrap.querySelector('.poster');
+  if (!newPoster) return;
+
+  // Применяем сохранённые правки
+  if (edits.size) emApplyEditsToNode(newPoster, edits);
+
+  // Авто-подгон
+  requestAnimationFrame(() => {
+    [
+      ['.hero-word', autoFitHeroWord],
+      ['.frame-title', el => autoFitElement(el,'--frame-title-size')],
+      ['.bold-title',  el => autoFitElement(el,'--bold-title-size')],
+      ['.se-title',    el => autoFitElement(el,'--se-title-size')],
+      ['.casual-title',el => autoFitElement(el,'--casual-title-size')],
+      ['.prod-title',  el => autoFitElement(el,'--prod-title-size')],
+      ['.co-headline', el => autoFitElement(el,'--co-headline-size')],
+      ['.at-title',    el => autoFitElement(el,'--at-title-size')],
+    ].forEach(([sel, fn]) => { const el = newPoster.querySelector(sel); if (el) fn(el); });
+    emMakeEditable(newPoster);
   });
 }
 
