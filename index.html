@@ -5526,8 +5526,23 @@ function stripHtmlTags(s) {
 // =====================================================================
 const waState = {
   weekJson: null,        // последний загруженный JSON недели
-  pngs: []               // [{ name, base64, eventId, caption, selected, status }]
+  pngs: [],              // [{ name, base64, eventId, caption, selected, status }]
+  allEvents: []          // все события (для привязки PNG к событию из любой недели)
 };
+
+async function waLoadAllEvents() {
+  // Берём teamEvents — туда попадают все события (опубликованные + черновики, не приватные)
+  if (waState.allEvents.length > 0) return; // уже загружены
+  try {
+    const url = CONFIG.APPS_SCRIPT_URL + '?action=teamEvents&project=details';
+    const res = await fetch(url).then(r => r.json());
+    if (res.ok && res.events) {
+      waState.allEvents = res.events;
+    }
+  } catch(e) {
+    console.warn('Не удалось загрузить allEvents:', e);
+  }
+}
 
 function openWeekAgentModal() {
   // По умолчанию — ближайший понедельник
@@ -5543,6 +5558,14 @@ function openWeekAgentModal() {
   waState.weekJson = null;
   waState.pngs = [];
   document.getElementById('weekAgentModal').classList.add('show');
+  // Подгружаем ВСЕ события в фоне — для привязки PNG к любому событию
+  waLoadAllEvents();
+}
+
+// Парсит имя файла, выдернутое из агента: "2026-06-26_frame_..." → "2026-06-26"
+function waExtractDateFromFilename(name) {
+  const m = String(name || '').match(/(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : '';
 }
 
 async function waLoadWeek() {
@@ -5612,13 +5635,24 @@ function waOpenAgent() {
 async function waOnPngSelected(event) {
   const files = Array.from(event.target.files || []);
   if (files.length === 0) return;
+  // Подтягиваем events если ещё не было
+  await waLoadAllEvents();
   for (const file of files) {
     if (!file.type.startsWith('image/')) continue;
     const base64 = await fileToBase64(file);
+    // Пробуем угадать событие по дате в имени файла
+    let guessedEventId = '';
+    const dateInName = waExtractDateFromFilename(file.name);
+    if (dateInName) {
+      // Ищем все события на эту дату
+      const candidates = waState.allEvents.filter(e => e.date === dateInName);
+      // Если ровно одно — привязываем; если несколько — оставляем выбор пользователю
+      if (candidates.length === 1) guessedEventId = candidates[0].id;
+    }
     waState.pngs.push({
       name: file.name,
       base64: base64,
-      eventId: '',
+      eventId: guessedEventId,
       caption: '',
       selected: true,
       status: ''
@@ -5644,26 +5678,63 @@ function waRenderPngs() {
     grid.innerHTML = '';
     return;
   }
-  // Список событий недели для привязки
-  const evOptions = waState.weekJson && waState.weekJson.events
-    ? waState.weekJson.events.map(e => `<option value="${e.id}">${e.dayOfWeek} ${e.date.slice(5)} · ${escapeHtml((e.name || e.format || '').slice(0, 30))}</option>`).join('')
-    : '';
-  grid.innerHTML = waState.pngs.map((p, i) => `
-    <div style="border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--card);">
-      <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
-        <input type="checkbox" ${p.selected ? 'checked' : ''} onchange="waState.pngs[${i}].selected = this.checked" style="width: auto;">
-        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
-      </label>
-      <img src="${p.base64}" style="width:100%; height:140px; object-fit:cover; border-radius:4px; margin:6px 0;">
-      <select onchange="waState.pngs[${i}].eventId = this.value" style="width:100%; font-size:11px; padding:4px;">
-        <option value="">— Без привязки к событию —</option>
-        ${evOptions}
-      </select>
-      <textarea placeholder="Подпись под фото (опционально)" oninput="waState.pngs[${i}].caption = this.value" style="width:100%; min-height:50px; margin-top:6px; font-size:11px; padding:4px; resize:vertical;">${escapeHtml(p.caption || '')}</textarea>
-      <div style="font-size:11px; margin-top:4px; min-height:14px;">${p.status || ''}</div>
-      <button type="button" onclick="waState.pngs.splice(${i},1); waRenderPngs();" style="font-size:11px; padding:3px 8px; margin-top:4px; width:100%;">🗑 Убрать</button>
-    </div>
-  `).join('');
+  // Все события для привязки (отсортированы по дате)
+  const allEvents = (waState.allEvents || [])
+    .slice()
+    .sort((a, b) => (a.date + (a.time || a.timeStart || '')).localeCompare(b.date + (b.time || b.timeStart || '')));
+
+  grid.innerHTML = waState.pngs.map((p, i) => {
+    // Определяем дату в имени файла, чтобы сначала показать события на эту дату
+    const dateInName = waExtractDateFromFilename(p.name);
+    const sameDate = dateInName ? allEvents.filter(e => e.date === dateInName) : [];
+    const otherDates = allEvents.filter(e => !sameDate.includes(e));
+
+    let evOptionsHtml = '';
+    if (sameDate.length > 0) {
+      evOptionsHtml += `<optgroup label="📅 События на ${dateInName}">`;
+      evOptionsHtml += sameDate.map(e => {
+        const t = e.time || e.timeStart || '';
+        const dispName = (e.name || e.format || '').slice(0, 40);
+        const sel = p.eventId === e.id ? 'selected' : '';
+        return `<option value="${e.id}" ${sel}>${t} · ${escapeHtml(dispName)}</option>`;
+      }).join('');
+      evOptionsHtml += '</optgroup>';
+    }
+    if (otherDates.length > 0) {
+      evOptionsHtml += `<optgroup label="Все остальные события">`;
+      evOptionsHtml += otherDates.map(e => {
+        const t = e.time || e.timeStart || '';
+        const dispName = (e.name || e.format || '').slice(0, 40);
+        const sel = p.eventId === e.id ? 'selected' : '';
+        return `<option value="${e.id}" ${sel}>${e.date.slice(5)} ${t} · ${escapeHtml(dispName)}</option>`;
+      }).join('');
+      evOptionsHtml += '</optgroup>';
+    }
+
+    const guessHint = (dateInName && sameDate.length === 1 && p.eventId === sameDate[0].id)
+      ? `<div style="font-size:10px; color:#5b8a4e; margin-top:2px;">✓ Авто-привязка по дате в имени</div>`
+      : (dateInName && sameDate.length > 1)
+        ? `<div style="font-size:10px; color:#d4a85c; margin-top:2px;">⚠ ${sameDate.length} событий на эту дату — выбери нужное</div>`
+        : '';
+
+    return `
+      <div style="border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--card);">
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
+          <input type="checkbox" ${p.selected ? 'checked' : ''} onchange="waState.pngs[${i}].selected = this.checked" style="width: auto;">
+          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
+        </label>
+        <img src="${p.base64}" style="width:100%; height:140px; object-fit:cover; border-radius:4px; margin:6px 0;">
+        <select onchange="waState.pngs[${i}].eventId = this.value; waRenderPngs();" style="width:100%; font-size:11px; padding:4px;">
+          <option value="">— Без привязки к событию —</option>
+          ${evOptionsHtml}
+        </select>
+        ${guessHint}
+        <textarea placeholder="Подпись под фото (если оставить пустой — соберётся из события)" oninput="waState.pngs[${i}].caption = this.value" style="width:100%; min-height:50px; margin-top:6px; font-size:11px; padding:4px; resize:vertical;">${escapeHtml(p.caption || '')}</textarea>
+        <div style="font-size:11px; margin-top:4px; min-height:14px;">${p.status || ''}</div>
+        <button type="button" onclick="waState.pngs.splice(${i},1); waRenderPngs();" style="font-size:11px; padding:3px 8px; margin-top:4px; width:100%;">🗑 Убрать</button>
+      </div>
+    `;
+  }).join('');
 }
 
 async function waTestTelegram() {
@@ -5701,12 +5772,27 @@ async function waPostAllToTelegram() {
     waRenderPngs();
 
     let caption = p.caption || '';
-    // Если привязано к событию и подпись пустая — собираем дефолтную
-    if (!caption && p.eventId && waState.weekJson) {
-      const ev = waState.weekJson.events.find(e => e.id === p.eventId);
+    // Если привязано к событию и подпись пустая — собираем дефолтную из allEvents
+    if (!caption && p.eventId) {
+      let ev = null;
+      // Ищем сначала в weekJson, потом в allEvents
+      if (waState.weekJson && waState.weekJson.events) {
+        ev = waState.weekJson.events.find(e => e.id === p.eventId);
+      }
+      if (!ev) {
+        ev = (waState.allEvents || []).find(e => e.id === p.eventId);
+      }
       if (ev) {
-        caption = `<b>${escapeHtml(ev.format)}: ${escapeHtml(ev.name)}</b>\n${escapeHtml(ev.dayOfWeek)}, ${ev.time}`;
+        const t = ev.time || ev.timeStart || '';
+        const dow = ev.dayOfWeek || '';
+        caption = `<b>${escapeHtml(ev.format || '')}: ${escapeHtml(ev.name || '')}</b>`;
+        if (dow) caption += `\n${escapeHtml(dow)}`;
+        if (t) caption += `, ${t}`;
         if (ev.price) caption += ` · ${ev.price} руб.`;
+        if (ev.alfaGroupId) {
+          const formUrl = 'https://proznanie4eee.s20.online/common/2/lead/create?gid=' + ev.alfaGroupId;
+          caption += `\n\n👉 <a href="${formUrl}">Записаться</a>`;
+        }
       }
     }
 
