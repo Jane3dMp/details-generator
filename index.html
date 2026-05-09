@@ -240,6 +240,16 @@ main {
 .day:hover { background: var(--hover); }
 .day:nth-child(7n) { border-right: none; }
 .day.other-month { background: #faf8f5; opacity: .4; }
+.day.past { background: #faf8f5; }
+.day.past .day-num { color: #b8a994; }
+.day.past .event-pill {
+  opacity: 0.55;
+  filter: grayscale(0.3);
+}
+.day.past .event-pill:hover {
+  opacity: 1;
+  filter: none;
+}
 .day.weekend .day-num { color: var(--accent); }
 .day.today { background: #fdf6e8; }
 .day.today .day-num { background: var(--accent); color: white; }
@@ -2320,6 +2330,7 @@ function renderCalendar() {
     const dStr = ymd(d);
     const inMonth = d.getMonth() === m;
     const isToday = d.getTime() === today.getTime();
+    const isPast = d.getTime() < today.getTime();
     const wkd = d.getDay();
     const isWe = wkd === 0 || wkd === 6;
     const dayEvents = state.events.filter(e => e.date === dStr && e.status !== 'archived');
@@ -2350,7 +2361,7 @@ function renderCalendar() {
       `;
     }).join('');
     html += `
-      <div class="day ${inMonth ? '' : 'other-month'} ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''}" onclick="openEventEditor(null, '${dStr}')">
+      <div class="day ${inMonth ? '' : 'other-month'} ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''} ${isPast && inMonth ? 'past' : ''}" onclick="openEventEditor(null, '${dStr}')">
         <span class="day-num">${d.getDate()}</span>
         ${eventsHtml}
       </div>
