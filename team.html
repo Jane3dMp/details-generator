@@ -103,6 +103,16 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
 }
 .day:nth-child(7n) { border-right: none; }
 .day.other-month { background: #fafafa; opacity: .35; }
+.day.past { background: #faf8f5; }
+.day.past .day-num { color: #b8a994; }
+.day.past .event-pill {
+  opacity: 0.55;
+  filter: grayscale(0.3);
+}
+.day.past .event-pill:hover {
+  opacity: 1;
+  filter: none;
+}
 .day.weekend { background: #fdf3e9; }
 .day.weekend .day-num { color: var(--accent); }
 .day.today { background: #fdf6e8; }
@@ -171,6 +181,8 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
 .events-table tbody tr:hover { background: #fafafa; }
 .events-table tbody tr.weekend { background: #fdf3e9; }
 .events-table tbody tr.weekend:hover { background: #f7e5d3; }
+.events-table tbody tr.past { opacity: 0.6; filter: grayscale(0.25); }
+.events-table tbody tr.past:hover { opacity: 1; filter: none; }
 .events-table tbody tr.draft { opacity: .78; }
 .events-table tbody tr.modified { background: #fde6ec; }
 .events-table tbody tr.modified:hover { background: #fad5df; }
@@ -847,6 +859,7 @@ function renderWeek() {
     d.setDate(ws.getDate() + i);
     const dStr = ymd(d);
     const isToday = d.getTime() === today.getTime();
+    const isPast = d.getTime() < today.getTime();
     const wkd = d.getDay();
     const isWe = wkd === 0 || wkd === 6;
     const dayEvents = state.events.filter(e => e.date === dStr && e.status !== 'archived');
@@ -862,7 +875,7 @@ function renderWeek() {
       `;
     }).join('');
     html += `
-      <div class="day ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''}">
+      <div class="day ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''} ${isPast ? 'past' : ''}">
         <span class="day-num">${d.getDate()}</span>
         ${eventsHtml}
       </div>
@@ -892,6 +905,7 @@ function renderMonth() {
     const dStr = ymd(d);
     const inMonth = d.getMonth() === m;
     const isToday = d.getTime() === today.getTime();
+    const isPast = d.getTime() < today.getTime();
     const wkd = d.getDay();
     const isWe = wkd === 0 || wkd === 6;
     const dayEvents = state.events.filter(e => e.date === dStr && e.status !== 'archived');
@@ -907,7 +921,7 @@ function renderMonth() {
       `;
     }).join('');
     html += `
-      <div class="day ${inMonth ? '' : 'other-month'} ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''}">
+      <div class="day ${inMonth ? '' : 'other-month'} ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''} ${isPast && inMonth ? 'past' : ''}">
         <span class="day-num">${d.getDate()}</span>
         ${eventsHtml}
       </div>
@@ -944,12 +958,14 @@ function renderTable() {
     const wkd = d.getDay();
     const isWe = wkd === 0 || wkd === 6;
     const isToday = ev.date === todayStr;
+    const isPast = ev.date < todayStr;
     const wdShort = WEEKDAY_SHORT[(wkd + 6) % 7];
     const st = ev.status || 'draft';
 
     const cls = [st];
     if (isWe) cls.push('weekend');
     if (isToday) cls.push('today');
+    if (isPast) cls.push('past');
 
     const priceHtml = ev.price ? (ev.price + ' р') : '<span class="em">—</span>';
     const refs = (ev.references || []).filter(r => r && r.thumb);

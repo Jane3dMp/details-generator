@@ -109,6 +109,16 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 }
 .day:nth-child(7n) { border-right: none; }
 .day.other-month { background: #fafafa; opacity: .35; }
+.day.past { background: #faf8f5; }
+.day.past .day-num { color: #b8a994; }
+.day.past .event-pill {
+  opacity: 0.5;
+  filter: grayscale(0.4);
+}
+.day.past .event-pill:hover {
+  opacity: 1;
+  filter: none;
+}
 .day.weekend { background: #efe5d3; }
 .day.weekend .day-num { color: var(--terracotta); }
 .day.today { background: #fff1d9; }
@@ -156,6 +166,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 }
 .list-day.weekend { background: #efe5d3; }
 .list-day.today { border-color: var(--amber); background: #fff1d9; }
+.list-day.past { opacity: 0.55; filter: grayscale(0.3); }
+.list-day.past:hover { opacity: 1; filter: none; }
 .list-day-head {
   display: flex;
   align-items: baseline;
@@ -262,6 +274,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 20px; }
 .events-table tbody tr.weekend { background: #fdf6e8; }
 .events-table tbody tr.weekend:hover { background: #f9eed8; }
 .events-table tbody tr.today { background: #fff1d9; }
+.events-table tbody tr.past { opacity: 0.55; filter: grayscale(0.3); }
+.events-table tbody tr.past:hover { opacity: 1; filter: none; }
 .events-table tbody tr.private { opacity: .7; }
 .events-table tbody tr.private:hover { background: #efe5d3; }
 .events-table td {
@@ -845,13 +859,14 @@ function renderCalendar() {
     const dStr = ymd(d);
     const inMonth = d.getMonth() === m;
     const isToday = d.getTime() === today.getTime();
+    const isPast = d.getTime() < today.getTime();
     const wkd = d.getDay();
     const isWe = wkd === 0 || wkd === 6;
     const dayEvents = state.events.filter(e => e.date === dStr);
     dayEvents.sort((a, b) => (a.timeStart || '99').localeCompare(b.timeStart || '99'));
     const eventsHtml = dayEvents.map(renderEventPill).join('');
     html += `
-      <div class="day ${inMonth ? '' : 'other-month'} ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''}">
+      <div class="day ${inMonth ? '' : 'other-month'} ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''} ${isPast && inMonth ? 'past' : ''}">
         <span class="day-num">${d.getDate()}</span>
         ${eventsHtml}
       </div>
@@ -891,6 +906,7 @@ function renderList() {
     const wkd = d.getDay();
     const isWe = wkd === 0 || wkd === 6;
     const isToday = dateStr === todayStr;
+    const isPast = dateStr < todayStr;
     const dayEvents = byDate[dateStr].slice().sort((a, b) => (a.timeStart || '99').localeCompare(b.timeStart || '99'));
 
     const eventsHtml = dayEvents.map(ev => {
@@ -922,7 +938,7 @@ function renderList() {
     }).join('');
 
     html += `
-      <div class="list-day ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''}">
+      <div class="list-day ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''} ${isPast ? 'past' : ''}">
         <div class="list-day-head">
           <div class="num">${d.getDate()}</div>
           <div class="name">${WEEKDAY_LONG[(wkd + 6) % 7]}, ${MONTH_NAMES_GEN[m]}</div>
@@ -958,11 +974,13 @@ function renderTable() {
     const wkd = d.getDay();
     const isWe = wkd === 0 || wkd === 6;
     const isToday = ev.date === todayStr;
+    const isPast = ev.date < todayStr;
     const wdShort = WEEKDAY_SHORT[(wkd + 6) % 7];
 
     const cls = [];
     if (isWe) cls.push('weekend');
     if (isToday) cls.push('today');
+    if (isPast) cls.push('past');
     if (ev.isPrivate) cls.push('private');
 
     if (ev.isPrivate) {
@@ -973,7 +991,7 @@ function renderTable() {
           <td class="col-time">${escapeHtml(ev.timeStart || '—')}</td>
           <td><div class="col-format">Приватное</div><div class="col-name">Слот занят</div></td>
           <td class="col-price"><span class="em">—</span></td>
-          <td class="col-action"><a class="btn-row olive" href="tel:${CONTACT_PHONE}" onclick="event.stopPropagation()">Связаться</a></td>
+          <td class="col-action">${isPast ? '<span class="em">завершено</span>' : `<a class="btn-row olive" href="tel:${CONTACT_PHONE}" onclick="event.stopPropagation()">Связаться</a>`}</td>
         </tr>
       `;
     }
@@ -983,6 +1001,9 @@ function renderTable() {
     const thumbHtml = refs.length > 0
       ? `<div class="thumb" style="background-image: url('${refs[0].thumb.replace(/'/g, "%27")}')"></div>`
       : `<div class="thumb empty"></div>`;
+    const actionHtml = isPast
+      ? '<span class="em">завершено</span>'
+      : `<a class="btn-row" href="${escapeHtml(ev.formUrl || '#')}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Записаться</a>`;
     return `
       <tr class="${cls.join(' ')}" onclick="openEvent('${ev.id}')">
         <td class="col-thumb-cell">${thumbHtml}</td>
@@ -993,9 +1014,7 @@ function renderTable() {
           <div class="col-name">${escapeHtml(ev.name || '')}</div>
         </td>
         <td class="col-price">${priceHtml}</td>
-        <td class="col-action">
-          <a class="btn-row" href="${escapeHtml(ev.formUrl || '#')}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Записаться</a>
-        </td>
+        <td class="col-action">${actionHtml}</td>
       </tr>
     `;
   }).join('');
