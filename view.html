@@ -879,9 +879,17 @@ function renderCalendar() {
 function renderList() {
   const m = state.curMonth.getMonth();
   const y = state.curMonth.getFullYear();
+
+  // В текущем месяце скрываем прошедшие
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayStrFilter = ymd(today);
+  const isCurrentMonth = (m === today.getMonth() && y === today.getFullYear());
+
   const monthEvents = state.events.filter(e => {
     const d = new Date(e.date);
-    return d.getMonth() === m && d.getFullYear() === y;
+    if (d.getMonth() !== m || d.getFullYear() !== y) return false;
+    if (isCurrentMonth && e.date < todayStrFilter) return false;
+    return true;
   });
 
   const container = document.getElementById('listView');
@@ -954,9 +962,18 @@ function renderList() {
 function renderTable() {
   const m = state.curMonth.getMonth();
   const y = state.curMonth.getFullYear();
+
+  // Если просматриваем текущий месяц — отсекаем прошедшие.
+  // Для прошлых/будущих месяцев показываем все.
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayStrFilter = ymd(today);
+  const isCurrentMonth = (m === today.getMonth() && y === today.getFullYear());
+
   const monthEvents = state.events.filter(e => {
     const d = new Date(e.date);
-    return d.getMonth() === m && d.getFullYear() === y;
+    if (d.getMonth() !== m || d.getFullYear() !== y) return false;
+    if (isCurrentMonth && e.date < todayStrFilter) return false;
+    return true;
   }).slice().sort((a, b) =>
     (a.date + (a.timeStart || '99')).localeCompare(b.date + (b.timeStart || '99'))
   );
