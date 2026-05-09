@@ -169,6 +169,37 @@ header .pill.warn::before, header .pill.alive::before {
 .toolbar .group { display: flex; gap: 4px; }
 .toolbar .sep { width: 1px; height: 24px; background: var(--line); margin: 0 4px; }
 
+/* Выпадающие меню в тулбаре */
+.dropdown { position: relative; display: inline-block; }
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 220px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  padding: 4px;
+  z-index: 1000;
+}
+.dropdown.open .dropdown-menu { display: flex; flex-direction: column; gap: 1px; }
+.dropdown-menu button {
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  color: var(--ink);
+}
+.dropdown-menu button:hover { background: var(--hover); }
+.dropdown-sep { height: 1px; background: var(--line); margin: 4px 6px; }
+
 main {
   flex: 1;
   padding: 20px;
@@ -1483,17 +1514,31 @@ main {
     <div class="group">
       <button onclick="window.open('view.html', '_blank')" title="Открыть страницу для клиентов в новой вкладке">🌐 Как клиент</button>
       <button onclick="window.open('team.html', '_blank')" title="Открыть страницу для промо/SMM в новой вкладке">📣 Как промо</button>
-      <button onclick="openWeekPoster()" title="Сделать афишу на неделю — текст для Telegram + картинка для Instagram">🗓 Афиша недели</button>
-      <button onclick="openPostersStudio()" title="Открыть генератор афиш на каждое событие — выбираешь дни, агент собирает 2 варианта на каждый">🎨 Афиши событий</button>
-      <button onclick="openWeekAgentModal()" title="Афиша недели через агента в Claude.ai: выгрузка JSON → агент рисует 7 афиш → загрузить PNG → запостить в Telegram">🤖 Через агента</button>
-      <button onclick="openTemplatesGallery()" title="Посмотреть все 18 шаблонов на одном событии">🖼 Галерея шаблонов</button>
-      <button onclick="window.open('library.html?v=' + Date.now(), '_blank')" title="Все сохранённые афиши — открыть и продолжить редактирование">📚 Библиотека</button>
-      <button onclick="window.open('competitors.html?v=' + Date.now(), '_blank')" title="Аналитика и парсинг IG-аккаунтов конкурентов">🔍 Конкуренты</button>
     </div>
     <div class="sep"></div>
     <div class="group">
-      <button onclick="exportJson()">↓ JSON</button>
-      <button onclick="importJson()">↑ JSON</button>
+      <!-- Группа афиш — выпадающее меню -->
+      <div class="dropdown" id="afishaDropdown">
+        <button onclick="toggleDropdown('afishaDropdown')" title="Все инструменты для афиш и постеров">🎨 Афиши ▾</button>
+        <div class="dropdown-menu">
+          <button onclick="closeDropdowns(); openWeekPoster()" title="Сделать афишу на неделю — текст для Telegram + картинка для Instagram">🗓 Афиша недели</button>
+          <button onclick="closeDropdowns(); openPostersStudio()" title="Открыть генератор афиш на каждое событие — выбираешь дни, агент собирает 2 варианта на каждый">🎨 Афиши событий</button>
+          <button onclick="closeDropdowns(); openWeekAgentModal()" title="Афиша недели через агента в Claude.ai: выгрузка JSON → агент рисует 7 афиш → загрузить PNG → запостить в Telegram">🤖 Через агента</button>
+          <div class="dropdown-sep"></div>
+          <button onclick="closeDropdowns(); openTemplatesGallery()" title="Посмотреть все 18 шаблонов на одном событии">🖼 Галерея шаблонов</button>
+          <button onclick="closeDropdowns(); window.open('library.html?v=' + Date.now(), '_blank')" title="Все сохранённые афиши — открыть и продолжить редактирование">📚 Библиотека</button>
+        </div>
+      </div>
+      <!-- Меню «··· Ещё» -->
+      <div class="dropdown" id="moreDropdown">
+        <button onclick="toggleDropdown('moreDropdown')" title="Дополнительные действия">··· Ещё ▾</button>
+        <div class="dropdown-menu">
+          <button onclick="closeDropdowns(); window.open('competitors.html?v=' + Date.now(), '_blank')" title="Аналитика и парсинг IG-аккаунтов конкурентов">🔍 Конкуренты</button>
+          <div class="dropdown-sep"></div>
+          <button onclick="closeDropdowns(); exportJson()">↓ Экспорт JSON</button>
+          <button onclick="closeDropdowns(); importJson()">↑ Импорт JSON</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -5576,7 +5621,26 @@ document.querySelectorAll('.modal-bg').forEach(bg => {
 });
 // Esc закрывает модалки
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show'));
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show'));
+    closeDropdowns();
+  }
+});
+
+// === Дропдауны в тулбаре ===
+function toggleDropdown(id) {
+  const dd = document.getElementById(id);
+  if (!dd) return;
+  const wasOpen = dd.classList.contains('open');
+  closeDropdowns();
+  if (!wasOpen) dd.classList.add('open');
+}
+function closeDropdowns() {
+  document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+}
+// Клик вне дропдауна — закрываем
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown')) closeDropdowns();
 });
 
 // =====================================================================
