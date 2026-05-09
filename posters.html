@@ -3643,6 +3643,10 @@ function init() {
     return;
   }
   populateFormatFilter();
+  // По умолчанию показываем события начиная с сегодняшнего дня
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const filterFromEl = document.getElementById('filterFrom');
+  if (filterFromEl && !filterFromEl.value) filterFromEl.value = todayStr;
   renderEventsList();
 }
 
@@ -3778,7 +3782,9 @@ function clearSelection() {
 }
 
 function resetFilters() {
-  document.getElementById('filterFrom').value = '';
+  // Сбрасываем фильтры, но "С" возвращаем к сегодняшнему дню (а не к пустоте)
+  const todayStr = new Date().toISOString().slice(0, 10);
+  document.getElementById('filterFrom').value = todayStr;
   document.getElementById('filterTo').value = '';
   document.getElementById('filterFormat').value = '';
   renderEventsList();
