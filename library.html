@@ -393,7 +393,7 @@ body {
 
 <script>
 const CONFIG = {
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyHrfjsxMyN2TGfAw-JH8MN0KW8QdUUy-bIQSlgjtEIciAw_FnbrL8ay5CrEcqrcQrF/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbz_gDx0iiSnddIRPrZjvzoOr9Ct7mio71WED1w29x4hwz_iq8HYaE84Pz-kC1dQBhWU/exec',
   PROJECT: 'details'
 };
 const POSTER_LIB_KEY = 'detali_poster_library';
@@ -818,12 +818,29 @@ function tgInsertDefaultCaption() {
   let cap = '<b>' + (item.eventName || 'Событие') + '</b>';
 
   // Пробуем найти полное событие в allEvents — там есть price/time/alfaGroupId/description
+  // Используем мягкую нормализацию имён: убираем пробелы, кавычки, регистр, дефисы
+  const normalize = s => String(s || '')
+    .toLowerCase()
+    .replace(/[«»"'`]/g, '')
+    .replace(/[–—-]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const wantName = normalize(item.eventName);
+
   let fullEv = null;
-  if (item.eventDate && item.eventName) {
+  if (item.eventDate && wantName) {
+    // Сначала ищем точное совпадение даты и нормализованного имени
     fullEv = (tgState.allEvents || []).find(e =>
-      e.date === item.eventDate &&
-      (e.name || '').toLowerCase() === (item.eventName || '').toLowerCase()
+      e.date === item.eventDate && normalize(e.name) === wantName
     );
+    // Если не нашли — пробуем "имя содержит" (для случаев типа "МК Двойная тарелка" в библиотеке vs "Двойная тарелка" в событиях)
+    if (!fullEv) {
+      fullEv = (tgState.allEvents || []).find(e => {
+        if (e.date !== item.eventDate) return false;
+        const evName = normalize(e.name);
+        return evName.includes(wantName) || wantName.includes(evName);
+      });
+    }
   }
   if (!fullEv && item.eventDate) {
     const sameDate = (tgState.allEvents || []).filter(e => e.date === item.eventDate);
