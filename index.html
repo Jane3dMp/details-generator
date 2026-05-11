@@ -4481,6 +4481,8 @@ function _readEventFormToObject() {
       limit: parseInt(document.getElementById('evLimit').value, 10) || null,
       costPerPerson: parseFloat(document.getElementById('evCostPerPerson')?.value) || null,
       description: document.getElementById('evDescr').value.trim(),
+      alfaNote: document.getElementById('evAlfaNote')?.value.trim() || '',
+      teamComment: document.getElementById('evTeamComment')?.value.trim() || '',
       references: (state.editingRefs || []).map(r => ({
         url: r.url || '', thumb: r.thumb || '', domain: r.domain || '', note: r.note || ''
       })),
@@ -5877,48 +5879,6 @@ async function draftTgSend() {
     btn.disabled = false;
     btn.textContent = oldText;
   }
-}
-
-// Утилита: читает текущие значения формы события в объект.
-// Использует те же ID полей что и saveEvent.
-function _readEventFormToObject() {
-  // Если открытое событие есть в state.events — берём его как базу
-  let base = {};
-  if (state.editingEventId) {
-    const found = state.events.find(e => e.id === state.editingEventId);
-    if (found) base = Object.assign({}, found);
-  }
-
-  const fld = id => document.getElementById(id);
-  const val = id => fld(id) ? fld(id).value : '';
-
-  const ev = Object.assign({}, base, {
-    id: state.editingEventId || ('tmp_' + Date.now()),
-    date: val('evDate') || base.date || '',
-    timeStart: val('evTime') || base.timeStart || '',
-    duration: parseFloat(val('evDuration')) || base.duration || 2.5,
-    format: val('evFormat') || base.format || '',
-    name: (val('evName') || base.name || '').trim(),
-    teacher: val('evTeacher') || base.teacher || '',
-    price: parseFloat(val('evPrice')) || base.price || null,
-    limit: parseInt(val('evLimit')) || base.limit || null,
-    description: (val('evDescr') || base.description || '').trim(),
-    alfaNote: (val('evAlfaNote') || base.alfaNote || '').trim(),
-    teamComment: (val('evTeamComment') || base.teamComment || '').trim()
-  });
-
-  // Референсы — из state.editingRefs (текущие, с превью)
-  if (Array.isArray(state.editingRefs)) {
-    ev.references = state.editingRefs.map(r => ({
-      url: r.url || '',
-      note: r.note || '',
-      thumb: r.thumb || '',
-      domain: r.domain || ''
-    }));
-  } else if (Array.isArray(base.references)) {
-    ev.references = base.references;
-  }
-  return ev;
 }
 
 // =====================================================================
