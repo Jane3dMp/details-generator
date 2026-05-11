@@ -297,6 +297,32 @@ main {
   margin-bottom: 4px;
 }
 
+/* Значок «🎯 запуск таргета» в день рекламы */
+.day { position: relative; }
+.target-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  z-index: 2;
+  white-space: nowrap;
+  user-select: none;
+  transition: transform 0.15s;
+}
+.target-badge:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+.day.past .target-badge { opacity: 0.5; }
+.day.past .target-badge:hover { opacity: 1; }
+
 .event-pill {
   display: block;
   background: var(--hover);
@@ -1780,6 +1806,14 @@ main {
         <div class="refs-grid" id="refsGrid"></div>
       </div>
 
+      <div class="row" style="margin-top: 4px;">
+        <div>
+          <label>🎯 Дата запуска таргета <span style="color:var(--muted); font-weight: normal;">(когда команде начинать рекламу — клиенты не увидят)</span></label>
+          <input type="date" id="evTargetLaunchDate">
+        </div>
+        <div></div>
+      </div>
+
       <div class="row full">
         <div>
           <label>💬 Комментарий команде <span style="color:var(--muted); font-weight: normal;">(для маркетологов и SMM, клиенты не увидят)</span></label>
@@ -2446,9 +2480,20 @@ function renderCalendar() {
         </div>
       `;
     }).join('');
+    // Значок 🎯 — есть ли события у которых дата запуска таргета = этот день
+    const targetsToday = state.events.filter(e => e.targetLaunchDate === dStr && e.status !== 'archived');
+    let targetBadgeHtml = '';
+    if (targetsToday.length > 0) {
+      const tooltip = '🎯 Запуск таргета (' + targetsToday.length + '):\n' +
+        targetsToday.map(e => {
+          const eventDateLabel = e.date ? (' → ' + e.date) : '';
+          return '• ' + [e.format, e.name].filter(Boolean).join(' · ') + eventDateLabel;
+        }).join('\n');
+      targetBadgeHtml = `<span class="target-badge" title="${escapeAttr(tooltip)}" onclick="event.stopPropagation(); openEventEditor('${targetsToday[0].id}')">🎯${targetsToday.length > 1 ? '·' + targetsToday.length : ''}</span>`;
+    }
     html += `
       <div class="day ${inMonth ? '' : 'other-month'} ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''} ${isPast && inMonth ? 'past' : ''}" onclick="openEventEditor(null, '${dStr}')">
-        <span class="day-num">${d.getDate()}</span>
+        <span class="day-num">${d.getDate()}</span>${targetBadgeHtml}
         ${eventsHtml}
       </div>
     `;
@@ -2697,6 +2742,7 @@ function openEventEditor(eventId, defaultDate) {
     ? ev.references.map(r => ({ url: r.url || '', note: r.note || '', thumb: r.thumb || '', domain: r.domain || '' }))
     : [];
   document.getElementById('evTeamComment').value = (ev && ev.teamComment) ? ev.teamComment : '';
+  document.getElementById('evTargetLaunchDate').value = (ev && ev.targetLaunchDate) ? ev.targetLaunchDate : '';
   document.getElementById('refUrlInput').value = '';
   document.getElementById('refNoteInput').value = '';
   renderReferences();
@@ -2835,7 +2881,8 @@ function saveEvent() {
       thumb: String(r.thumb || ''),
       domain: String(r.domain || '')
     })).filter(r => r.url),
-    teamComment: document.getElementById('evTeamComment').value.trim()
+    teamComment: document.getElementById('evTeamComment').value.trim(),
+    targetLaunchDate: document.getElementById('evTargetLaunchDate').value || ''
   };
   if (!newData.date)   { toast('Укажите дату', 'err'); return; }
   if (!newData.format) { toast('Выберите формат', 'err'); return; }
@@ -4483,6 +4530,7 @@ function _readEventFormToObject() {
       description: document.getElementById('evDescr').value.trim(),
       alfaNote: document.getElementById('evAlfaNote')?.value.trim() || '',
       teamComment: document.getElementById('evTeamComment')?.value.trim() || '',
+      targetLaunchDate: document.getElementById('evTargetLaunchDate')?.value || '',
       references: (state.editingRefs || []).map(r => ({
         url: r.url || '', thumb: r.thumb || '', domain: r.domain || '', note: r.note || ''
       })),

@@ -100,8 +100,35 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
   border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
   min-width: 0;     /* чтобы grid-ячейки не раздувались от длинного контента */
   overflow: hidden;
+  position: relative;
 }
 .day:nth-child(7n) { border-right: none; }
+
+/* Значок «🎯 запуск таргета» в день рекламы */
+.target-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  z-index: 2;
+  white-space: nowrap;
+  user-select: none;
+  transition: transform 0.15s;
+}
+.target-badge:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+.day.past .target-badge { opacity: 0.55; }
+.day.past .target-badge:hover { opacity: 1; }
+
 .day.other-month { background: #fafafa; opacity: .35; }
 .day.past { background: #faf8f5; }
 .day.past .day-num { color: #b8a994; }
@@ -874,9 +901,16 @@ function renderWeek() {
         </div>
       `;
     }).join('');
+    const targetsToday = state.events.filter(e => e.targetLaunchDate === dStr && e.status !== 'archived');
+    let targetBadgeHtml = '';
+    if (targetsToday.length > 0) {
+      const tooltip = '🎯 Запуск таргета (' + targetsToday.length + '):\n' +
+        targetsToday.map(e => '• ' + [e.format, e.name].filter(Boolean).join(' · ') + (e.date ? ' → ' + e.date : '')).join('\n');
+      targetBadgeHtml = `<span class="target-badge" title="${escapeHtml(tooltip)}" onclick="event.stopPropagation(); openEvent('${targetsToday[0].id}')">🎯${targetsToday.length > 1 ? '·' + targetsToday.length : ''}</span>`;
+    }
     html += `
       <div class="day ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''} ${isPast ? 'past' : ''}">
-        <span class="day-num">${d.getDate()}</span>
+        <span class="day-num">${d.getDate()}</span>${targetBadgeHtml}
         ${eventsHtml}
       </div>
     `;
@@ -920,9 +954,16 @@ function renderMonth() {
         </div>
       `;
     }).join('');
+    const targetsToday = state.events.filter(e => e.targetLaunchDate === dStr && e.status !== 'archived');
+    let targetBadgeHtml = '';
+    if (targetsToday.length > 0) {
+      const tooltip = '🎯 Запуск таргета (' + targetsToday.length + '):\n' +
+        targetsToday.map(e => '• ' + [e.format, e.name].filter(Boolean).join(' · ') + (e.date ? ' → ' + e.date : '')).join('\n');
+      targetBadgeHtml = `<span class="target-badge" title="${escapeHtml(tooltip)}" onclick="event.stopPropagation(); openEvent('${targetsToday[0].id}')">🎯${targetsToday.length > 1 ? '·' + targetsToday.length : ''}</span>`;
+    }
     html += `
       <div class="day ${inMonth ? '' : 'other-month'} ${isWe ? 'weekend' : ''} ${isToday ? 'today' : ''} ${isPast && inMonth ? 'past' : ''}">
-        <span class="day-num">${d.getDate()}</span>
+        <span class="day-num">${d.getDate()}</span>${targetBadgeHtml}
         ${eventsHtml}
       </div>
     `;
@@ -1080,6 +1121,15 @@ function openEvent(id) {
     }
   }
   if (ev.alfaGroupId) details.push(`<div class="detail-row"><div class="lbl">ID в Альфе</div><div class="val">${ev.alfaGroupId}</div></div>`);
+  if (ev.targetLaunchDate) {
+    const td = new Date(ev.targetLaunchDate);
+    const tdLabel = !isNaN(td) ? `${td.getDate()} ${MONTH_NAMES[td.getMonth()]}` : ev.targetLaunchDate;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    let mark = '';
+    if (ev.targetLaunchDate < todayStr) mark = ' <span style="color: var(--muted); font-size: 11px;">прошёл</span>';
+    else if (ev.targetLaunchDate === todayStr) mark = ' <span style="color: #ee5a52; font-weight: 600;">🔥 сегодня!</span>';
+    details.push(`<div class="detail-row"><div class="lbl">🎯 Запуск таргета</div><div class="val">${tdLabel}${mark}</div></div>`);
+  }
   document.getElementById('mDetails').innerHTML = details.join('');
 
   const descrEl = document.getElementById('mDescr');
