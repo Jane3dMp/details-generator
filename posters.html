@@ -7018,10 +7018,10 @@ async function emAddToLibrary() {
       await new Promise(r => setTimeout(r, 200));
 
       const canvas = await html2canvas(node, {
-        scale: 1.5, useCORS: true, allowTaint: true,
+        scale: 3, useCORS: true, allowTaint: true,
         backgroundColor: null, logging: false
       });
-      thumbnailUrl = canvas.toDataURL('image/jpeg', 0.85);
+      thumbnailUrl = canvas.toDataURL('image/jpeg', 0.92);
 
       zone.innerHTML = '';
 
@@ -7048,10 +7048,10 @@ async function emAddToLibrary() {
           await waitForImages(tgNode);
           await new Promise(r => setTimeout(r, 200));
           const tgCanvas = await html2canvas(tgNode, {
-            scale: 1.5, useCORS: true, allowTaint: true,
+            scale: 3, useCORS: true, allowTaint: true,
             backgroundColor: null, logging: false
           });
-          thumbnailTelegramUrl = tgCanvas.toDataURL('image/jpeg', 0.85);
+          thumbnailTelegramUrl = tgCanvas.toDataURL('image/jpeg', 0.92);
         }
       } catch(e2) {
         console.warn('telegram thumbnail render failed', e2);
