@@ -5769,7 +5769,7 @@ async function openEventDraftToTelegram() {
   document.getElementById('draftTgPreview').textContent = '⏳ Загружаю превью...';
   document.getElementById('draftTgRefsSection').style.display = 'none';
   document.getElementById('draftTgNoRefs').style.display = 'none';
-  openModal('draftTgModal');
+  document.getElementById('draftTgModal').classList.add('show');
 
   try {
     const res = await apiPost('previewEventDraft', { eventId: draftTgState.eventId, event: ev });
