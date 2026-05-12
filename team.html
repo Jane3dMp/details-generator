@@ -544,6 +544,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
     <h1>Пространство <em>Детали</em></h1>
     <span class="badge">только просмотр</span>
     <div class="spacer"></div>
+    <button class="ghost" onclick="openContentPlan()" title="Открыть контент-план Деталей в Google Sheets на текущий просматриваемый месяц" style="background: #fdf3e9; border: 1px solid var(--accent); color: var(--accent); padding: 6px 12px; border-radius: 6px; font-size: 13px; margin-right: 8px; cursor: pointer;">📝 КП</button>
     <div class="view-mode">
       <button id="modeMonthBtn" class="mode-btn active" onclick="setViewMode('month')">Месяц</button>
       <button id="modeWeekBtn" class="mode-btn" onclick="setViewMode('week')">Неделя</button>
@@ -607,6 +608,26 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
     <div class="modal-foot">
       <button class="btn" onclick="closeModal()">Закрыть</button>
       <button class="btn copy" onclick="copyDescription()">📋 Скопировать описание</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== МОДАЛКА: КОНТЕНТ-ПЛАН (Google Sheets КП Детали) ====== -->
+<div class="modal-bg" id="contentPlanModal">
+  <div class="modal" style="max-width: 95vw; width: 95vw; max-height: 95vh; height: 95vh; padding: 0; display: flex; flex-direction: column;">
+    <div class="modal-head" style="flex-shrink: 0;">
+      <h2 id="contentPlanTitle">📝 Контент-план</h2>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <a id="contentPlanOpenNewTab" href="#" target="_blank" rel="noopener" class="ghost" style="text-decoration: none; padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px;">↗ Открыть в новой вкладке</a>
+        <button class="ghost" onclick="closeModal('contentPlanModal')">✕</button>
+      </div>
+    </div>
+    <div style="flex: 1; min-height: 0; overflow: hidden;">
+      <iframe id="contentPlanFrame" src="about:blank" style="width: 100%; height: 100%; border: none;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
+    </div>
+    <div id="contentPlanFallback" style="display: none; padding: 24px; text-align: center;">
+      <p style="margin: 0 0 12px; color: var(--muted);">Документ не отобразился во встроенном виде (вероятно, Google Sheets блокирует iframe). Откройте его в новой вкладке.</p>
+      <a id="contentPlanFallbackLink" href="#" target="_blank" rel="noopener" class="primary" style="display: inline-block; padding: 10px 20px; text-decoration: none; border-radius: 6px; background: var(--accent); color: white;">↗ Открыть документ</a>
     </div>
   </div>
 </div>
@@ -1086,6 +1107,63 @@ function nextPeriod() {
 function prevMonth() { prevPeriod(); }
 function nextMonth() { nextPeriod(); }
 
+// =====================================================================
+// КОНТЕНТ-ПЛАН (Google Sheets «КП Детали»)
+// =====================================================================
+// По мере появления новых месяцев — добавляйте строки в CONTENT_PLAN_GIDS.
+// Ключ — 'YYYY-MM', значение — gid листа (число из URL после #gid=).
+// Узнать gid: открыть документ → выбрать лист → URL содержит #gid=NUMBER.
+const CONTENT_PLAN_DOC_ID = '18A-eHuUIWs5ymTELK7d72icMarB87b8xx3rj579NJAg';
+const CONTENT_PLAN_GIDS = {
+  '2026-05': '0',     // лист «май 26»
+  // '2026-06': 'XXX', // лист «июнь 26» — добавь после создания
+  // '2026-07': 'XXX',
+};
+
+function openContentPlan() {
+  const m = state.curMonth.getMonth();
+  const y = state.curMonth.getFullYear();
+  const monthKey = y + '-' + String(m + 1).padStart(2, '0');
+  const monthName = MONTH_NAMES[m] + ' ' + y;
+
+  const hasGid = CONTENT_PLAN_GIDS[monthKey] !== undefined;
+  const gid = CONTENT_PLAN_GIDS[monthKey];
+  const base = 'https://docs.google.com/spreadsheets/d/' + CONTENT_PLAN_DOC_ID;
+  const frameUrl   = hasGid ? (base + '/edit?rm=embedded&single=true&gid=' + encodeURIComponent(gid)) : (base + '/edit?rm=embedded&single=true');
+  const newTabUrl  = hasGid ? (base + '/edit#gid=' + encodeURIComponent(gid)) : (base + '/edit');
+
+  const titleEl = document.getElementById('contentPlanTitle');
+  if (titleEl) {
+    titleEl.textContent = hasGid
+      ? '📝 Контент-план · ' + monthName
+      : '📝 Контент-план (лист на «' + monthName + '» не указан — открыт весь документ)';
+  }
+
+  const frame = document.getElementById('contentPlanFrame');
+  const openLink = document.getElementById('contentPlanOpenNewTab');
+  const fallback = document.getElementById('contentPlanFallback');
+  const fallbackLink = document.getElementById('contentPlanFallbackLink');
+
+  if (openLink)     openLink.href = newTabUrl;
+  if (fallbackLink) fallbackLink.href = newTabUrl;
+  if (fallback)     fallback.style.display = 'none';
+
+  let loaded = false;
+  if (frame) {
+    frame.style.display = '';
+    frame.onload = () => { loaded = true; };
+    frame.src = frameUrl;
+    setTimeout(() => {
+      if (!loaded && frame && fallback) {
+        frame.style.display = 'none';
+        fallback.style.display = 'block';
+      }
+    }, 4000);
+  }
+
+  document.getElementById('contentPlanModal').classList.add('show');
+}
+
 function openEvent(id) {
   const ev = state.events.find(e => e.id === id);
   if (!ev) return;
@@ -1187,8 +1265,12 @@ function openEvent(id) {
   document.getElementById('evModal').classList.add('show');
 }
 
-function closeModal() {
-  document.getElementById('evModal').classList.remove('show');
+function closeModal(id) {
+  if (id) {
+    document.getElementById(id).classList.remove('show');
+  } else {
+    document.getElementById('evModal').classList.remove('show');
+  }
 }
 
 function copyDescription() {
