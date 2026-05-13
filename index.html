@@ -4284,19 +4284,9 @@ async function alfaDelete() {
 
 async function publishEventsToAlfa(mode) {
   if (state.events.length === 0) {
-    renderCalendar();
-  // Если API не смог архивировать — открываем Альфу для ручной архивации
-  if (r.needsManual && r.alfaUrl) {
-    window.open(r.alfaUrl, '_blank', 'noopener');
-    toast('Архивировано у нас. В Альфе — заверши вручную (вкладка открыта). API Альфы не умеет архивировать группы.', 'warn');
-  } else {
-    toast('Группа удалена в Альфе · view.html и team.html обновлены', 'ok');
-  }
-  closeModal('eventModal');
-}
+    toast('Нет событий для отправки', 'err');
     return;
   }
-
   // Считаем что и в каком статусе
   const drafts   = state.events.filter(e => (e.status || 'draft') === 'draft');
   const modified = state.events.filter(e => e.status === 'modified');
