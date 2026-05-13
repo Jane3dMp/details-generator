@@ -1549,9 +1549,10 @@ main {
       <button class="ghost" onclick="testAlfaConnection()" title="Проверить связь с Альфа CRM">🔍</button>
     </div>
     <div class="sep"></div>
-    <div class="group">
+     <div class="group">
       <button onclick="window.open('view.html', '_blank')" title="Открыть страницу для клиентов в новой вкладке">🌐 Как клиент</button>
       <button onclick="window.open('team.html', '_blank')" title="Открыть страницу для промо/SMM в новой вкладке">📣 Как промо</button>
+      <button onclick="refreshPublicSnapshot()" title="Перезаписать данные view.html и team.html текущим состоянием (если там что-то застряло)">🔄 Обновить публикации</button>
     </div>
     <div class="sep"></div>
     <div class="group">
@@ -2369,6 +2370,31 @@ function logout() {
   location.reload();
 }
 
+// Принудительно перезаписать snapshot_main текущим состоянием.
+// Используется когда в view.html / team.html застряли удалённые события.
+async function refreshPublicSnapshot() {
+  if (!confirm(
+    '🔄 Обновить публикации?\n\n' +
+    'Перезапишет snapshot_main текущим состоянием конструктора.\n' +
+    'view.html и team.html сразу подхватят актуальные данные.\n\n' +
+    'Это безопасно — данные конструктора не меняются.'
+  )) return;
+ 
+  toast('Обновляю публикации…', 'ok');
+  try {
+    const r = await apiPost('pushSnapshot', {
+      stateJson: JSON.stringify(currentState())
+    });
+    if (!r.ok) {
+      toast('Ошибка: ' + (r.error || ''), 'err');
+      return;
+    }
+    toast('✓ Готово · view: ' + (r.visibleClients || 0) + ' событий, team: ' + (r.visibleTeam || 0) + ' событий', 'ok');
+  } catch(e) {
+    toast('Ошибка: ' + (e.message || e), 'err');
+  }
+}
+  
 (function autoLogin() {
   const pwd = localStorage.getItem('detali_pwd');
   const name = localStorage.getItem('detali_name');
