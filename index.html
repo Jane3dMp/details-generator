@@ -2372,24 +2372,35 @@ function logout() {
 
 // Принудительно перезаписать snapshot_main текущим состоянием.
 // Используется когда в view.html / team.html застряли удалённые события.
+// Принудительно очистить snapshot и пересоздать заново.
+// Используется когда в view.html / team.html застряли призраки.
 async function refreshPublicSnapshot() {
   if (!confirm(
     '🔄 Обновить публикации?\n\n' +
-    'Перезапишет snapshot_main текущим состоянием конструктора.\n' +
-    'view.html и team.html сразу подхватят актуальные данные.\n\n' +
+    '1. Удалит текущий snapshot полностью\n' +
+    '2. Пересоздаст из текущего конструктора\n\n' +
+    'view.html и team.html сразу покажут актуальную картину.\n' +
     'Это безопасно — данные конструктора не меняются.'
   )) return;
  
-  toast('Обновляю публикации…', 'ok');
+  toast('Очищаю старый snapshot…', 'ok');
   try {
-    const r = await apiPost('pushSnapshot', {
-      stateJson: JSON.stringify(currentState())
-    });
-    if (!r.ok) {
-      toast('Ошибка: ' + (r.error || ''), 'err');
+    // 1. Чистим snapshot
+    const clear = await apiPost('clearSnapshot', {});
+    if (!clear.ok) {
+      toast('Ошибка очистки: ' + (clear.error || ''), 'err');
       return;
     }
-    toast('✓ Готово · view: ' + (r.visibleClients || 0) + ' событий, team: ' + (r.visibleTeam || 0) + ' событий', 'ok');
+    // 2. Пересоздаём из текущего state
+    toast('Пересоздаю snapshot…', 'ok');
+    const push = await apiPost('pushSnapshot', {
+      stateJson: JSON.stringify(currentState())
+    });
+    if (!push.ok) {
+      toast('Snapshot очищен, но пересоздать не удалось: ' + (push.error || ''), 'err');
+      return;
+    }
+    toast('✓ Готово · view: ' + (push.visibleClients || 0) + ', team: ' + (push.visibleTeam || 0) + ' событий', 'ok');
   } catch(e) {
     toast('Ошибка: ' + (e.message || e), 'err');
   }
