@@ -3057,22 +3057,48 @@ function saveEvent(keepOpen) {
   return true;
 }
 
-function deleteCurrentEvent() {
+async function deleteCurrentEvent() {
   if (!state.editingEventId) return;
   const ev = state.events.find(e => e.id === state.editingEventId);
   if (!ev) return;
   if (ev.status === 'published' && ev.alfaGroupId) {
     if (!confirm(
       'Это событие УЖЕ опубликовано в Альфе (id=' + ev.alfaGroupId + ').\n\n' +
-      'Удалить из конструктора и архивировать в Альфе?\n' +
-      '(если на группу записаны клиенты — их данные не пропадут, но группа станет неактивной)'
+      'Сделать сразу:\n' +
+      '  • архивировать группу в Альфе (новых записей не будет)\n' +
+      '  • скрыть с view.html (клиенты)\n' +
+      '  • скрыть с team.html (промо)\n\n' +
+      '(если на группу записаны клиенты — их данные не пропадут)'
     )) return;
-    // Помечаем archived — реальная архивация произойдёт при «Применить в Альфу»
+
+    toast('Архивирую в Альфе…', 'ok');
+
+    // 1. Архивируем в Альфе
+    const r = await apiPost('archiveInAlfa', { groupId: ev.alfaGroupId });
+    if (!r.ok) {
+      toast('Альфа отказалась: ' + (r.error || ''), 'err');
+      return;
+    }
+
+    // 2. Локально ставим archived
     ev.status = 'archived';
+    ev.publishedToAlfa = false;
+    ev.publishToAlfa = false;
+
+    // 3. Сохраняем working_main
+    await autosaveDraft();
+
+    // 4. Обновляем snapshot_main → view.html и team.html сразу обновятся
+    try {
+      const ps = await apiPost('pushSnapshot', {
+        stateJson: JSON.stringify(currentState())
+      });
+      if (!ps.ok) console.warn('pushSnapshot не прошёл:', ps.error);
+    } catch(e) { console.warn(e); }
+
     closeModal('eventModal');
     renderCalendar();
-    toast('Событие помечено к архивации · нажмите «Применить в Альфу»', 'ok');
-    autosaveDraft();
+    toast('Готово · группа удалена в Альфе, view и team обновлены', 'ok');
     return;
   }
   // Чистый черновик — просто удаляем
@@ -4234,9 +4260,25 @@ async function alfaDelete() {
   ev.publishedToAlfa = false;
   ev.publishToAlfa = false;
   // alfaGroupId оставляем для истории — видно что было привязано
-  renderCalendar();
+
+  // Сохраняем в working_main
   await autosaveDraft();
-  toast('Группа удалена в Альфе', 'ok');
+
+  // ВАЖНО: обновляем snapshot_main чтобы view.html И team.html сразу подхватили
+  // (раньше team.html продолжал показывать архивированное событие)
+  try {
+    const ps = await apiPost('pushSnapshot', {
+      stateJson: JSON.stringify(currentState())
+    });
+    if (!ps.ok) {
+      console.warn('pushSnapshot после archive не прошёл:', ps.error);
+    }
+  } catch(e) {
+    console.warn('pushSnapshot ошибка:', e);
+  }
+
+  renderCalendar();
+  toast('Группа удалена в Альфе · view.html и team.html обновлены', 'ok');
   closeModal('eventModal');
 }
 
