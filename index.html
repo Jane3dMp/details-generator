@@ -2974,7 +2974,7 @@ function updateCostTotal() {
   block.innerHTML = '<b>' + fmt(total) + '</b><br><span style="color:var(--muted); font-size:11px;">' + parts.join(' ') + '</span>';
 }
 
-function saveEvent() {
+function saveEvent(keepOpen) {
   const newData = {
     id: state.editingEventId || ('e_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)),
     date: document.getElementById('evDate').value,
@@ -3004,9 +3004,9 @@ function saveEvent() {
     teamComment: document.getElementById('evTeamComment').value.trim(),
     targetLaunchDate: document.getElementById('evTargetLaunchDate').value || ''
   };
-  if (!newData.date)   { toast('Укажите дату', 'err'); return; }
-  if (!newData.format) { toast('Выберите формат', 'err'); return; }
-  if (!newData.name)   { toast('Укажите название', 'err'); return; }
+  if (!newData.date)   { toast('Укажите дату', 'err'); return false; }
+  if (!newData.format) { toast('Выберите формат', 'err'); return false; }
+  if (!newData.name)   { toast('Укажите название', 'err'); return false; }
 
   const idx = state.events.findIndex(e => e.id === newData.id);
   if (idx < 0) {
@@ -3018,6 +3018,8 @@ function saveEvent() {
       alfaLessonId: null,
       formUrl: ''
     });
+    // Запоминаем что теперь это сохранённое событие (важно если keepOpen)
+    state.editingEventId = newData.id;
     toast('Событие добавлено как черновик', 'ok');
   } else {
     // Редактирование — определяем, изменилось ли что-то существенное
@@ -3047,9 +3049,12 @@ function saveEvent() {
     }
   }
 
-  closeModal('eventModal');
+  if (!keepOpen) {
+    closeModal('eventModal');
+  }
   renderCalendar();
   autosaveDraft();
+  return true;
 }
 
 function deleteCurrentEvent() {
@@ -3654,9 +3659,10 @@ async function publishOneToAlfa() {
   )) return;
 
   // Сначала сохраняем форму как обычно (вдруг есть несохранённые правки)
-  saveEvent();
-  // saveEvent закрывает модалку → ev мог обновиться, ищем заново
-  const fresh = state.events.find(e => e.id === eventId);
+  // keepOpen=true — модалка должна остаться открытой
+  if (saveEvent(true) === false) return;
+  // saveEvent установит state.editingEventId если событие было новое
+  const fresh = state.events.find(e => e.id === state.editingEventId);
   if (!fresh) { toast('Событие пропало после сохранения', 'err'); return; }
 
   // Снимаем publishToAlfa у всех ОСТАЛЬНЫХ draft на время отправки,
@@ -3730,7 +3736,13 @@ async function publishOneToAlfa() {
   renderCalendar();
   await autosaveDraft();
 
-  closeModal('eventModal');
+  // НЕ закрываем модалку — пользователь может ещё нажать «Клиентам»/«Промо».
+  // Но перерисовываем блок статуса, чтобы кнопка «🚀 В Альфу» исчезла (событие уже опубликовано).
+  const justPublished = state.events.find(e => e.id === eventId);
+  if (justPublished && typeof openEventEditor === 'function') {
+    // Передёргиваем редактор тем же ID — он перерисует блоки «Статус» и кнопки
+    openEventEditor(eventId);
+  }
   toast(resultMsg || 'Готово', 'ok');
 
   // Напоминание про галочку «Разрешить публичную запись лидов» в карточке группы Альфы.
@@ -3788,10 +3800,10 @@ async function _publishOneToChannel(channel) {
   const checkboxId = channel === 'clients' ? 'evPublishToClients' : 'evPublishToTeam';
   const channelLabel = channel === 'clients' ? 'клиентам (view.html)' : 'промо/SMM (team.html)';
 
-  // Проставляем чекбокс и сохраняем
+  // Проставляем чекбокс и сохраняем БЕЗ закрытия модалки
   document.getElementById(checkboxId).checked = true;
-  saveEvent();
-  // saveEvent закрывает модалку; ev мог обновиться — берём свежий
+  if (saveEvent(true) === false) return;
+  // ev мог обновиться — берём свежий
   const fresh = state.events.find(e => e.id === eventId);
   if (!fresh) { toast('Событие пропало', 'err'); return; }
   fresh[flagName] = true;
