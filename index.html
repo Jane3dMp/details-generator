@@ -1544,7 +1544,6 @@ main {
     </div>
     <div class="sep"></div>
     <div class="group">
-      <button onclick="publishEventsToAlfa('sync')" title="Применить в Альфе все изменения" id="syncBtn" style="display:none">🔄 Применить изменения <span id="syncCount" class="badge"></span></button>
       <button onclick="pullFromAlfa()" title="Сравнить локальные данные с Альфой и подсветить расхождения" id="pullBtn">⬇ Подтянуть из Альфы <span id="pullDiffCount" class="badge" style="display:none">0</span></button>
       <button onclick="rebuildFromAlfa()" title="Полностью переписать админку из Альфы (Альфа = мастер)" style="border-color: var(--red); color: var(--red);">🔁 Перезагрузить из Альфы</button>
       <button class="ghost" onclick="testAlfaConnection()" title="Проверить связь с Альфа CRM">🔍</button>
@@ -2895,7 +2894,7 @@ function openEventEditor(eventId, defaultDate) {
     _setPublishBlockMode('published', true);
   } else if (ev.status === 'modified') {
     stBlock.innerHTML = `<span style="color:var(--yellow)">⏳ Есть изменения, не отправленные в Альфу (id=${ev.alfaGroupId})</span><br>` +
-      `<span style="font-size:11px; color:var(--muted)">Нажмите «🔄 Применить изменения» в шапке, чтобы синхронизировать</span>`;
+      `<span style="font-size:11px; color:var(--muted)">Нажмите «🔄 Внести правки в Альфу» ниже, чтобы синхронизировать</span>`;
     createRow.style.display = 'block';
     linkRow.style.display = 'none';
     _setPublishBlockMode('published', true);
@@ -4394,15 +4393,18 @@ async function publishEventsToAlfa(mode) {
 }
 
 // Обновление видимости кнопки «Применить изменения»
+// (сама кнопка убрана из шапки — править события теперь только из карточки.
+//  функция оставлена как no-op чтобы существующие вызовы не падали)
 function updateSyncButton() {
+  const btn = document.getElementById('syncBtn');
+  if (!btn) return;
   const modified = state.events.filter(e => e.status === 'modified').length;
   const archived = state.events.filter(e => e.status === 'archived').length;
   const total = modified + archived;
-  const btn = document.getElementById('syncBtn');
   const cnt = document.getElementById('syncCount');
   if (total > 0) {
     btn.style.display = 'inline-flex';
-    cnt.textContent = total;
+    if (cnt) cnt.textContent = total;
   } else {
     btn.style.display = 'none';
   }
