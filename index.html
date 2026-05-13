@@ -4178,7 +4178,9 @@ async function alfaUnlink() {
   renderCalendar();
   await autosaveDraft();
   toast('Событие отвязано от Альфы', 'ok');
-  closeModal('eventModal');
+  // НЕ закрываем — пользователь может хотеть продолжить работу
+  // Перерисуем редактор: теперь это снова черновик (появится кнопка «🚀 В Альфу»)
+  openEventEditor(eventId);
 }
 
 async function alfaPushUpdates() {
@@ -4193,11 +4195,8 @@ async function alfaPushUpdates() {
     `Поля Альфы будут перезаписаны.`
   )) return;
 
-  // Сохраняем форму и временно ставим этому событию статус 'modified'
-  // (бэк отправляет в Альфу всё что modified). У других modified-событий
-  // сейчас тоже могут быть изменения — мы их не трогаем, они тоже улетят.
-  // Если нужна изоляция — раскомментируй блок backup ниже.
-  saveEvent();
+  // Сохраняем форму БЕЗ закрытия модалки и временно ставим статус 'modified'
+  if (saveEvent(true) === false) return;
   const fresh = state.events.find(e => e.id === eventId);
   if (!fresh) { toast('Событие пропало', 'err'); return; }
   if (fresh.status !== 'modified') fresh.status = 'modified';
@@ -4232,7 +4231,9 @@ async function alfaPushUpdates() {
   renderCalendar();
   await autosaveDraft();
   toast('Изменения отправлены в Альфу', 'ok');
-  closeModal('eventModal');
+  // НЕ закрываем модалку — пользователь может хотеть нажать ещё что-то
+  // Перерисовываем редактор: статус «modified» → «published»
+  openEventEditor(eventId);
 }
 
 async function alfaDelete() {
