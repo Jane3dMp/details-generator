@@ -274,11 +274,24 @@ main {
 .day.past { background: #faf8f5; }
 .day.past .day-num { color: #b8a994; }
 .day.past .event-pill {
-  opacity: 0.55;
-  filter: grayscale(0.3);
+  opacity: 0.45;
+  filter: grayscale(0.4);
+  position: relative;
+  padding-left: 20px;  /* место для галочки */
+}
+.day.past .event-pill::before {
+  content: '✓';
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6ba368;
+  font-weight: 700;
+  font-size: 12px;
+  opacity: 0.85;
 }
 .day.past .event-pill:hover {
-  opacity: 1;
+  opacity: 0.95;
   filter: none;
 }
 .day.weekend .day-num { color: var(--accent); }
