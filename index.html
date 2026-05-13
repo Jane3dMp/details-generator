@@ -4065,7 +4065,10 @@ function computeAlfaDiff(ev, a) {
   //   А) «Формат "Название" - 120 руб.» — когда создавали через конструктор
   //   Б) «Гавайская вечеринка - 120 руб.» — когда создавали вручную (без кавычек)
   // Применяем только в поле name события (формат не трогаем — слишком хрупко).
-  const ourAlfaName = (ev.format || '') + (ev.name ? ' "' + ev.name + '"' : '') + (ev.price ? ' - ' + ev.price + ' руб.' : '');
+  // ВАЖНО: если ev.name уже содержит обрамляющие кавычки ("Караоке"),
+  // обрежем их — иначе при склейке получим двойные кавычки и вечный «расхождение».
+  const cleanName = String(ev.name || '').trim().replace(/^["«„]|["»"]$/g, '');
+  const ourAlfaName = (ev.format || '') + (cleanName ? ' "' + cleanName + '"' : '') + (ev.price ? ' - ' + ev.price + ' руб.' : '');
   if (a.name && ourAlfaName.trim() !== String(a.name).trim()) {
     diff.name = {
       ours: ourAlfaName, alfa: a.name, label: 'Название (в Альфе)',
