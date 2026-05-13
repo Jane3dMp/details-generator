@@ -4068,7 +4068,13 @@ function computeAlfaDiff(ev, a) {
   // ВАЖНО: если ev.name уже содержит обрамляющие кавычки ("Караоке"),
   // обрежем их — иначе при склейке получим двойные кавычки и вечный «расхождение».
   const cleanName = String(ev.name || '').trim().replace(/^["«„]|["»"]$/g, '');
-  const ourAlfaName = (ev.format || '') + (cleanName ? ' "' + cleanName + '"' : '') + (ev.price ? ' - ' + ev.price + ' руб.' : '');
+  // Кавычки вокруг name нужны только когда есть format (они разделяют формат и название).
+  // Если format пустой — оставляем name как есть, без обёртки.
+  const ourAlfaName =
+    (ev.format
+      ? ev.format + (cleanName ? ' "' + cleanName + '"' : '')
+      : cleanName) +
+    (ev.price ? ' - ' + ev.price + ' руб.' : '');
   if (a.name && ourAlfaName.trim() !== String(a.name).trim()) {
     diff.name = {
       ours: ourAlfaName, alfa: a.name, label: 'Название (в Альфе)',
