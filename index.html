@@ -4148,11 +4148,25 @@ function computeAlfaDiff(ev, a) {
     .trim()
     .toLowerCase();
 
-  if (a.name && normForCompare(ourAlfaName) !== normForCompare(a.name)) {
-    // DEBUG: чтобы было видно почему diff появляется — пиши в консоль обе строки
+  const ourNorm = normForCompare(ourAlfaName);
+  const alfaNorm = normForCompare(a.name);
+  if (a.name && ourNorm !== alfaNorm) {
+    // DEBUG: посимвольное сравнение — найдём что именно отличается
     console.log('[diff name] ev=' + ev.id + ' format=' + JSON.stringify(ev.format) + ' name=' + JSON.stringify(ev.name));
-    console.log('  ours:  ' + JSON.stringify(ourAlfaName) + ' → norm: ' + JSON.stringify(normForCompare(ourAlfaName)));
-    console.log('  alfa:  ' + JSON.stringify(a.name)        + ' → norm: ' + JSON.stringify(normForCompare(a.name)));
+    console.log('  ours norm len=' + ourNorm.length + ': ' + JSON.stringify(ourNorm));
+    console.log('  alfa norm len=' + alfaNorm.length + ': ' + JSON.stringify(alfaNorm));
+    // Посимвольная разница
+    const maxLen = Math.max(ourNorm.length, alfaNorm.length);
+    for (let i = 0; i < maxLen; i++) {
+      const c1 = ourNorm[i] || '∅';
+      const c2 = alfaNorm[i] || '∅';
+      if (c1 !== c2) {
+        const code1 = ourNorm.charCodeAt(i);
+        const code2 = alfaNorm.charCodeAt(i);
+        console.log(`  ⚠ позиция ${i}: ours="${c1}" (U+${(code1||0).toString(16).toUpperCase().padStart(4,'0')}) vs alfa="${c2}" (U+${(code2||0).toString(16).toUpperCase().padStart(4,'0')})`);
+        if (i > 5) break; // первые несколько отличий хватит
+      }
+    }
     diff.name = {
       ours: ourAlfaName, alfa: a.name, label: 'Название (в Альфе)',
       applyValue: parseAlfaName(a.name)
