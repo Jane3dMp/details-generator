@@ -4269,7 +4269,7 @@ function openAlfaDiffsOverview() {
   if (items.length === 0) {
     body.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--muted);">Расхождений нет. Все события синхронизированы с Альфой ✓</div>';
     summary.textContent = '0 событий';
-    openModal('alfaDiffsModal');
+    document.getElementById('alfaDiffsModal').classList.add('show');
     return;
   }
 
@@ -4324,7 +4324,7 @@ function openAlfaDiffsOverview() {
 
   body.innerHTML = html;
   summary.textContent = `${items.length} событий с расхождениями`;
-  openModal('alfaDiffsModal');
+  document.getElementById('alfaDiffsModal').classList.add('show');
 }
 
 // Применить отмеченные поля из Альфы к одному событию (вызывается из обзорной модалки)
