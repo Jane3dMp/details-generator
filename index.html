@@ -4149,6 +4149,10 @@ function computeAlfaDiff(ev, a) {
     .toLowerCase();
 
   if (a.name && normForCompare(ourAlfaName) !== normForCompare(a.name)) {
+    // DEBUG: чтобы было видно почему diff появляется — пиши в консоль обе строки
+    console.log('[diff name] ev=' + ev.id + ' format=' + JSON.stringify(ev.format) + ' name=' + JSON.stringify(ev.name));
+    console.log('  ours:  ' + JSON.stringify(ourAlfaName) + ' → norm: ' + JSON.stringify(normForCompare(ourAlfaName)));
+    console.log('  alfa:  ' + JSON.stringify(a.name)        + ' → norm: ' + JSON.stringify(normForCompare(a.name)));
     diff.name = {
       ours: ourAlfaName, alfa: a.name, label: 'Название (в Альфе)',
       applyValue: parseAlfaName(a.name)
