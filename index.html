@@ -4061,6 +4061,10 @@ async function pullFromAlfa() {
     let msg = 'Готово. Событий с расхождениями: ' + diffCount + ' из ' + linked.length;
     if (gone > 0) msg += '. Пропавших в Альфе: ' + gone;
     toast(msg, 'ok');
+    // Если есть расхождения — сразу открываем общий обзор
+    if (diffCount > 0 || gone > 0) {
+      setTimeout(() => openAlfaDiffsOverview(), 400);
+    }
   } catch(e) {
     toast('Ошибка: ' + (e.message || e), 'err');
   } finally {
@@ -4244,6 +4248,195 @@ async function alfaApplyFromAlfa() {
   setTimeout(() => openEventEditor(ev.id), 50);
   renderCalendar();
   toast('Применено: ' + labels.join(', '), 'ok');
+}
+
+
+// ============================================================
+// МОДАЛКА: ОБЗОР ВСЕХ РАСХОЖДЕНИЙ С АЛЬФОЙ (после pullFromAlfa)
+// ============================================================
+function openAlfaDiffsOverview() {
+  const items = state.events.filter(ev =>
+    ev.alfaGroupId && ev.status !== 'archived' &&
+    ev._alfaDiff && Object.keys(ev._alfaDiff).length > 0
+  );
+  // Сортируем по дате
+  items.sort((a, b) => (a.date + (a.timeStart || '')).localeCompare(b.date + (b.timeStart || '')));
+
+  const body = document.getElementById('alfaDiffsModalBody');
+  const summary = document.getElementById('alfaDiffsModalSummary');
+  if (!body) return;
+
+  if (items.length === 0) {
+    body.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--muted);">Расхождений нет. Все события синхронизированы с Альфой ✓</div>';
+    summary.textContent = '0 событий';
+    openModal('alfaDiffsModal');
+    return;
+  }
+
+  const html = items.map((ev, idx) => {
+    const diff = ev._alfaDiff || {};
+    if (diff._missing) {
+      return `<div class="alfa-diff-card" data-event-id="${escapeAttr(ev.id)}" style="border:1px solid #e6c69a; background:#fff8e8; border-radius:10px; padding:14px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+          <div>
+            <div style="font-weight:600; font-size:14px;">${escapeHtml(ev.date)} · ${escapeHtml(ev.timeStart || '')} — ${escapeHtml(ev.name || ev.format || '?')}</div>
+            <div style="color:#c84a4a; font-size:12px; margin-top:4px;">⚠ Группа в Альфе не найдена (удалена/архивирована)</div>
+          </div>
+          <button onclick="openEventFromDiffOverview('${escapeAttr(ev.id)}')" style="background: transparent; color: var(--ink); border: 1px solid var(--line); padding: 4px 10px;">Открыть</button>
+        </div>
+      </div>`;
+    }
+
+    const rows = Object.keys(diff).map(k => {
+      const d = diff[k];
+      const ours = d.ours == null || d.ours === '' ? '<i style="opacity:.5">пусто</i>' : escapeHtml(String(d.ours));
+      let alfa = d.alfa == null || d.alfa === '' ? '<i style="opacity:.5">пусто</i>' : escapeHtml(String(d.alfa));
+      if (d.applyValue != null && String(d.applyValue) !== String(d.alfa)) {
+        alfa += `<br><span style="font-size:10px; color:#7a5408;">→ применится: <b>${escapeHtml(String(d.applyValue))}</b></span>`;
+      }
+      const checkbox = d.readOnly
+        ? '<span title="Нельзя автоматически" style="opacity:.4; font-size:14px;">🔒</span>'
+        : `<input type="checkbox" data-diff-key="${escapeAttr(k)}" data-event-id="${escapeAttr(ev.id)}" id="ovDiff_${escapeAttr(ev.id)}_${escapeAttr(k)}" checked>`;
+      return `<div style="display:grid; grid-template-columns: 24px 110px 1fr 1fr; gap:6px; padding:5px 0; border-bottom:1px dashed #e6c69a; align-items:center;">
+        <div style="text-align:center;">${checkbox}</div>
+        <label for="ovDiff_${escapeAttr(ev.id)}_${escapeAttr(k)}" style="font-weight:500; cursor:${d.readOnly ? 'default' : 'pointer'};">${escapeHtml(d.label)}</label>
+        <div><span style="color:#888; font-size:10px;">у нас:</span><br>${ours}</div>
+        <div><span style="color:#a85a13; font-size:10px;">в Альфе:</span><br>${alfa}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="alfa-diff-card" data-event-id="${escapeAttr(ev.id)}" style="border:1px solid #e6c69a; background:#fff8e8; border-radius:10px; padding:14px; margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; gap:10px;">
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; font-size:14px;">${escapeHtml(ev.date)} · ${escapeHtml(ev.timeStart || '')}</div>
+          <div style="font-size:13px; color:var(--ink); margin-top:2px;">${escapeHtml(ev.format || '')}${ev.format && ev.name ? ' · ' : ''}${escapeHtml(ev.name || '')}</div>
+        </div>
+        <button onclick="openEventFromDiffOverview('${escapeAttr(ev.id)}')" title="Открыть событие в обычной модалке" style="background: transparent; color: var(--ink); border: 1px solid var(--line); padding: 4px 10px; font-size: 12px; white-space: nowrap;">Открыть</button>
+      </div>
+      ${rows}
+      <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <button onclick="applyAlfaDiffForEvent('${escapeAttr(ev.id)}')" style="background: var(--accent); color: white;">↓ Применить из Альфы (отмеченные)</button>
+        <button onclick="applyAlfaPushForEvent('${escapeAttr(ev.id)}')" style="background: transparent; color: var(--ink); border: 1px solid var(--line);">↑ Перезаписать в Альфе</button>
+        <button onclick="skipAlfaDiffForEvent('${escapeAttr(ev.id)}')" style="background: transparent; color: var(--muted); border: 1px solid var(--line);">Оставить как есть</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  body.innerHTML = html;
+  summary.textContent = `${items.length} событий с расхождениями`;
+  openModal('alfaDiffsModal');
+}
+
+// Применить отмеченные поля из Альфы к одному событию (вызывается из обзорной модалки)
+async function applyAlfaDiffForEvent(eventId) {
+  const ev = state.events.find(e => e.id === eventId);
+  if (!ev) return;
+  const snap = ev._alfaSnapshot;
+  if (!snap || !snap.found) { toast('Нет свежего снимка из Альфы', 'err'); return; }
+
+  // Собираем отмеченные чекбоксы ИМЕННО для этого события
+  const checked = [];
+  document.querySelectorAll(`#alfaDiffsModalBody input[type="checkbox"][data-event-id="${eventId}"]:checked`).forEach(c => {
+    checked.push(c.getAttribute('data-diff-key'));
+  });
+  if (checked.length === 0) {
+    toast('Не выбрано ни одного поля', 'err');
+    return;
+  }
+  const labels = checked.map(k => (ev._alfaDiff[k] && ev._alfaDiff[k].label) || k);
+
+  // Применяем (та же логика что в alfaApplyFromAlfa)
+  checked.forEach(k => {
+    const d = ev._alfaDiff[k];
+    if (!d) return;
+    if (k === 'name' && d.applyValue) ev.name = d.applyValue;
+    else if (k === 'date' && d.applyValue) ev.date = d.applyValue;
+    else if (k === 'timeStart' && snap.time_from) ev.timeStart = snap.time_from;
+    else if (k === 'duration' && d.applyValue != null) ev.duration = d.applyValue;
+    else if (k === 'limit' && snap.limit != null) ev.limit = snap.limit;
+    else if (k === 'note' && snap.note != null) ev.alfaNote = snap.note;
+  });
+
+  // Удаляем эту карточку из модалки
+  ev._alfaDiff = {};
+  ev._alfaSnapshot = null;
+  await autosaveDraft();
+  renderCalendar();
+  removeDiffCardAndCheck(eventId);
+  toast(`«${ev.name || ev.format || '?'}»: применено (${labels.join(', ')})`, 'ok');
+}
+
+// Перезаписать в Альфе значениями из нашей админки (по одному событию)
+async function applyAlfaPushForEvent(eventId) {
+  const ev = state.events.find(e => e.id === eventId);
+  if (!ev || !ev.alfaGroupId) return;
+  if (!confirm(`Перезаписать в Альфе данные группы id=${ev.alfaGroupId}?\n\nОтправятся текущие значения из нашей админки (название, время, лимит, описание).`)) return;
+
+  ev.status = 'modified';
+  toast('Отправляю в Альфу…', 'ok');
+  try {
+    const r = await apiPost('syncEventsToAlfa', {
+      id: 'working_main',
+      name: 'Рабочий черновик',
+      stateJson: JSON.stringify({ ...currentState(), events: [ev] })
+    });
+    if (!r.ok) { toast('Ошибка: ' + (r.error || ''), 'err'); return; }
+    const upd = (r.alfa && r.alfa.updated) || 0;
+    const errs = (r.alfa && r.alfa.errors) || 0;
+    if (errs > 0) {
+      const errMsg = (r.alfa.results || []).map(x => x.error).filter(Boolean).join('; ');
+      toast(`Ошибки при обновлении: ${errMsg}`, 'err');
+      return;
+    }
+    ev.status = 'published';
+    ev._alfaDiff = {};
+    ev._alfaSnapshot = null;
+    await autosaveDraft();
+    renderCalendar();
+    removeDiffCardAndCheck(eventId);
+    toast(`«${ev.name || ev.format || '?'}»: перезаписано в Альфе`, 'ok');
+  } catch(e) {
+    toast('Ошибка: ' + (e.message || e), 'err');
+  }
+}
+
+// Оставить как есть — просто скрыть карточку и пометить событие что diff проигнорирован
+function skipAlfaDiffForEvent(eventId) {
+  const ev = state.events.find(e => e.id === eventId);
+  if (!ev) return;
+  // Локально диффа больше не показываем — при следующем pullFromAlfa он вернётся, если поля реально расходятся
+  ev._alfaDiff = {};
+  ev._alfaSnapshot = null;
+  renderCalendar();
+  removeDiffCardAndCheck(eventId);
+}
+
+// Удалить карточку из модалки + закрыть модалку если карточек не осталось
+function removeDiffCardAndCheck(eventId) {
+  const card = document.querySelector(`#alfaDiffsModalBody .alfa-diff-card[data-event-id="${eventId}"]`);
+  if (card) card.remove();
+  const remaining = document.querySelectorAll('#alfaDiffsModalBody .alfa-diff-card').length;
+  const summary = document.getElementById('alfaDiffsModalSummary');
+  if (summary) summary.textContent = remaining + ' событий с расхождениями';
+  // Обновляем бейдж на кнопке pullBtn
+  const badge = document.getElementById('pullDiffCount');
+  if (badge) {
+    if (remaining > 0) {
+      badge.textContent = String(remaining);
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  if (remaining === 0) {
+    setTimeout(() => closeModal('alfaDiffsModal'), 300);
+  }
+}
+
+// Открыть событие из обзорной модалки (закрывает обзор, открывает редактор)
+function openEventFromDiffOverview(eventId) {
+  closeModal('alfaDiffsModal');
+  setTimeout(() => openEventEditor(eventId), 100);
 }
 
 async function alfaUnlink() {
@@ -6495,5 +6688,23 @@ async function waPostAllToTelegram() {
     (log.length ? `<div style="margin-top:6px; font-family: monospace; font-size:11px; color:var(--muted); max-height:120px; overflow-y:auto;">${log.map(l => escapeHtml(l)).join('<br>')}</div>` : '');
 }
 </script>
+
+<!-- ====== МОДАЛКА: ОБЗОР РАСХОЖДЕНИЙ С АЛЬФОЙ ====== -->
+<div class="modal-bg" id="alfaDiffsModal">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2>⚠ Расхождения с Альфой</h2>
+      <button class="x" onclick="closeModal('alfaDiffsModal')">✕</button>
+    </div>
+    <div class="modal-body" id="alfaDiffsModalBody" style="max-height: 70vh; overflow-y: auto;">
+      <!-- наполняется через JS -->
+    </div>
+    <div class="modal-foot" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="color: var(--muted); font-size: 12px;" id="alfaDiffsModalSummary">—</div>
+      <button onclick="closeModal('alfaDiffsModal')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
