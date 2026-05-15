@@ -4130,7 +4130,17 @@ function computeAlfaDiff(ev, a) {
       ? ev.format + (cleanName ? ' "' + cleanName + '"' : '')
       : cleanName) +
     (ev.price ? ' - ' + ev.price + ' руб.' : '');
-  if (a.name && ourAlfaName.trim() !== String(a.name).trim()) {
+  // Жёсткая нормализация для сравнения: lowercase, NBSP/тонкие пробелы → обычный,
+  // схлопывание подряд идущих пробелов, обрезка краёв.
+  // Это убирает ложные расхождения из-за регистра ('День рождения' vs 'День Рождения'),
+  // неразрывных пробелов и двойных пробелов в строке Альфы.
+  const normForCompare = s => String(s || '')
+    .replace(/[\u00A0\u202F\u2009\u2007]/g, ' ')  // NBSP, narrow NBSP, thin sp, figure sp → пробел
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  if (a.name && normForCompare(ourAlfaName) !== normForCompare(a.name)) {
     diff.name = {
       ours: ourAlfaName, alfa: a.name, label: 'Название (в Альфе)',
       applyValue: parseAlfaName(a.name)
@@ -4138,7 +4148,7 @@ function computeAlfaDiff(ev, a) {
   }
   // note vs alfaNote / description
   const ourNote = String(ev.alfaNote || ev.description || '').slice(0, 255).trim();
-  if (String(a.note || '').trim() !== ourNote) {
+  if (normForCompare(a.note || '') !== normForCompare(ourNote)) {
     diff.note = { ours: ourNote, alfa: a.note || '', label: 'Описание (note)' };
   }
   // limit
@@ -4372,13 +4382,30 @@ async function applyAlfaDiffForEvent(eventId) {
     else if (k === 'note' && snap.note != null) ev.alfaNote = snap.note;
   });
 
-  // Удаляем эту карточку из модалки
-  ev._alfaDiff = {};
-  ev._alfaSnapshot = null;
-  await autosaveDraft();
-  renderCalendar();
-  removeDiffCardAndCheck(eventId);
-  toast(`«${ev.name || ev.format || '?'}»: применено (${labels.join(', ')})`, 'ok');
+  // КРИТИЧНО: ждём сохранения В БД ДО удаления карточки.
+  // Если autosaveDraft провалится — оставляем карточку, чтобы пользователь повторил.
+  try {
+    await autosaveDraft();
+  } catch(e) {
+    toast('Не удалось сохранить: ' + (e.message || e), 'err');
+    return;
+  }
+
+  // Пересчитываем diff с применёнными значениями (на остатке snap'а который был до сброса)
+  // Если после применения остались расхождения — оставляем карточку, иначе убираем
+  const remainingDiff = computeAlfaDiff(ev, snap);
+  ev._alfaDiff = remainingDiff;
+  if (Object.keys(remainingDiff).length === 0) {
+    ev._alfaSnapshot = null;
+    renderCalendar();
+    removeDiffCardAndCheck(eventId);
+    toast(`«${ev.name || ev.format || '?'}»: применено (${labels.join(', ')})`, 'ok');
+  } else {
+    // Часть полей осталась — перерисуем карточку этого события
+    renderCalendar();
+    openAlfaDiffsOverview();
+    toast(`«${ev.name || ev.format || '?'}»: применено (${labels.join(', ')}). Остались поля для разбора.`, 'ok');
+  }
 }
 
 // Перезаписать в Альфе значениями из нашей админки (по одному событию)
