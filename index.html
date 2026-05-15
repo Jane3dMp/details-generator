@@ -207,6 +207,14 @@ main {
   grid-template-columns: 1fr 320px;
   gap: 20px;
 }
+
+/* Скрытие правой панели (Финансы/Библиотека/Педагоги) */
+main.sidebar-hidden {
+  grid-template-columns: 1fr;
+}
+main.sidebar-hidden .sidebar {
+  display: none;
+}
 .calendar-wrap { min-width: 0; }
 .sidebar { min-width: 0; }
 
@@ -1580,10 +1588,11 @@ main {
           <button onclick="closeDropdowns(); importJson()">↑ Импорт JSON</button>
         </div>
       </div>
+      <button id="sidebarToggleBtn" onclick="toggleSidebar()" title="Показать/скрыть боковую панель с финансами, библиотекой и педагогами">📊 Аналитика</button>
     </div>
   </div>
 
-  <main>
+  <main class="sidebar-hidden" id="mainGrid">
     <div class="calendar-wrap">
       <div class="month-header">
         <h2 id="monthTitle">—</h2>
@@ -2740,6 +2749,40 @@ function initCollapsiblePanels() {
     }
   });
 }
+
+// === Переключение видимости боковой панели (Финансы/Библиотека/Педагоги) ===
+function toggleSidebar() {
+  const m = document.getElementById('mainGrid');
+  if (!m) return;
+  m.classList.toggle('sidebar-hidden');
+  const hidden = m.classList.contains('sidebar-hidden');
+  try { localStorage.setItem('sidebarHidden', hidden ? '1' : '0'); } catch(e) {}
+  // обновим текст кнопки
+  const btn = document.getElementById('sidebarToggleBtn');
+  if (btn) btn.textContent = hidden ? '📊 Аналитика' : '📊 Скрыть';
+}
+
+// Восстановление состояния при загрузке (по умолчанию — скрыта)
+(function initSidebarState() {
+  function applyState() {
+    const m = document.getElementById('mainGrid');
+    if (!m) return;
+    let hidden = '1'; // по умолчанию скрыта
+    try { 
+      const saved = localStorage.getItem('sidebarHidden');
+      if (saved !== null) hidden = saved;
+    } catch(e) {}
+    if (hidden === '1') m.classList.add('sidebar-hidden');
+    else m.classList.remove('sidebar-hidden');
+    const btn = document.getElementById('sidebarToggleBtn');
+    if (btn) btn.textContent = (hidden === '1') ? '📊 Аналитика' : '📊 Скрыть';
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyState);
+  } else {
+    applyState();
+  }
+})();
 
 function switchTab(t) {
   document.querySelectorAll('.sidebar-tabs button').forEach(b => b.classList.remove('active'));
