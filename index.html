@@ -4010,7 +4010,15 @@ async function rebuildFromAlfa() {
 }
 
 async function pullFromAlfa() {
-  const linked = state.events.filter(e => e.alfaGroupId && e.status !== 'archived');
+  // Сегодня в локальной таймзоне в формате YYYY-MM-DD
+  const todayStr = (() => {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  })();
+  // Тянем только связанные с Альфой и НЕ прошедшие (сегодня включительно)
+  const linked = state.events.filter(e =>
+    e.alfaGroupId && e.status !== 'archived' && e.date && e.date >= todayStr
+  );
   if (linked.length === 0) {
     toast('Нет событий, связанных с Альфой', 'err');
     return;
@@ -4255,8 +4263,15 @@ async function alfaApplyFromAlfa() {
 // МОДАЛКА: ОБЗОР ВСЕХ РАСХОЖДЕНИЙ С АЛЬФОЙ (после pullFromAlfa)
 // ============================================================
 function openAlfaDiffsOverview() {
+  // Сегодня в локальной таймзоне
+  const todayStr = (() => {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  })();
+  // Только будущие (от сегодня) события с расхождениями
   const items = state.events.filter(ev =>
     ev.alfaGroupId && ev.status !== 'archived' &&
+    ev.date && ev.date >= todayStr &&
     ev._alfaDiff && Object.keys(ev._alfaDiff).length > 0
   );
   // Сортируем по дате
