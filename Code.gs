@@ -83,7 +83,7 @@ function initSheetHeaders_(sh, name) {
   const headers = {
     [SH_DET_FORMATS]:    ['Формат', 'Категория', 'Описание-шаблон', 'Цена по умолчанию', 'Лимит по умолчанию', 'Длительность по умолчанию (ч)', 'Активен'],
     [SH_DET_TEACHERS]:   ['ФИО', 'Ставка, руб', 'ID в Альфе', 'Контакт', 'Специализация', 'Активен'],
-    [SH_DET_TEMPLATES]:  ['Название', 'Формат', 'Педагог', 'Описание', 'Цена', 'Лимит', 'Длительность (ч)', 'Теги', 'Использовалось раз'],
+    [SH_DET_TEMPLATES]:  ['Название', 'Формат', 'Педагог', 'Описание', 'Цена', 'Лимит', 'Длительность (ч)', 'Теги', 'Использовалось раз', 'Референсы (JSON)'],
     [SH_DET_PUBLISHED]:  ['id', 'name', 'monthKey', 'updated', 'stateJson'],
     [SH_DET_DRAFTS]:     ['id', 'name', 'updated', 'stateJson'],
     [SH_DET_SESSIONS]:   ['sessionId', 'publishId', 'editorName', 'userAgent', 'updated'],
@@ -330,6 +330,14 @@ function detailsGetTemplates_() {
     duration:    Number(r['Длительность (ч)']) || null,
     tags:        String(r['Теги'] || '').trim(),
     usedCount:   Number(r['Использовалось раз']) || 0,
+    references:  (function(){
+      try {
+        const raw = String(r['Референсы (JSON)'] || '').trim();
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+      } catch(e) { return []; }
+    })(),
     rowIdx:      r._rowIdx
   })).filter(t => t.name);
 }
@@ -361,20 +369,44 @@ function detailsSaveTemplate_(body) {
   const t = body.template || {};
   if (!t.name) return { ok: false, error: 'нет name' };
   const sh = getSheet_(SH_DET_TEMPLATES);
-  // Если такое название уже есть — увеличим счётчик использования
+
+  // Сериализуем references (только лёгкие поля — url/note/thumb/domain).
+  // thumb может содержать маркер 'thumb:<hash>' или короткий URL — это норм.
+  // Полные data:image; URL сюда лучше не пихать — лист имеет 50000 лимит на ячейку.
+  const refsArr = Array.isArray(t.references) ? t.references.map(r => ({
+    url:    String((r && r.url) || ''),
+    note:   String((r && r.note) || ''),
+    thumb:  String((r && r.thumb) || ''),
+    domain: String((r && r.domain) || '')
+  })).filter(r => r.url) : [];
+  // Если случайно прилетел гигантский thumb (data:...) — обрезаем его, оставляя только маркер/URL
+  refsArr.forEach(r => {
+    if (r.thumb && r.thumb.length > 500 && r.thumb.indexOf('data:') === 0) {
+      r.thumb = '';   // в кэше thumb-листа всё равно лежит реальная картинка
+    }
+  });
+  let refsJson = refsArr.length ? JSON.stringify(refsArr) : '';
+  if (refsJson.length > 49000) refsJson = '';  // безопасность
+
+  // Если такое название уже есть — обновляем references + увеличиваем счётчик
   const data = sh.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() === t.name) {
       const used = Number(data[i][8]) || 0;
       sh.getRange(i + 1, 9).setValue(used + 1);
-      return { ok: true, updated: true };
+      // Если в шаблоне явно переданы НОВЫЕ referenсы — перезаписываем колонку 10
+      if (refsArr.length > 0 || (t.references && Array.isArray(t.references))) {
+        sh.getRange(i + 1, 10).setValue(refsJson);
+      }
+      return { ok: true, updated: true, refsCount: refsArr.length };
     }
   }
   sh.appendRow([
     t.name, t.format || '', t.teacher || '', t.description || '',
-    t.price || '', t.limit || '', t.duration || '', t.tags || '', 1
+    t.price || '', t.limit || '', t.duration || '', t.tags || '', 1,
+    refsJson
   ]);
-  return { ok: true, created: true };
+  return { ok: true, created: true, refsCount: refsArr.length };
 }
 
 // ============================================================
