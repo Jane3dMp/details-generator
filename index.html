@@ -1584,6 +1584,8 @@ main.sidebar-hidden .sidebar {
           <div class="dropdown-sep"></div>
           <button onclick="closeDropdowns(); window.open('competitors.html?v=' + Date.now(), '_blank')" title="Аналитика и парсинг IG-аккаунтов конкурентов">🔍 Конкуренты</button>
           <div class="dropdown-sep"></div>
+          <button onclick="closeDropdowns(); importNewFromAlfa()" title="Найти в Альфе группы, которых нет в админке, и добавить их сюда">➕ Импорт новых из Альфы</button>
+          <div class="dropdown-sep"></div>
           <button onclick="closeDropdowns(); exportJson()">↓ Экспорт JSON</button>
           <button onclick="closeDropdowns(); importJson()">↑ Импорт JSON</button>
         </div>
@@ -4294,6 +4296,52 @@ async function alfaApplyFromAlfa() {
   toast('Применено: ' + labels.join(', '), 'ok');
 }
 
+
+// ============================================================
+// ИМПОРТ НОВЫХ ИЗ АЛЬФЫ (групп которых нет в state.events)
+// ============================================================
+async function importNewFromAlfa() {
+  toast('Ищу в Альфе новые группы…', 'ok');
+  // Собираем уже известные alfaGroupId
+  const knownGroupIds = state.events
+    .map(e => e.alfaGroupId)
+    .filter(x => x);
+
+  let r;
+  try {
+    r = await apiPost('importNewFromAlfa', { knownGroupIds });
+  } catch(e) {
+    toast('Ошибка: ' + (e.message || e), 'err');
+    return;
+  }
+  if (!r.ok) { toast('Ошибка: ' + (r.error || ''), 'err'); return; }
+
+  const newEvents = r.newEvents || [];
+  if (newEvents.length === 0) {
+    toast('Новых групп в Альфе не найдено', 'ok');
+    return;
+  }
+
+  // Показываем модалку с подтверждением
+  const lines = newEvents.map(e => 
+    `• ${e.date} ${e.timeStart} — ${e.format || ''}${e.format && e.name ? ' · ' : ''}${e.name || ''} (gid=${e.alfaGroupId})`
+  ).join('\n');
+
+  const msg = `Найдено ${newEvents.length} групп в Альфе, которых нет в админке:\n\n${lines}\n\nДобавить их все?`;
+  if (!confirm(msg)) return;
+
+  // Добавляем в state.events
+  newEvents.forEach(ev => {
+    // Проверка дубля по id (на всякий случай)
+    if (!state.events.find(e => e.id === ev.id)) {
+      state.events.push(ev);
+    }
+  });
+
+  await autosaveDraft();
+  renderCalendar();
+  toast(`Добавлено: ${newEvents.length} событий. Теперь сделай «🔄 Обновить публикации» чтобы они появились в team/view.`, 'ok');
+}
 
 // ============================================================
 // МОДАЛКА: ОБЗОР ВСЕХ РАСХОЖДЕНИЙ С АЛЬФОЙ (после pullFromAlfa)
