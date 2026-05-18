@@ -167,6 +167,7 @@ function doGet(e) {
     const project = params.project || 'camp';
 
     if (project === 'details') return doGetDetails_(action, params);
+    if (project === 'competitors') return doGetCompetitors_(action, params);
 
     switch(action) {
       case 'all':           return jsonResponse(getAll_(project));
@@ -191,6 +192,7 @@ function doPost(e) {
     const project = body.project || 'camp';
 
     if (project === 'details') return doPostDetails_(action, body);
+    if (project === 'competitors') return doPostCompetitors_(action, body);
 
     switch(action) {
       case 'claude':       return jsonResponse(callClaude_(body.prompt, body.system));
@@ -223,6 +225,9 @@ function doGetDetails_(action, params) {
     case 'publicEvents':  return jsonResponse(detailsGetPublicEvents_(params));
     case 'teamEvents':    return jsonResponse(detailsGetTeamEvents_(params));
     case 'bookingCounts': return jsonResponse(detailsBookingCounts_(params));
+    case 'weekJson':      return jsonResponse(detailsGetWeekJson_(params));
+    case 'postersList':   return jsonResponse(detailsPostersList_());
+    case 'posterGet':     return jsonResponse(detailsPosterGet_(params));
     default: return jsonResponse({ ok: false, error: 'Unknown details action: ' + action });
   }
 }
@@ -250,6 +255,16 @@ function doPostDetails_(action, body) {
     case 'pushSnapshot':        return jsonResponse(detailsPushSnapshot_(body));
     case 'rebuildFromAlfaDryRun': return jsonResponse(detailsRebuildFromAlfa_(body, false));
     case 'rebuildFromAlfaApply':  return jsonResponse(detailsRebuildFromAlfa_(body, true));
+    case 'importNewFromAlfa':     return jsonResponse(detailsImportNewFromAlfa_(body));
+    case 'clearSnapshot':         return jsonResponse(detailsClearSnapshot_(body));
+    case 'testTelegramConnection':   return jsonResponse(detailsTestTelegram_());
+    case 'previewTelegramPost':      return jsonResponse(detailsPreviewTelegramPost_(body));
+    case 'postToTelegram':           return jsonResponse(detailsPostToTelegram_(body));
+    case 'postPhotoToTelegram':      return jsonResponse(detailsPostPhotoToTelegram_(body));
+    case 'posterSave':               return jsonResponse(detailsPosterSave_(body));
+    case 'posterDelete':             return jsonResponse(detailsPosterDelete_(body));
+    case 'previewEventDraft':        return jsonResponse(detailsPreviewEventDraft_(body));
+    case 'postEventDraftToTelegram': return jsonResponse(detailsPostEventDraftToTelegram_(body));
     default: return jsonResponse({ ok: false, error: 'Unknown details action: ' + action });
   }
 }
@@ -557,124 +572,7 @@ function detailsArchiveInAlfa_(body) {
  *   - lessonId: id первого найденного урока группы (или null)
  *   - removed: 0 или 1
  */
-function detailsPullFromAlfa_(body) {
-  const groupIds = (body.groupIds || []).map(x => parseInt(x, 10)).filter(x => x > 0);
-  if (groupIds.length === 0) return { ok: false, error: 'нет groupIds' };
-  if (typeof alfaLogin_ !== 'function') return { ok: false, error: 'Alfa.gs не найден' };
-
-  let token;
-  try { token = alfaLogin_(); }
-  catch(e) { return { ok: false, error: 'Логин: ' + (e.message || e) }; }
-
-  // Загружаем все группы (одним запросом — у Альфы нет endpoint group/get).
-  // Пагинируем как в _syncFromAlfa_.
-  const allGroups = {};
-  let page = 0;
-  const seen = {};
-  while (true) {
-    let resp;
-    try {
-      resp = alfaCall_(token, CFG.BRANCH_ID,
-        '/v2api/' + CFG.BRANCH_ID + '/group/index', { page: page });
-    } catch(e) {
-      return { ok: false, error: 'group/index: ' + (e.message || e) };
-    }
-    const items = resp.items || [];
-    if (items.length === 0) break;
-    let news = 0;
-    items.forEach(g => {
-      if (!seen[g.id]) {
-        seen[g.id] = true;
-        allGroups[g.id] = g;
-        news++;
-      }
-    });
-    if (news === 0) break;
-    page++;
-    if (page > 30) break;
-  }
-
-  // Загружаем уроки за широкое окно
-  const now = new Date();
-  let tz = ''; try { tz = SpreadsheetApp.getActive().getSpreadsheetTimeZone(); } catch(e){}
-  if (!tz) tz = 'Europe/Moscow';
-  const dateFrom = Utilities.formatDate(new Date(now.getFullYear(), now.getMonth() - 6, 1), tz, 'yyyy-MM-dd');
-  const dateTo   = Utilities.formatDate(new Date(now.getFullYear(), now.getMonth() + 6, 28), tz, 'yyyy-MM-dd');
-  const lessonByGroupId = {};
-  let lpage = 0;
-  const seenL = {};
-  while (true) {
-    let resp;
-    try {
-      resp = alfaCall_(token, CFG.BRANCH_ID,
-        '/v2api/' + CFG.BRANCH_ID + '/lesson/index', { date_from: dateFrom, date_to: dateTo, page: lpage });
-    } catch(e) { break; }
-    const items = resp.items || [];
-    if (items.length === 0) break;
-    let news = 0;
-    items.forEach(l => {
-      if (!seenL[l.id]) {
-        seenL[l.id] = true;
-        news++;
-        (l.group_ids || []).forEach(gid => {
-          // Берём ПЕРВЫЙ урок группы (если их несколько, берём самый ранний)
-          if (!lessonByGroupId[gid] || (l.date && l.date < lessonByGroupId[gid].date)) {
-            lessonByGroupId[gid] = l;
-          }
-        });
-      }
-    });
-    if (news === 0) break;
-    lpage++;
-    if (lpage > 50) break;
-  }
-
-  const out = {};
-  groupIds.forEach(gid => {
-    const g = allGroups[gid];
-    if (!g) {
-      out[gid] = { found: false, removed: 1 };
-      return;
-    }
-    const l = lessonByGroupId[gid];
-    let timeFrom = '';
-    let durationMin = null;
-    let lessonDate = '';
-    let lessonId = null;
-    if (l) {
-      lessonId = l.id;
-      lessonDate = l.date || '';
-      // time_from в формате 'YYYY-MM-DD HH:mm:ss' — выдрать HH:mm
-      if (l.time_from) {
-        const m = String(l.time_from).match(/(\d{2}):(\d{2})/);
-        if (m) timeFrom = m[1] + ':' + m[2];
-      }
-      // duration считаем из time_from/time_to
-      if (l.time_from && l.time_to) {
-        const f = new Date(l.time_from);
-        const t = new Date(l.time_to);
-        if (!isNaN(f) && !isNaN(t)) {
-          durationMin = Math.round((t - f) / 60000);
-        }
-      }
-    }
-    out[gid] = {
-      found: true,
-      removed: g.removed || 0,
-      name: String(g.name || ''),
-      note: String(g.note || ''),
-      limit: Number(g.limit) || null,
-      b_date: g.b_date || '',                 // 'yyyy-MM-dd' — у Альфы тут именно ISO в ответе
-      lesson_date: lessonDate,                // тоже ISO
-      time_from: timeFrom,                    // 'HH:mm'
-      duration_min: durationMin,
-      lesson_id: lessonId,
-      is_public: g.is_public || 0
-    };
-  });
-
-  return { ok: true, items: out, fetchedAt: nowIso_() };
-}
+// dead copy of detailsPullFromAlfa_ removed — see active version below
 
 function detailsBookingCounts_(params) {
   const idsRaw = String(params.groupIds || '').trim();
@@ -1166,6 +1064,35 @@ function alfaCreateGroupAndLesson_(token, ev, eventsSh, sheetRow) {
   return { groupId, lessonId, formUrl };
 }
 
+// ============================================================
+// ПАТЧ: исправление обновления времени урока в Альфе
+// ============================================================
+// ПРОБЛЕМА: «Внести правки в Альфу» обновляет название и note (описание)
+// группы, но НЕ обновляет время (time_from / time_to / lesson_date)
+// и длительность урока.
+//
+// КОРЕНЬ:
+//   1. Если у события нет ev.alfaLessonId — функция вообще не пробует
+//      обновить урок (только группу).
+//   2. Если обновление урока проваливается — try/catch глотает ошибку:
+//      «Не критично — группа обновилась». Время в Альфе остаётся старым,
+//      но фронту шлётся ok: true.
+//
+// КАК ПРИМЕНИТЬ:
+// 1. Открой Code.gs в Apps Script
+// 2. Ctrl+F → найди: function alfaUpdateGroupAndLesson_(token, ev, eventsSh, sheetRow)
+// 3. Замени ВСЮ функцию (от function до закрывающей } перед следующей function)
+//    на код ниже:
+
+// ============================================================
+// ЗАМЕНИ ВСЮ ФУНКЦИЮ alfaUpdateGroupAndLesson_ В Code.gs НА ЭТУ
+// ============================================================
+// 1. Открой Code.gs в Apps Script
+// 2. Ctrl+F → найди: function alfaUpdateGroupAndLesson_(token, ev, eventsSh, sheetRow)
+// 3. Выдели всю функцию ОТ слова `function` ДО закрывающей `}` ПЕРЕД следующей функцией
+// 4. Удали и вставь то что ниже (от function до } включительно)
+// 5. Ctrl+S → Manage deployments → ✏ → New version → Deploy
+
 function alfaUpdateGroupAndLesson_(token, ev, eventsSh, sheetRow) {
   if (!ev.alfaGroupId) throw new Error('нет alfaGroupId — нечего обновлять');
 
@@ -1195,18 +1122,42 @@ function alfaUpdateGroupAndLesson_(token, ev, eventsSh, sheetRow) {
     limit: toInt_(ev.limit) || 12, is_public: 1,
     lesson_type_id: CFG.LESSON_TYPE,
   };
-  alfaCall_(token, CFG.BRANCH_ID,
+  Logger.log('[alfaUpdate group] → ' + JSON.stringify(groupPayload));
+  const grpResp = alfaCall_(token, CFG.BRANCH_ID,
     '/v2api/' + CFG.BRANCH_ID + '/group/update?id=' + ev.alfaGroupId, groupPayload);
+  Logger.log('[alfaUpdate group] ← ' + JSON.stringify(grpResp).slice(0, 400));
 
-  // 2) Обновляем урок (если есть ID)
+  // 2) Урок: ищем lessonId если его нет
   let lessonId = ev.alfaLessonId || null;
   if (sheetRow && !lessonId) {
     lessonId = eventsSh.getRange(sheetRow, 21).getValue() || null;
   }
+  // Если lessonId всё ещё пуст — спросим у Альфы через lesson/index
+  if (!lessonId) {
+    try {
+      const lessonsResp = alfaCall_(token, CFG.BRANCH_ID,
+        '/v2api/' + CFG.BRANCH_ID + '/lesson/index',
+        { group_id: ev.alfaGroupId, page: 0 });
+      const items = (lessonsResp && lessonsResp.items) || [];
+      if (items.length > 0 && items[0].id) {
+        lessonId = items[0].id;
+        Logger.log('[alfaUpdate] найден lessonId через lesson/index: ' + lessonId);
+      } else {
+        Logger.log('[alfaUpdate] урок не найден через lesson/index, items=' + JSON.stringify(items).slice(0, 200));
+      }
+    } catch(e) {
+      Logger.log('[alfaUpdate] ошибка поиска lessonId: ' + (e.message || e));
+    }
+  }
+
+  // 3) Обновляем урок (если нашли ID)
   if (lessonId) {
-    const startStr = formatTime_(ev.timeStart);
-    const endStr = addHours_(startStr, ev.duration || 2.5);
+    const startStr = formatTime_(ev.timeStart);   // "15:00"
+    const endStr = addHours_(startStr, ev.duration || 2.5);   // "17:30"
     const durationMin = Math.round((ev.duration || 2.5) * 60);
+    // Альфа на вход требует HH:mm:ss (с секундами), хоть в model отдаёт без них
+    const startStrFull = startStr + ':00';
+    const endStrFull   = endStr   + ':00';
     const lessonPayload = {
       id: lessonId,
       branch_id: CFG.BRANCH_ID,
@@ -1217,16 +1168,83 @@ function alfaUpdateGroupAndLesson_(token, ev, eventsSh, sheetRow) {
       group_ids: [ev.alfaGroupId],
       lesson_date: dateStrRu,
       duration: durationMin,
-      time_from: startStr,
-      time_to:   endStr,
+      time_from: startStrFull,
+      time_to:   endStrFull,
       topic: String(ev.name || ''),
       status: 1,
     };
+    Logger.log('[alfaUpdate lesson] → ' + JSON.stringify(lessonPayload));
+    const lessonResp = alfaCall_(token, CFG.BRANCH_ID,
+      '/v2api/' + CFG.BRANCH_ID + '/lesson/update?id=' + lessonId, lessonPayload);
+    Logger.log('[alfaUpdate lesson] ← ' + JSON.stringify(lessonResp).slice(0, 400));
+
+    // Проверяем что Альфа реально обновила
+    if (lessonResp && lessonResp.errors &&
+        (Array.isArray(lessonResp.errors) ? lessonResp.errors.length > 0
+                                          : Object.keys(lessonResp.errors).length > 0)) {
+      throw new Error('Альфа отказалась обновлять урок: ' + JSON.stringify(lessonResp.errors).slice(0, 300));
+    }
+    // Сохраняем найденный lessonId обратно чтобы в следующий раз не искать
+    ev.alfaLessonId = lessonId;
+  } else {
+    // Урока в /lesson/index нет — пробуем обновить РЕГУЛЯРНОЕ расписание группы.
+    // Альфа хранит расписание одноразовых событий именно в /regular-lesson/index
+    // (то что видно в карточке группы в блоке «Регулярные уроки»).
+    Logger.log('[alfaUpdate] обычный урок не найден, пробуем regular-lesson…');
+    let regularLessonId = null;
     try {
-      alfaCall_(token, CFG.BRANCH_ID,
-        '/v2api/' + CFG.BRANCH_ID + '/lesson/update?id=' + lessonId, lessonPayload);
+      // Тянем все regular-lesson (API игнорирует фильтр по group_id)
+      // и ищем тот что привязан к нашей группе
+      let rpage = 0;
+      while (rpage < 30) {
+        const rResp = alfaCall_(token, CFG.BRANCH_ID,
+          '/v2api/' + CFG.BRANCH_ID + '/regular-lesson/index', { page: rpage });
+        const items = (rResp && rResp.items) || [];
+        if (items.length === 0) break;
+        for (const rl of items) {
+          if (rl.related_class === 'Group' && Number(rl.related_id) === Number(ev.alfaGroupId)) {
+            regularLessonId = rl.id;
+            Logger.log('[alfaUpdate] найдена regular-lesson id=' + regularLessonId + ' для группы ' + ev.alfaGroupId);
+            break;
+          }
+        }
+        if (regularLessonId) break;
+        rpage++;
+      }
     } catch(e) {
-      // Не критично — группа обновилась
+      Logger.log('[alfaUpdate] regular-lesson/index ошибка: ' + (e.message || e));
+    }
+
+    if (!regularLessonId) {
+      throw new Error('У группы id=' + ev.alfaGroupId + ' не найден ни обычный урок, ни регулярное расписание в Альфе. ' +
+                      'Время не обновится. Откройте группу в Альфе и добавьте расписание вручную.');
+    }
+
+    // Обновляем регулярное расписание
+    const startStrR = formatTime_(ev.timeStart);    // "15:00"
+    const endStrR   = addHours_(startStrR, ev.duration || 2.5);   // "17:30"
+    // Для regular-lesson Альфа на /update ждёт time_from_v и time_to_v в формате "HH:mm"
+    // (без секунд — формат тот же что приходит из /index).
+    // Поле b_date — реальная дата урока (для одноразовых событий совпадает с e_date).
+    const regularPayload = {
+      id: regularLessonId,
+      time_from_v: startStrR,
+      time_to_v:   endStrR,
+      b_date:      dateStr,         // 'yyyy-MM-dd'
+      e_date:      dateStr,         // одноразовое = b_date
+    };
+    Logger.log('[alfaUpdate regular] → ' + JSON.stringify(regularPayload));
+    try {
+      const rUpdResp = alfaCall_(token, CFG.BRANCH_ID,
+        '/v2api/' + CFG.BRANCH_ID + '/regular-lesson/update?id=' + regularLessonId, regularPayload);
+      Logger.log('[alfaUpdate regular] ← ' + JSON.stringify(rUpdResp).slice(0, 400));
+      if (rUpdResp && rUpdResp.errors &&
+          (Array.isArray(rUpdResp.errors) ? rUpdResp.errors.length > 0
+                                          : Object.keys(rUpdResp.errors).length > 0)) {
+        throw new Error('Альфа отказалась обновлять расписание: ' + JSON.stringify(rUpdResp.errors).slice(0, 300));
+      }
+    } catch(e) {
+      throw new Error('Не удалось обновить регулярное расписание группы ' + ev.alfaGroupId + ': ' + (e.message || e));
     }
   }
 
@@ -1239,12 +1257,79 @@ function alfaUpdateGroupAndLesson_(token, ev, eventsSh, sheetRow) {
   return { groupId: ev.alfaGroupId, lessonId };
 }
 
+// 4. Ctrl+S
+// 5. Manage deployments → ✏ → New version → Deploy
+//
+// После деплоя:
+//   - Открой событие, поменяй время → жми «Внести правки в Альфу»
+//   - Если урок найден и обновлён → время в Альфе изменится
+//   - Если урок не найден → получишь конкретный тост с причиной
+//   - В Apps Script → Executions можно посмотреть полные логи [alfaUpdate ...]
+
+// ============================================================
+// ПАТЧ: исправление архивации группы в Альфе
+// ============================================================
+// ПРОБЛЕМА: detailsArchiveInAlfa_ возвращает { ok: true } даже когда Альфа
+// фактически не архивировала группу. Функция alfaArchiveGroup_ не проверяет
+// ответ Альфы — Альфа может вернуть 200 с body { errors: [...] } или
+// { errno: 1 }, и это пройдёт как «успех».
+//
+// КАК ПРИМЕНИТЬ:
+// 1. Открой Code.gs в Apps Script
+// 2. Ctrl+F → найди: function alfaArchiveGroup_(token, groupId)
+// 3. Заменить ВСЮ функцию (всё от `function alfaArchiveGroup_` до закрывающей `}`)
+//    на код ниже:
+
 function alfaArchiveGroup_(token, groupId) {
   // Альфа: customer-group/update с removed=1
   const payload = { id: groupId, removed: 1 };
-  alfaCall_(token, CFG.BRANCH_ID,
-    '/v2api/' + CFG.BRANCH_ID + '/group/update?id=' + groupId, payload);
+  const path = '/v2api/' + CFG.BRANCH_ID + '/group/update?id=' + groupId;
+
+  Logger.log('[alfaArchive] → POST ' + path + ' payload=' + JSON.stringify(payload));
+  const resp = alfaCall_(token, CFG.BRANCH_ID, path, payload);
+  Logger.log('[alfaArchive] ← response=' + JSON.stringify(resp).slice(0, 500));
+
+  // Проверяем что Альфа реально архивировала. Возможные форматы ответа:
+  //   успех:   { model: { id: 457, removed: 1, ... } }
+  //   успех:   { id: 457 }
+  //   ошибка:  { errors: { field: "msg" } }   или   { errors: [...] }
+  //   ошибка:  { errno: 1, message: "..." }
+  //   ошибка:  { code: 500, message: "..." }
+
+  if (!resp || typeof resp !== 'object') {
+    throw new Error('Пустой/невалидный ответ от Альфы: ' + JSON.stringify(resp).slice(0, 200));
+  }
+
+  // Явные ошибки
+  if (resp.errors && (Array.isArray(resp.errors) ? resp.errors.length > 0 : Object.keys(resp.errors).length > 0)) {
+    throw new Error('Альфа errors: ' + JSON.stringify(resp.errors).slice(0, 300));
+  }
+  if (resp.errno && resp.errno !== 0) {
+    throw new Error('Альфа errno=' + resp.errno + ': ' + (resp.message || ''));
+  }
+  if (resp.code && resp.code >= 400) {
+    throw new Error('Альфа code=' + resp.code + ': ' + (resp.message || ''));
+  }
+
+  // Проверяем что в модели реально removed=1
+  const model = resp.model || resp;
+  if (model && (model.removed !== undefined) && parseInt(model.removed, 10) !== 1) {
+    throw new Error('Альфа приняла запрос но removed=' + model.removed + ' (не 1). model=' + JSON.stringify(model).slice(0, 300));
+  }
+
+  return resp;
 }
+
+// 4. Ctrl+S
+// 5. Manage deployments → ✏ → New version → Deploy
+//
+// После деплоя — нажми «🗑 Удалить в Альфе» ещё раз:
+//   - если Альфа реально что-то отвечает не так → увидишь тост с конкретной ошибкой
+//   - если Альфа реально архивирует → группа исчезнет
+//
+// Дополнительно: после деплоя можно посмотреть Логи (Executions в Apps Script)
+// и увидеть строки [alfaArchive] → POST ... и [alfaArchive] ← response= ...
+// чтобы понять что именно Альфа возвращает.
 
 // ============================================================
 // DETAILS — ПУБЛИЧНЫЕ ЭНДПОЙНТЫ ДЛЯ view.html И team.html
@@ -1338,6 +1423,8 @@ function detailsGetTeamEvents_(params) {
   arr = arr.filter(e => e.date && (e.format || e.name));
 
   // Флаг публикации промо/команде. Обратная совместимость: отсутствие = true.
+  // Скрываем архивированные события — они уже удалены из Альфы
+  arr = arr.filter(e => e.status !== 'archived');
   arr = arr.filter(e => e.publishedToTeam !== false);
 
   arr.sort((a, b) => (a.date + (a.timeStart || '')).localeCompare(b.date + (b.timeStart || '')));
@@ -3327,6 +3414,174 @@ function detailsPushSnapshot_(body) {
   return { ok: true, snapshotAt: today.toISOString(), visibleClients: visClients, visibleTeam: visTeam };
 }
 
+/**
+ * Импорт групп из Альфы, которых нет в локальном state.
+ * body.knownGroupIds — массив alfaGroupId, которые уже есть у нас (присылает фронт).
+ * Возвращает: { ok: true, newEvents: [...] } — события, готовые к добавлению в state.
+ *
+ * Не пишет ничего в БД — только формирует объекты. Фронт сам решает что добавить.
+ */
+function detailsImportNewFromAlfa_(body) {
+  if (typeof alfaLogin_ !== 'function') return { ok: false, error: 'Alfa.gs не найден' };
+
+  const knownIds = {};
+  ((body && body.knownGroupIds) || []).forEach(id => { knownIds[Number(id)] = true; });
+
+  let token;
+  try { token = alfaLogin_(); }
+  catch(e) { return { ok: false, error: 'Логин: ' + (e.message || e) }; }
+
+  // 1. Тянем все группы постранично
+  const allGroups = [];
+  const seen = {};
+  let page = 0;
+  while (true) {
+    let resp;
+    try {
+      resp = alfaCall_(token, CFG.BRANCH_ID, '/v2api/' + CFG.BRANCH_ID + '/group/index', { page });
+    } catch(e) { return { ok: false, error: 'group/index: ' + (e.message || e) }; }
+    const items = (resp && resp.items) || [];
+    if (items.length === 0) break;
+    let news = 0;
+    items.forEach(g => { if (!seen[g.id]) { seen[g.id] = true; allGroups.push(g); news++; } });
+    if (news === 0) break;
+    page++;
+    if (page > 30) break;
+  }
+
+  // 2. Активные нашего филиала, ещё не известные нам
+  let tz = ''; try { tz = SpreadsheetApp.getActive().getSpreadsheetTimeZone(); } catch(e){}
+  if (!tz) tz = 'Europe/Moscow';
+  const todayStr = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+
+  const unknownGroups = allGroups.filter(g => {
+    if (g.removed === 1) return false;
+    if (g.branch_ids && g.branch_ids.indexOf(CFG.BRANCH_ID) < 0) return false;
+    if (knownIds[Number(g.id)]) return false;  // у нас уже есть
+    return true;
+  });
+
+  if (unknownGroups.length === 0) {
+    return { ok: true, newEvents: [], message: 'Все группы из Альфы уже есть в админке' };
+  }
+
+  // 3. Тянем регулярки чтобы получить дату/время каждой группы
+  const regularByGroup = {};
+  try {
+    let rpage = 0;
+    while (rpage < 30) {
+      const rr = alfaCall_(token, CFG.BRANCH_ID,
+        '/v2api/' + CFG.BRANCH_ID + '/regular-lesson/index', { page: rpage });
+      const ritems = (rr && rr.items) || [];
+      if (ritems.length === 0) break;
+      ritems.forEach(rl => {
+        if (rl.related_class !== 'Group') return;
+        const gid = Number(rl.related_id);
+        if (!gid) return;
+        if (regularByGroup[gid]) return;   // берём первое попавшееся
+        regularByGroup[gid] = {
+          b_date: rl.b_date || '',
+          time_from: rl.time_from_v || '',
+          time_to: rl.time_to_v || ''
+        };
+      });
+      rpage++;
+    }
+  } catch(e) { /* не критично */ }
+
+  // 4. Форматы — для подбора format/name из имени группы
+  const formats = detailsGetFormats_().map(f => f.name).filter(Boolean);
+  formats.sort((a, b) => b.length - a.length);   // длинные сперва
+
+  // 5. Собираем новые события
+  const newEvents = [];
+  unknownGroups.forEach(g => {
+    const reg = regularByGroup[g.id];
+    let dateStr = '';
+    let timeStart = '';
+    let durationH = 2.5;
+
+    if (reg && reg.b_date) {
+      dateStr = String(reg.b_date).slice(0, 10);
+      if (reg.time_from) {
+        const m = reg.time_from.match(/(\d{1,2}):(\d{2})/);
+        if (m) timeStart = String(m[1]).padStart(2, '0') + ':' + m[2];
+      }
+      if (reg.time_from && reg.time_to) {
+        const [h1, m1] = reg.time_from.split(':').map(Number);
+        const [h2, m2] = reg.time_to.split(':').map(Number);
+        if (!isNaN(h1) && !isNaN(h2)) {
+          let mins = (h2 * 60 + (m2||0)) - (h1 * 60 + (m1||0));
+          if (mins < 0) mins += 24 * 60;
+          if (mins > 0) durationH = +(mins / 60).toFixed(2);
+        }
+      }
+    } else if (g.b_date) {
+      dateStr = normalizeDate_(g.b_date);
+    }
+
+    // Пропускаем группы без даты или с прошедшей датой
+    if (!dateStr) return;
+    if (dateStr < todayStr) return;
+
+    // Парсим имя
+    const parsed = _parseAlfaGroupName_(g.name, formats);
+
+    newEvents.push({
+      id: 'alfa_' + g.id,
+      date: dateStr,
+      timeStart: timeStart || '18:00',
+      duration: durationH,
+      format: parsed.format,
+      name: parsed.name,
+      teacher: '',
+      price: parsed.price,
+      limit: Number(g.limit) || 12,
+      costPerPerson: null,
+      costGroup: null,
+      description: '',
+      alfaNote: String(g.note || ''),
+      status: 'published',
+      publishToAlfa: false,
+      publishedToAlfa: true,
+      alfaGroupId: g.id,
+      alfaLessonId: null,
+      formUrl: CFG.ALFA_HOST + '/common/' + CFG.BRANCH_ID + '/lead/create?gid=' + g.id,
+      comment: '',
+      references: [],
+      teamComment: '',
+      publishedToClients: true,
+      publishedToTeam: true
+    });
+  });
+
+  newEvents.sort((a, b) => (a.date + a.timeStart).localeCompare(b.date + b.timeStart));
+
+  return {
+    ok: true,
+    newEvents,
+    totalUnknown: unknownGroups.length,
+    skippedNoDate: unknownGroups.length - newEvents.length
+  };
+}
+
+function detailsClearSnapshot_(body) {
+  // Удаляет строку snapshot_main из листа SH_DET_PUBLISHED.
+  // После этого view.html и team.html отдают пустые списки до следующего pushSnapshot.
+  try {
+    const pubSh = getSheet_(SH_DET_PUBLISHED);
+    const row = findRowById_(pubSh, 'snapshot_main');
+    if (row > 0) {
+      pubSh.deleteRow(row);
+      Logger.log('[clearSnapshot] удалена строка ' + row);
+      return { ok: true, deleted: true };
+    }
+    return { ok: true, deleted: false, reason: 'snapshot_main не найден' };
+  } catch(e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
 function publishWorkingDraftAsSnapshot() {
   const draftsSh = getSheet_(SH_DET_DRAFTS);
   const workRow = findRowById_(draftsSh, WORKING_DRAFT_ID);
@@ -4488,4 +4743,1030 @@ function _testBookingCounts() {
 function _testProd() {
   const r = detailsBookingCounts_({ groupIds: '343' });
   Logger.log(JSON.stringify(r));
+}
+
+// ============================================================
+// PULL FROM ALFA — синхронизация в обратную сторону
+// ============================================================
+function detailsPullFromAlfa_(body) {
+  try {
+    if (typeof alfaLogin_ !== 'function') {
+      return { ok: false, error: 'Файл Alfa.gs не найден' };
+    }
+    const groupIds = (body && body.groupIds) || [];
+    if (!Array.isArray(groupIds) || groupIds.length === 0) {
+      return { ok: false, error: 'groupIds пустой' };
+    }
+    const wantedIds = {};
+    groupIds.forEach(id => { wantedIds[Number(id)] = true; });
+
+    const token = alfaLogin_();
+    if (!token) return { ok: false, error: 'Не удалось залогиниться в Альфу' };
+
+    // 1. Получаем все активные группы (постранично)
+    const allGroups = [];
+    const seen = {};
+    let page = 0;
+    while (true) {
+      const resp = alfaCall_(token, CFG.BRANCH_ID,
+        '/v2api/' + CFG.BRANCH_ID + '/group/index', { page: page });
+      const items = (resp && resp.items) || [];
+      if (items.length === 0) break;
+      let news = 0;
+      items.forEach(g => {
+        if (!seen[g.id]) {
+          seen[g.id] = true;
+          allGroups.push(g);
+          news++;
+        }
+      });
+      if (news === 0) break;
+      page++;
+      if (page > 30) break;
+    }
+
+    const groupsById = {};
+    allGroups.forEach(g => { groupsById[g.id] = g; });
+
+    // 2. Уроки за следующие 90 дней
+    const today = new Date();
+    const dateFrom = Utilities.formatDate(today, 'Europe/Moscow', 'yyyy-MM-dd');
+    const dateToObj = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000);
+    const dateTo = Utilities.formatDate(dateToObj, 'Europe/Moscow', 'yyyy-MM-dd');
+
+    const lessonsByGroup = {};
+    try {
+      let lpage = 0;
+      while (true) {
+        const lr = alfaCall_(token, CFG.BRANCH_ID,
+          '/v2api/' + CFG.BRANCH_ID + '/lesson/index',
+          { date_from: dateFrom, date_to: dateTo, page: lpage });
+        const items = (lr && lr.items) || [];
+        if (items.length === 0) break;
+        items.forEach(l => {
+          const gid = l.group_id || l.subject_id || (l.group && l.group.id);
+          if (!gid) return;
+          if (!lessonsByGroup[gid]) lessonsByGroup[gid] = [];
+          lessonsByGroup[gid].push({
+            id: l.id,
+            date: l.date || l.lesson_date || '',
+            time_from: l.time_from_h || l.time_from || '',
+            time_to: l.time_to_h || l.time_to || '',
+            room_id: l.room_id || null,
+            note: l.note || ''
+          });
+        });
+        lpage++;
+        if (lpage > 30) break;
+      }
+    } catch(eL) {
+      Logger.log('lesson/index failed: ' + eL);
+    }
+
+    // 2b. Регулярные уроки (тащим целиком — фильтр по group_id в API не работает)
+    // Они содержат реальную дату урока (b_date) и время для одноразовых событий.
+    // В админке Альфы они показываются как «Регулярные уроки» в карточке группы.
+    const regularByGroup = {};
+    try {
+      let rpage = 0;
+      while (true) {
+        const rr = alfaCall_(token, CFG.BRANCH_ID,
+          '/v2api/' + CFG.BRANCH_ID + '/regular-lesson/index', { page: rpage });
+        const ritems = (rr && rr.items) || [];
+        if (ritems.length === 0) break;
+        ritems.forEach(rl => {
+          // Связь с группой через related_class='Group' + related_id
+          if (rl.related_class !== 'Group') return;
+          const gid = Number(rl.related_id);
+          if (!gid) return;
+          if (!regularByGroup[gid]) regularByGroup[gid] = [];
+          regularByGroup[gid].push({
+            id: rl.id,
+            b_date: rl.b_date || '',
+            e_date: rl.e_date || '',
+            time_from: rl.time_from_v || '',
+            time_to: rl.time_to_v || '',
+            day: rl.day || null,
+            is_public: rl.is_public || 0
+          });
+        });
+        rpage++;
+        if (rpage > 30) break;
+      }
+    } catch(eR) {
+      Logger.log('regular-lesson/index failed: ' + eR);
+    }
+
+    // 3. Собираем результат
+    const items = {};
+    Object.keys(wantedIds).forEach(gid => {
+      const numGid = Number(gid);
+      const g = groupsById[numGid];
+      if (!g) {
+        items[numGid] = { found: false };
+        return;
+      }
+      const isRemoved = (g.removed === 1 || g.removed === true || g.is_archive === 1);
+      const lessons = (lessonsByGroup[numGid] || [])
+        .slice()
+        .sort((a, b) => (a.date + (a.time_from||'')).localeCompare(b.date + (b.time_from||'')));
+
+      // Берём первый регулярный урок этой группы — для одноразовых событий
+      // он один и содержит точную дату + время
+      const regulars = (regularByGroup[numGid] || [])
+        .slice()
+        .sort((a, b) => (a.b_date || '').localeCompare(b.b_date || ''));
+      const firstRegular = regulars[0] || null;
+
+      // Считаем duration в минутах из time_from/time_to
+      let durationMin = null;
+      if (firstRegular && firstRegular.time_from && firstRegular.time_to) {
+        const [h1, m1] = firstRegular.time_from.split(':').map(Number);
+        const [h2, m2] = firstRegular.time_to.split(':').map(Number);
+        if (!isNaN(h1) && !isNaN(h2)) {
+          durationMin = (h2 * 60 + (m2||0)) - (h1 * 60 + (m1||0));
+          if (durationMin < 0) durationMin += 24 * 60;
+        }
+      }
+
+      items[numGid] = {
+        found: !isRemoved,
+        archived: isRemoved,
+        id: g.id,
+        name: g.name || '',
+        price: g.price || g.b2c_price || null,
+        limit: g.limit || g.max_count || null,
+        note: g.note || '',
+        // ВЕРХНЕУРОВНЕВЫЕ ПОЛЯ для computeAlfaDiff (фронт смотрит ровно сюда)
+        b_date:       firstRegular ? firstRegular.b_date    : (g.b_date || ''),
+        time_from:    firstRegular ? firstRegular.time_from : '',
+        duration_min: durationMin,
+        lessons: lessons,
+        regulars: regulars
+      };
+    });
+
+    return {
+      ok: true,
+      items: items,
+      fetchedAt: new Date().toISOString(),
+      counts: {
+        wanted: Object.keys(wantedIds).length,
+        found: Object.values(items).filter(i => i.found).length,
+        archived: Object.values(items).filter(i => i.archived).length,
+        missing: Object.values(items).filter(i => !i.found && !i.archived).length
+      }
+    };
+  } catch(e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+// ============================================================
+// ВОССТАНОВЛЕНИЕ УДАЛЁННЫХ ФУНКЦИЙ + ФИКС alfaUpdate
+// ============================================================
+//
+// При замене функции alfaUpdateGroupAndLesson_ случайно были стёрты
+// 18 функций (Telegram + posters cloud + weekJson + draft TG).
+//
+// Этот файл восстанавливает ВСЁ.
+//
+// ===== КАК ПРИМЕНИТЬ =====
+// 1. Открой Code.gs в Apps Script
+// 2. Ctrl+End — перейди в КОНЕЦ файла (увидишь хвост функции
+//    с return { ok: true, items: items, ... })
+// 3. Поставь пустую строку после закрывающей `}` последней функции
+// 4. Скопируй ВЕСЬ ЭТОТ ФАЙЛ (от начала до конца) и вставь
+// 5. Ctrl+S → Manage deployments → ✏ → New version → Deploy
+//
+// Функция alfaUpdateGroupAndLesson_ у тебя в файле УЖЕ есть после
+// прошлой замены — её трогать не нужно.
+// ============================================================
+
+function tg_getCfg_() {
+  const props = PropertiesService.getScriptProperties();
+  return {
+    token:     props.getProperty('TELEGRAM_BOT_TOKEN') || '',
+    channelId: props.getProperty('TELEGRAM_CHANNEL_ID') || ''
+  };
+}
+
+function tg_apiCall_(method, payload) {
+  const cfg = tg_getCfg_();
+  if (!cfg.token) throw new Error('TELEGRAM_BOT_TOKEN не задан в Script Properties');
+  const url = 'https://api.telegram.org/bot' + cfg.token + '/' + method;
+  const resp = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  const code = resp.getResponseCode();
+  const text = resp.getContentText();
+  let json;
+  try { json = JSON.parse(text); } catch(e) { throw new Error('Telegram вернул не JSON: ' + text.slice(0, 300)); }
+  if (code !== 200 || !json.ok) {
+    throw new Error('Telegram ' + code + ': ' + (json.description || text.slice(0, 300)));
+  }
+  return json.result;
+}
+
+// === Тест связи с Telegram-ботом (detailsTestTelegram_) ===
+function detailsTestTelegram_() {
+  try {
+    const cfg = tg_getCfg_();
+    if (!cfg.token)     return { ok: false, error: 'TELEGRAM_BOT_TOKEN не задан в Script Properties' };
+    if (!cfg.channelId) return { ok: false, error: 'TELEGRAM_CHANNEL_ID не задан в Script Properties' };
+    // Проверяем токен через getMe
+    const me = tg_apiCall_('getMe', {});
+    // Проверяем доступ к каналу/чату через getChat
+    let chat;
+    try {
+      chat = tg_apiCall_('getChat', { chat_id: cfg.channelId });
+    } catch(e) {
+      return {
+        ok: false,
+        error: 'Бот @' + (me.username || '?') + ' работает, но не может прочитать чат ' + cfg.channelId +
+               '. Если это канал — добавьте бота админом. Если личка — отправьте /start от своего аккаунта.\n' +
+               'Детали: ' + (e.message || e)
+      };
+    }
+    return {
+      ok: true,
+      bot: { username: me.username, name: me.first_name },
+      chat: { id: chat.id, type: chat.type, title: chat.title || chat.first_name || '' }
+    };
+  } catch(e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+// === Сборка текста поста (tg_buildEventPost_) ===
+function tg_buildEventPost_(ev) {
+  const monthNamesGen = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  const dow = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+  const d = new Date(ev.date);
+  const dateLine = d.getDate() + ' ' + monthNamesGen[d.getMonth()] + ', ' + dow[d.getDay()];
+  const time = ev.timeStart ? ev.timeStart : '';
+
+  const lines = [];
+  // Заголовок: формат + название
+  if (ev.format && ev.name)      lines.push('✨ <b>' + tg_esc_(ev.format) + ': ' + tg_esc_(ev.name) + '</b>');
+  else if (ev.name)              lines.push('✨ <b>' + tg_esc_(ev.name) + '</b>');
+  else if (ev.format)            lines.push('✨ <b>' + tg_esc_(ev.format) + '</b>');
+
+  // Дата и время
+  let when = '📅 ' + dateLine;
+  if (time) when += ' · ' + time;
+  if (ev.duration) when += ' · ' + ev.duration + ' ч';
+  lines.push(when);
+
+  // Педагог
+  if (ev.teacher) lines.push('👤 ' + tg_esc_(ev.teacher));
+
+  // Описание (если есть)
+  if (ev.description) {
+    lines.push('');
+    lines.push(tg_esc_(String(ev.description).slice(0, 700)));
+  }
+
+  // Цена и места
+  const priceLimitParts = [];
+  if (ev.price) priceLimitParts.push('💰 ' + ev.price + ' руб.');
+  if (ev.limit) priceLimitParts.push('🪑 до ' + ev.limit + ' мест');
+  if (priceLimitParts.length > 0) {
+    lines.push('');
+    lines.push(priceLimitParts.join(' · '));
+  }
+
+  // Ссылка на запись
+  if (ev.alfaGroupId && CFG && CFG.ALFA_HOST) {
+    const formUrl = CFG.ALFA_HOST + '/common/' + CFG.BRANCH_ID + '/lead/create?gid=' + ev.alfaGroupId;
+    lines.push('');
+    lines.push('👉 <a href="' + formUrl + '">Записаться</a>');
+  }
+
+  return lines.join('\n');
+}
+
+// === Утилиты Telegram (tg_esc_, tg_findEventById_) ===
+function tg_esc_(s) {
+  // HTML-режим Telegram требует экранировать только < > &
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Находит событие по eventId среди опубликованных + рабочего черновика
+function tg_findEventById_(eventId) {
+  const allPublished = collectAllPublishedEvents_();
+  let found = allPublished.find(e => e.id === eventId);
+  if (found) return found;
+  const drafts = collectLatestDraftsEvents_();
+  found = drafts.find(e => e.id === eventId);
+  return found || null;
+}
+
+// === Превью поста (detailsPreviewTelegramPost_) ===
+function detailsPreviewTelegramPost_(body) {
+  const eventId = String(body.eventId || '').trim();
+  if (!eventId) return { ok: false, error: 'нет eventId' };
+  const ev = tg_findEventById_(eventId);
+  if (!ev) return { ok: false, error: 'событие не найдено: ' + eventId };
+  const text = tg_buildEventPost_(ev);
+  const cfg = tg_getCfg_();
+  return {
+    ok: true,
+    text: text,
+    chatId: cfg.channelId || '(не задан)',
+    parseMode: 'HTML'
+  };
+}
+
+// === Постинг текстом одного события (detailsPostToTelegram_) ===
+function detailsPostToTelegram_(body) {
+  const eventId = String(body.eventId || '').trim();
+  const customText = body.customText ? String(body.customText) : null;
+  if (!eventId && !customText) return { ok: false, error: 'нужен eventId или customText' };
+
+  const cfg = tg_getCfg_();
+  if (!cfg.token || !cfg.channelId) {
+    return { ok: false, error: 'Telegram не настроен. Задайте TELEGRAM_BOT_TOKEN и TELEGRAM_CHANNEL_ID в Script Properties.' };
+  }
+
+  let text;
+  if (customText) {
+    text = customText;
+  } else {
+    const ev = tg_findEventById_(eventId);
+    if (!ev) return { ok: false, error: 'событие не найдено: ' + eventId };
+    text = tg_buildEventPost_(ev);
+  }
+
+  try {
+    const result = tg_apiCall_('sendMessage', {
+      chat_id: cfg.channelId,
+      text: text,
+      parse_mode: 'HTML',
+      disable_web_page_preview: false,
+      link_preview_options: { is_disabled: false }
+    });
+    // Пробуем построить ссылку на пост (только для каналов с username)
+    let postUrl = '';
+    if (result.chat && result.chat.username) {
+      postUrl = 'https://t.me/' + result.chat.username + '/' + result.message_id;
+    }
+    return {
+      ok: true,
+      messageId: result.message_id,
+      chatId: result.chat ? result.chat.id : cfg.channelId,
+      postUrl: postUrl,
+      text: text
+    };
+  } catch(e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+// === JSON недели для агента афиш (detailsGetWeekJson_) ===
+function detailsGetWeekJson_(params) {
+  const weekStart = String((params && params.weekStart) || '').trim();
+  if (!weekStart || !/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) {
+    return { ok: false, error: 'нужен weekStart в формате YYYY-MM-DD' };
+  }
+  // weekEnd = weekStart + 6 дней
+  const startDate = new Date(weekStart + 'T00:00:00');
+  const endDate = new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000);
+  const weekEnd = Utilities.formatDate(endDate, 'Europe/Moscow', 'yyyy-MM-dd');
+
+  // Расширенный список приватных форматов (закрытые мероприятия — не для афиш)
+  const PRIVATE_FOR_POSTERS = [
+    'День рождения', 'Свидание', 'Частное мероприятие',
+    'Свадьба', 'Корпоратив', 'Закрытое'
+  ];
+
+  // 1. Собираем кандидатов из обоих источников (опубликованные + рабочий черновик)
+  const published = collectAllPublishedEvents_();
+  const drafts = collectLatestDraftsEvents_();
+  const byId = {};
+  drafts.forEach(ev => { byId[ev.id] = ev; });
+  published.forEach(ev => { byId[ev.id] = ev; });
+  let candidates = Object.values(byId);
+
+  // 2. Базовый фильтр: неделя + не архив + не приватный + содержательный
+  candidates = candidates.filter(ev => {
+    if (!ev.date) return false;
+    if (ev.status === 'archived') return false;
+    if (PRIVATE_FOR_POSTERS.indexOf(ev.format) >= 0) return false;
+    if (ev.date < weekStart || ev.date > weekEnd) return false;
+    // Отсекаем "пустышки": нет ни имени, ни описания (или формат "-")
+    const fmt = String(ev.format || '').trim();
+    const name = String(ev.name || '').trim();
+    const desc = String(ev.description || '').trim();
+    if (fmt === '-' || fmt === '') return false;
+    if (!name && !desc) return false;
+    if (name === '-' && !desc) return false;
+    return true;
+  });
+
+  // 3. Дедупликация: группируем по date+timeStart, оставляем "лучшее" событие
+  // "Лучшее" = больше всего полезных данных:
+  //   alfa-привязка (alfaGroupId) +20, описание +len/100, референсы +кол-во*5, педагог +5
+  const scoreEvent = ev => {
+    let score = 0;
+    if (ev.alfaGroupId) score += 20;
+    if (ev.description) score += Math.min(50, String(ev.description).length / 20);
+    if (ev.references && ev.references.length) score += ev.references.length * 5;
+    if (ev.teacher) score += 5;
+    if (ev.price) score += 2;
+    if (ev.id && String(ev.id).startsWith('alfa_')) score += 10; // приоритет alfa-импортов
+    return score;
+  };
+
+  const groups = {};
+  candidates.forEach(ev => {
+    const key = ev.date + '|' + (ev.timeStart || '');
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(ev);
+  });
+
+  let events = [];
+  Object.keys(groups).forEach(key => {
+    const arr = groups[key];
+    if (arr.length === 1) {
+      events.push(arr[0]);
+    } else {
+      // Сортируем по score убывая, берём первое
+      arr.sort((a, b) => scoreEvent(b) - scoreEvent(a));
+      const winner = arr[0];
+      // Но если у "проигравшего" есть данные, которых нет у победителя — мерджим
+      for (let i = 1; i < arr.length; i++) {
+        const loser = arr[i];
+        if (!winner.description && loser.description) winner.description = loser.description;
+        if (!winner.teacher && loser.teacher) winner.teacher = loser.teacher;
+        if (!winner.name && loser.name) winner.name = loser.name;
+        if (!winner.format && loser.format) winner.format = loser.format;
+        if ((!winner.references || winner.references.length === 0) && loser.references && loser.references.length) {
+          winner.references = loser.references;
+        }
+      }
+      events.push(winner);
+    }
+  });
+
+  // 4. Сортируем
+  events.sort((a, b) => (a.date + (a.timeStart || '')).localeCompare(b.date + (b.timeStart || '')));
+
+  // 5. Преобразуем в формат для агента
+  const dowNames = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+  const out = events.map(ev => {
+    const d = new Date(ev.date + 'T00:00:00');
+    return {
+      id: ev.id,
+      date: ev.date,
+      dayOfWeek: dowNames[d.getDay()],
+      format: ev.format || '',
+      name: ev.name || '',
+      teacher: ev.teacher || '',
+      time: ev.timeStart || '',
+      duration: ev.duration || null,
+      price: ev.price || null,
+      limit: ev.limit || null,
+      description: ev.description || '',
+      references: (ev.references || []).filter(r => r && r.url).map(r => ({
+        url: r.url,
+        note: r.note || ''
+      })),
+      teamComment: ev.teamComment || ''
+    };
+  });
+
+  return {
+    ok: true,
+    weekStart: weekStart,
+    weekEnd: weekEnd,
+    eventsCount: out.length,
+    events: out,
+    audience: 'Женщины 25-48 из Могилева, ищут состояние и атмосферу, не услугу',
+    style: 'Уютно, тепло, по-человечески. Без пафоса. Без штампов вроде "незабываемый вечер творчества".'
+  };
+}
+
+// === Постинг фото из библиотеки (detailsPostPhotoToTelegram_) ===
+function detailsPostPhotoToTelegram_(body) {
+  const cfg = tg_getCfg_();
+  if (!cfg.token) return { ok: false, error: 'TELEGRAM_BOT_TOKEN не задан' };
+  const chatId = String(body.chatId || cfg.channelId || '').trim();
+  if (!chatId) return { ok: false, error: 'chatId не задан' };
+
+  let photoBase64 = String(body.photoBase64 || '').trim();
+  if (!photoBase64) return { ok: false, error: 'photoBase64 не задан' };
+  // Убираем префикс data: если есть
+  const m = photoBase64.match(/^data:image\/[a-z]+;base64,(.+)$/i);
+  if (m) photoBase64 = m[1];
+
+  const caption = body.caption ? String(body.caption).slice(0, 1024) : ''; // Telegram caption limit
+
+  let blob;
+  try {
+    const decoded = Utilities.base64Decode(photoBase64);
+    blob = Utilities.newBlob(decoded, 'image/png', 'poster.png');
+  } catch(e) {
+    return { ok: false, error: 'Не удалось декодировать base64: ' + (e.message || e) };
+  }
+
+  const url = 'https://api.telegram.org/bot' + cfg.token + '/sendPhoto';
+  const formData = {
+    chat_id: chatId,
+    photo: blob,
+    parse_mode: 'HTML'
+  };
+  if (caption) formData.caption = caption;
+
+  try {
+    const resp = UrlFetchApp.fetch(url, {
+      method: 'post',
+      payload: formData,
+      muteHttpExceptions: true
+    });
+    const code = resp.getResponseCode();
+    const text = resp.getContentText();
+    let json;
+    try { json = JSON.parse(text); } catch(e) {
+      return { ok: false, error: 'Telegram вернул не JSON: ' + text.slice(0, 300) };
+    }
+    if (code !== 200 || !json.ok) {
+      return { ok: false, error: 'Telegram ' + code + ': ' + (json.description || text.slice(0, 300)) };
+    }
+    let postUrl = '';
+    if (json.result && json.result.chat && json.result.chat.username) {
+      postUrl = 'https://t.me/' + json.result.chat.username + '/' + json.result.message_id;
+    }
+    return {
+      ok: true,
+      messageId: json.result.message_id,
+      chatId: json.result.chat ? json.result.chat.id : chatId,
+      postUrl: postUrl
+    };
+  } catch(e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+// === Облако постеров (postersList/Get/Save/Delete) ===
+function detailsPostersList_() {
+  try {
+    const sh = getPostersSheet_();
+    const lastRow = sh.getLastRow();
+    if (lastRow < 2) return { ok: true, items: [] };
+    // Читаем только первые 7 столбцов (без payload)
+    const data = sh.getRange(2, 1, lastRow - 1, 7).getValues();
+    const items = data
+      .filter(r => r[0]) // пропуск пустых
+      .map(r => ({
+        id:           String(r[0]),
+        saved_at:     r[1] ? String(r[1]) : '',
+        event_name:   String(r[2] || ''),
+        event_date:   r[3] ? String(r[3]) : '',
+        layout:       String(r[4] || ''),
+        accent:       String(r[5] || ''),
+        thumbnail_url: String(r[6] || '')
+      }));
+    items.sort((a, b) => (b.saved_at || '').localeCompare(a.saved_at || ''));
+    return { ok: true, items };
+  } catch(e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+/**
+ * GET ?action=posterGet&id=<id>
+ * Возвращает один постер с полным payload.
+ */
+function detailsPosterGet_(params) {
+  try {
+    const id = String((params && params.id) || '').trim();
+    if (!id) return { ok: false, error: 'нет id' };
+    const sh = getPostersSheet_();
+    const lastRow = sh.getLastRow();
+    if (lastRow < 2) return { ok: false, error: 'не найдено' };
+    const data = sh.getRange(2, 1, lastRow - 1, 8).getValues();
+    for (let i = 0; i < data.length; i++) {
+      if (String(data[i][0]) === id) {
+        let payload = null;
+        try { payload = JSON.parse(String(data[i][7] || 'null')); } catch(e) {}
+        return {
+          ok: true,
+          item: {
+            id:            String(data[i][0]),
+            saved_at:      data[i][1] ? String(data[i][1]) : '',
+            event_name:    String(data[i][2] || ''),
+            event_date:    data[i][3] ? String(data[i][3]) : '',
+            layout:        String(data[i][4] || ''),
+            accent:        String(data[i][5] || ''),
+            thumbnail_url: String(data[i][6] || ''),
+            payload:       payload
+          }
+        };
+      }
+    }
+    return { ok: false, error: 'не найдено' };
+  } catch(e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+/**
+ * POST { action: 'posterSave', id, savedAt, eventName, eventDate, layout, accent, thumbnailUrl, payload }
+ * Сохраняет/обновляет постер. Если id уже есть — обновляет, иначе создаёт.
+ */
+function detailsPosterSave_(body) {
+  try {
+    const id = String(body.id || '').trim();
+    if (!id) return { ok: false, error: 'нет id' };
+
+    const sh = getPostersSheet_();
+    const payloadJson = body.payload ? JSON.stringify(body.payload) : '';
+
+    // Apps Script лимит ячейки — 50_000 символов. Защищаемся.
+    if (payloadJson.length > 49000) {
+      return { ok: false, error: 'payload слишком большой (' + payloadJson.length + ' символов, лимит 49000)' };
+    }
+
+    const rowData = [
+      id,
+      String(body.savedAt || nowIso_()),
+      String(body.eventName || ''),
+      String(body.eventDate || ''),
+      String(body.layout || ''),
+      String(body.accent || ''),
+      String(body.thumbnailUrl || ''),
+      payloadJson
+    ];
+
+    // Ищем существующую строку
+    const lastRow = sh.getLastRow();
+    let foundRow = -1;
+    if (lastRow >= 2) {
+      const idValues = sh.getRange(2, 1, lastRow - 1, 1).getValues();
+      for (let i = 0; i < idValues.length; i++) {
+        if (String(idValues[i][0]) === id) {
+          foundRow = i + 2;
+          break;
+        }
+      }
+    }
+
+    if (foundRow > 0) {
+      sh.getRange(foundRow, 1, 1, 8).setValues([rowData]);
+      return { ok: true, id, updated: true };
+    } else {
+      sh.appendRow(rowData);
+      return { ok: true, id, created: true };
+    }
+  } catch(e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+/**
+ * POST { action: 'posterDelete', id }
+ * Удаляет постер из облака.
+ */
+function detailsPosterDelete_(body) {
+  try {
+    const id = String(body.id || '').trim();
+    if (!id) return { ok: false, error: 'нет id' };
+    const sh = getPostersSheet_();
+    const lastRow = sh.getLastRow();
+    if (lastRow < 2) return { ok: true, deleted: false };
+    const idValues = sh.getRange(2, 1, lastRow - 1, 1).getValues();
+    for (let i = 0; i < idValues.length; i++) {
+      if (String(idValues[i][0]) === id) {
+        sh.deleteRow(i + 2);
+        return { ok: true, deleted: true };
+      }
+    }
+    return { ok: true, deleted: false };
+  } catch(e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+// ============================================================
+// БЛОК 2: «На обсуждение» — черновик события в Telegram
+// ============================================================
+function tg_buildEventDraftPost_(ev) {
+  const monthNamesGen = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  const dow = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+  const d = ev.date ? new Date(ev.date) : null;
+
+  const lines = [];
+
+  // Шапка
+  lines.push('💡 <b>НА ОБСУЖДЕНИЕ</b>');
+  lines.push('');
+
+  // Формат + название
+  if (ev.format && ev.name)      lines.push('✨ <b>' + tg_esc_(ev.format) + ': ' + tg_esc_(ev.name) + '</b>');
+  else if (ev.name)              lines.push('✨ <b>' + tg_esc_(ev.name) + '</b>');
+  else if (ev.format)            lines.push('✨ <b>' + tg_esc_(ev.format) + '</b>');
+
+  // Дата и время
+  if (d) {
+    const dateLine = d.getDate() + ' ' + monthNamesGen[d.getMonth()] + ', ' + dow[d.getDay()];
+    let when = '📅 ' + dateLine;
+    if (ev.timeStart) when += ' · ' + ev.timeStart;
+    if (ev.duration)  when += ' · ' + ev.duration + ' ч';
+    lines.push(when);
+  }
+
+  // Педагог
+  if (ev.teacher) lines.push('👤 ' + tg_esc_(ev.teacher));
+
+  // Описание (длинное, для команды — без обрезки до 700 как в обычном посте)
+  if (ev.description) {
+    lines.push('');
+    lines.push(tg_esc_(String(ev.description).slice(0, 2000)));
+  }
+
+  // Цена и места
+  const priceLimitParts = [];
+  if (ev.price) priceLimitParts.push('💰 ' + ev.price + ' руб.');
+  if (ev.limit) priceLimitParts.push('🪑 до ' + ev.limit + ' мест');
+  if (priceLimitParts.length > 0) {
+    lines.push('');
+    lines.push(priceLimitParts.join(' · '));
+  }
+
+  // Краткое для Альфы (если задано отдельно от описания)
+  if (ev.alfaNote && ev.alfaNote !== ev.description) {
+    lines.push('');
+    lines.push('📎 <i>Для Альфы:</i> ' + tg_esc_(String(ev.alfaNote).slice(0, 400)));
+  }
+
+  // Референсы
+  const refs = (ev.references || []).filter(r => r && r.url);
+  if (refs.length > 0) {
+    lines.push('');
+    lines.push('🔖 <b>Референсы (' + refs.length + '):</b>');
+    refs.slice(0, 10).forEach((r, i) => {
+      const domain = String(r.domain || '').replace(/^www\./, '');
+      const note = String(r.note || '').trim();
+      let line = '• <a href="' + tg_esc_(r.url) + '">' + tg_esc_(domain || 'ссылка') + '</a>';
+      if (note) line += ' — ' + tg_esc_(note);
+      lines.push(line);
+    });
+    if (refs.length > 10) lines.push('… и ещё ' + (refs.length - 10));
+  }
+
+  // Комментарий команде (если есть)
+  if (ev.teamComment) {
+    lines.push('');
+    lines.push('💬 <i>Комментарий:</i> ' + tg_esc_(String(ev.teamComment).slice(0, 500)));
+  }
+
+  // Финальный вопрос
+  lines.push('');
+  lines.push('❓ <b>Есть предложения / пожелания / стиль / цвет?</b>');
+
+  return lines.join('\n');
+}
+
+// === Превью поста-черновика ===
+function detailsPreviewEventDraft_(body) {
+  const eventId = String(body.eventId || '').trim();
+  if (!eventId) return { ok: false, error: 'нет eventId' };
+
+  // Сначала ищем в working_main / опубликованных, потом — в body.event (если фронт прислал свежее)
+  let ev = tg_findEventById_(eventId);
+
+  // Если фронт прислал свежие данные (можно перетереть несохранённые правки)
+  if (body.event && typeof body.event === 'object') {
+    ev = body.event;
+  }
+
+  if (!ev) return { ok: false, error: 'событие не найдено: ' + eventId };
+
+  // Резолвим thumb-маркеры в реальные data URL для отправки фото
+  if (Array.isArray(ev.references)) {
+    try {
+      const tmap = thumbCacheLoadAll_();
+      ev.references = resolveThumbs_(ev.references, tmap);
+    } catch(e) {}
+  }
+
+  const text = tg_buildEventDraftPost_(ev);
+  const cfg = tg_getCfg_();
+
+  // Сразу собираем список референсов с готовыми превью (для модалки на фронте)
+  const refsForUI = (ev.references || []).filter(r => r && r.url).map(r => ({
+    url: r.url,
+    note: r.note || '',
+    thumb: r.thumb || '',
+    domain: r.domain || ''
+  }));
+
+  return {
+    ok: true,
+    text: text,
+    refs: refsForUI,
+    chatId: cfg.channelId || '(не задан)',
+    parseMode: 'HTML'
+  };
+}
+
+// === Отправка черновика в Telegram ===
+//
+// body.eventId — обязательно
+// body.event — опционально, свежие данные с фронта (несохранённые правки)
+// body.refUrlsToSend — массив URL референсов которые отправить как фото (max 10)
+//                     если пусто — отправляем только текст
+//
+function detailsPostEventDraftToTelegram_(body) {
+  const cfg = tg_getCfg_();
+  if (!cfg.token)     return { ok: false, error: 'TELEGRAM_BOT_TOKEN не задан' };
+  if (!cfg.channelId) return { ok: false, error: 'TELEGRAM_CHANNEL_ID не задан' };
+
+  const eventId = String(body.eventId || '').trim();
+  if (!eventId) return { ok: false, error: 'нет eventId' };
+
+  // Берём свежие данные с фронта если переданы
+  let ev = body.event && typeof body.event === 'object' ? body.event : tg_findEventById_(eventId);
+  if (!ev) return { ok: false, error: 'событие не найдено: ' + eventId };
+
+  // Резолвим thumb-маркеры в data URL — нужно для отправки фото
+  if (Array.isArray(ev.references)) {
+    try {
+      const tmap = thumbCacheLoadAll_();
+      ev.references = resolveThumbs_(ev.references, tmap);
+    } catch(e) {}
+  }
+
+  const text = tg_buildEventDraftPost_(ev);
+  const refUrlsToSend = Array.isArray(body.refUrlsToSend) ? body.refUrlsToSend.slice(0, 10) : [];
+
+  try {
+    // === ВАРИАНТ 1: только текст (без фото) ===
+    if (refUrlsToSend.length === 0) {
+      const resp = tg_apiCall_('sendMessage', {
+        chat_id: cfg.channelId,
+        text: text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+      });
+      return {
+        ok: true,
+        mode: 'text',
+        messageId: resp.message_id,
+        message: 'Отправлено в «Учительскую» (только текст)'
+      };
+    }
+
+    // === ВАРИАНТ 2: с фото через sendMediaGroup ===
+    // Собираем фото из переданных URL — для каждого ищем data URL в референсах события
+    const refsByUrl = {};
+    (ev.references || []).forEach(r => { if (r && r.url) refsByUrl[r.url] = r; });
+
+    const mediaList = [];
+    const failedUrls = [];
+
+    refUrlsToSend.forEach(url => {
+      const r = refsByUrl[url];
+      if (!r) return;
+      const thumb = String(r.thumb || '');
+      // Подходят: data:image/...;base64,... или внешние http(s) URL
+      if (thumb.indexOf('data:image') === 0) {
+        // base64 data URL — Telegram Bot API НЕ принимает напрямую через JSON в sendMediaGroup
+        // Нужно отправлять как multipart с attached file. Это сложно через UrlFetchApp.
+        // Альтернатива: использовать оригинальный URL картинки если он публичный.
+        // Pinterest URL'ы — публичные (i.pinimg.com), Telegram скачает их сам.
+        // Поэтому для media group используем url, не thumb.
+        if (url && /^https?:\/\//i.test(url)) {
+          mediaList.push({ url: url, note: r.note || '' });
+        } else {
+          failedUrls.push(url);
+        }
+      } else if (/^https?:\/\//i.test(thumb)) {
+        // thumb уже URL — можно отправить
+        mediaList.push({ url: thumb, note: r.note || '' });
+      } else if (/^https?:\/\//i.test(url)) {
+        // У thumb нет URL, но у url-источника есть — отправим источник
+        mediaList.push({ url: url, note: r.note || '' });
+      } else {
+        failedUrls.push(url);
+      }
+    });
+
+    if (mediaList.length === 0) {
+      // Не получилось ни одного фото — fallback на текст
+      const resp = tg_apiCall_('sendMessage', {
+        chat_id: cfg.channelId,
+        text: text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+      });
+      return {
+        ok: true,
+        mode: 'text-fallback',
+        messageId: resp.message_id,
+        warning: 'Не удалось прикрепить фото (нет публичных URL у референсов), отправлено только текстом',
+        message: 'Отправлено в «Учительскую» (только текст)'
+      };
+    }
+
+    // Telegram caption лимит: 1024 символа для media с caption.
+    // Если текст длиннее — отправим media без caption + отдельный sendMessage с текстом после.
+    const CAPTION_LIMIT = 1024;
+    let captionForFirst = '';
+    let separateMessage = '';
+
+    if (text.length <= CAPTION_LIMIT) {
+      captionForFirst = text;
+    } else {
+      // Caption будет коротким (название + дата + педагог), полный текст — отдельно
+      const shortLines = [];
+      shortLines.push('💡 <b>НА ОБСУЖДЕНИЕ</b>');
+      if (ev.format && ev.name) shortLines.push('<b>' + tg_esc_(ev.format) + ': ' + tg_esc_(ev.name) + '</b>');
+      else if (ev.name)         shortLines.push('<b>' + tg_esc_(ev.name) + '</b>');
+      if (ev.date) {
+        const monthNamesGen = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+        const d = new Date(ev.date);
+        let when = '📅 ' + d.getDate() + ' ' + monthNamesGen[d.getMonth()];
+        if (ev.timeStart) when += ' · ' + ev.timeStart;
+        shortLines.push(when);
+      }
+      shortLines.push('');
+      shortLines.push('↓ подробности и обсуждение ниже ↓');
+      captionForFirst = shortLines.join('\n').slice(0, CAPTION_LIMIT);
+      separateMessage = text;
+    }
+
+    // Формируем массив media для sendMediaGroup
+    const media = mediaList.map((m, i) => {
+      const item = {
+        type: 'photo',
+        media: m.url
+      };
+      if (i === 0 && captionForFirst) {
+        item.caption = captionForFirst;
+        item.parse_mode = 'HTML';
+      }
+      return item;
+    });
+
+    // Отправляем медиа-группу
+    let mediaResult;
+    try {
+      mediaResult = tg_apiCall_('sendMediaGroup', {
+        chat_id: cfg.channelId,
+        media: media
+      });
+    } catch(e) {
+      // Если sendMediaGroup провалился (например Telegram не смог скачать картинки) —
+      // отправляем хотя бы текст
+      const resp = tg_apiCall_('sendMessage', {
+        chat_id: cfg.channelId,
+        text: text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+      });
+      return {
+        ok: true,
+        mode: 'text-fallback',
+        messageId: resp.message_id,
+        warning: 'Telegram не смог загрузить фото: ' + (e.message || e) + '. Отправлено только текстом.',
+        message: 'Отправлено в «Учительскую» (только текст)'
+      };
+    }
+
+    // Если был длинный текст — отправляем его отдельным сообщением
+    let textMessageId = null;
+    if (separateMessage) {
+      try {
+        const r2 = tg_apiCall_('sendMessage', {
+          chat_id: cfg.channelId,
+          text: separateMessage,
+          parse_mode: 'HTML',
+          disable_web_page_preview: true,
+          reply_to_message_id: Array.isArray(mediaResult) && mediaResult[0] ? mediaResult[0].message_id : undefined
+        });
+        textMessageId = r2.message_id;
+      } catch(e) { /* не критично */ }
+    }
+
+    return {
+      ok: true,
+      mode: 'media-group',
+      photosCount: media.length,
+      mediaMessageIds: Array.isArray(mediaResult) ? mediaResult.map(m => m.message_id) : [],
+      textMessageId: textMessageId,
+      failedCount: failedUrls.length,
+      message: 'Отправлено в «Учительскую» (' + media.length + ' фото' + (separateMessage ? ' + текст' : '') + ')'
+    };
+
+  } catch(e) {
+    return { ok: false, error: String(e.message || e) };
+  }
 }
