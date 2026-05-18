@@ -3214,6 +3214,16 @@ function autosaveDraft() {
 async function saveAsTemplate() {
   const name = document.getElementById('evName').value.trim();
   if (!name) { toast('Сначала укажите название', 'err'); return; }
+  // Сохраняем references из state.editingRefs.
+  // ВАЖНО: thumb может быть data: URL — он может быть большим. Шлём только маркер
+  // 'thumb:<hash>' или короткий URL; полные data: URL обрежем на сервере.
+  const refsForTpl = (state.editingRefs || []).map(r => ({
+    url:    String(r.url || ''),
+    note:   String(r.note || ''),
+    thumb:  String(r.thumb || ''),
+    domain: String(r.domain || '')
+  })).filter(r => r.url);
+
   const tpl = {
     name,
     format: document.getElementById('evFormat').value,
@@ -3222,11 +3232,13 @@ async function saveAsTemplate() {
     price: parseFloat(document.getElementById('evPrice').value) || null,
     limit: parseInt(document.getElementById('evLimit').value) || null,
     duration: parseFloat(document.getElementById('evDuration').value) || null,
-    tags: ''
+    tags: '',
+    references: refsForTpl
   };
   const r = await apiPost('saveTemplate', { template: tpl });
   if (r.ok) {
-    toast('Сохранено в шаблоны', 'ok');
+    const refsMsg = refsForTpl.length ? ` (${refsForTpl.length} пин${refsForTpl.length === 1 ? '' : (refsForTpl.length < 5 ? 'а' : 'ов')})` : '';
+    toast('Сохранено в шаблоны' + refsMsg, 'ok');
     // обновим библиотеку
     const lib = await apiGet('library');
     if (lib.ok) state.templates = lib.templates || [];
@@ -3382,6 +3394,16 @@ function useTemplate(rowIdx) {
   document.getElementById('evPrice').value = t.price || '';
   document.getElementById('evLimit').value = t.limit || 12;
   document.getElementById('evDuration').value = t.duration || 2.5;
+  // Подтягиваем референсы из шаблона
+  if (Array.isArray(t.references) && t.references.length > 0) {
+    state.editingRefs = t.references.map(r => ({
+      url:    String(r.url || ''),
+      note:   String(r.note || ''),
+      thumb:  String(r.thumb || ''),
+      domain: String(r.domain || '')
+    }));
+    if (typeof renderReferences === 'function') renderReferences();
+  }
   updateEventFinStats();
 }
 
