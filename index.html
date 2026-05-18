@@ -2909,7 +2909,9 @@ function openEventEditor(eventId, defaultDate) {
 
   // селекты
   const fmtSel = document.getElementById('evFormat');
-  fmtSel.innerHTML = '<option value="">— выберите —</option>' + state.formats.map(f => `<option>${escapeHtml(f.name)}</option>`).join('');
+  fmtSel.innerHTML = '<option value="">— выберите —</option>' +
+    state.formats.map(f => `<option>${escapeHtml(f.name)}</option>`).join('') +
+    '<option value="__add__" style="font-style: italic; color: var(--accent);">+ Добавить формат…</option>';
   const tSel = document.getElementById('evTeacher');
   tSel.innerHTML = '<option value="">— не выбран —</option>' + state.teachers.map(t => `<option>${escapeHtml(t.name)}</option>`).join('');
 
