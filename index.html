@@ -3001,8 +3001,46 @@ function openEventEditor(eventId, defaultDate) {
   document.getElementById('eventModal').classList.add('show');
 }
 
+async function _addNewFormatInline() {
+  const fmtSel = document.getElementById('evFormat');
+  const name = (prompt('Название нового формата:') || '').trim();
+  if (!name) {
+    fmtSel.value = '';
+    return;
+  }
+  // Проверка дубля
+  if (state.formats.find(f => f.name.toLowerCase() === name.toLowerCase())) {
+    toast('Такой формат уже существует', 'err');
+    fmtSel.value = name;
+    onFormatChange();
+    return;
+  }
+  // Шлём на сервер
+  try {
+    const r = await apiPost('addFormat', { format: { name } });
+    if (!r.ok) { toast('Ошибка: ' + (r.error || ''), 'err'); fmtSel.value = ''; return; }
+  } catch(e) {
+    toast('Ошибка: ' + (e.message || e), 'err');
+    fmtSel.value = '';
+    return;
+  }
+  // Добавляем локально и пересобираем options
+  state.formats.push({ name, category: '', template: '', defaultPrice: null, defaultLimit: null, defaultDuration: null });
+  fmtSel.innerHTML = '<option value="">— выберите —</option>' +
+    state.formats.map(f => `<option>${escapeHtml(f.name)}</option>`).join('') +
+    '<option value="__add__" style="font-style: italic; color: var(--accent);">+ Добавить формат…</option>';
+  fmtSel.value = name;
+  toast('Формат «' + name + '» добавлен', 'ok');
+  onFormatChange();
+}
+
 function onFormatChange() {
   const fmtName = document.getElementById('evFormat').value;
+  // Спецзначение — открываем prompt для создания нового формата
+  if (fmtName === '__add__') {
+    _addNewFormatInline();
+    return;
+  }
   const f = state.formats.find(x => x.name === fmtName);
   if (!f) return;
   // Если поля пустые — заполняем дефолтами формата
