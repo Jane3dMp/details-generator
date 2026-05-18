@@ -3383,7 +3383,8 @@ function renderTemplatesPicker() {
 
 function useTemplate(rowIdx) {
   const t = state.templates.find(x => x.rowIdx === rowIdx);
-  if (!t) return;
+  if (!t) { console.warn('[useTemplate] шаблон не найден, rowIdx=' + rowIdx); return; }
+  console.log('[useTemplate] шаблон:', t.name, '— refs в шаблоне:', (t.references || []).length);
   // открываем редактор события с предзаполнением, дата = сегодня
   state.editingEventId = null;
   openEventEditor(null, ymd(new Date()));
@@ -3402,7 +3403,15 @@ function useTemplate(rowIdx) {
       thumb:  String(r.thumb || ''),
       domain: String(r.domain || '')
     }));
-    if (typeof renderReferences === 'function') renderReferences();
+    console.log('[useTemplate] записал state.editingRefs:', state.editingRefs.length, state.editingRefs);
+    if (typeof renderReferences === 'function') {
+      renderReferences();
+      console.log('[useTemplate] renderReferences вызвана. В DOM:', document.querySelectorAll('#refsGrid .ref-item').length, 'элементов');
+    } else {
+      console.warn('[useTemplate] renderReferences не функция');
+    }
+  } else {
+    console.log('[useTemplate] в шаблоне нет references, оставляем пустой буфер');
   }
   updateEventFinStats();
 }
