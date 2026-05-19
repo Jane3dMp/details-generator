@@ -1585,6 +1585,7 @@ main.sidebar-hidden .sidebar {
           <button onclick="closeDropdowns(); window.open('competitors.html?v=' + Date.now(), '_blank')" title="Аналитика и парсинг IG-аккаунтов конкурентов">🔍 Конкуренты</button>
           <div class="dropdown-sep"></div>
           <button onclick="closeDropdowns(); importNewFromAlfa()" title="Найти в Альфе группы, которых нет в админке, и добавить их сюда">➕ Импорт новых из Альфы</button>
+          <button onclick="closeDropdowns(); syncTeachersFromAlfa()" title="Подтянуть из Альфы педагогов, которых нет в админке">↻ Синхр педагогов из Альфы</button>
           <div class="dropdown-sep"></div>
           <button onclick="closeDropdowns(); exportJson()">↓ Экспорт JSON</button>
           <button onclick="closeDropdowns(); importJson()">↑ Импорт JSON</button>
@@ -2913,7 +2914,10 @@ function openEventEditor(eventId, defaultDate) {
     state.formats.map(f => `<option>${escapeHtml(f.name)}</option>`).join('') +
     '<option value="__add__" style="font-style: italic; color: var(--accent);">+ Добавить формат…</option>';
   const tSel = document.getElementById('evTeacher');
-  tSel.innerHTML = '<option value="">— не выбран —</option>' + state.teachers.map(t => `<option>${escapeHtml(t.name)}</option>`).join('');
+  tSel.innerHTML = '<option value="">— не выбран —</option>' +
+    state.teachers.map(t => `<option>${escapeHtml(t.name)}</option>`).join('') +
+    '<option value="__add__" style="font-style: italic; color: var(--accent);">+ Добавить педагога…</option>';
+  tSel.onchange = function() { onTeacherChange(); };
 
   // дефолты или текущие
   const ev = isEdit ? state.events.find(e => e.id === eventId) : null;
@@ -3001,6 +3005,41 @@ function openEventEditor(eventId, defaultDate) {
   );
 
   document.getElementById('eventModal').classList.add('show');
+}
+
+async function _addNewTeacherInline() {
+  const tSel = document.getElementById('evTeacher');
+  const name = (prompt('ФИО педагога:') || '').trim();
+  if (!name) {
+    tSel.value = '';
+    return;
+  }
+  if (state.teachers.find(t => t.name.toLowerCase() === name.toLowerCase())) {
+    toast('Такой педагог уже есть', 'err');
+    tSel.value = name;
+    return;
+  }
+  try {
+    const r = await apiPost('addTeacher', { teacher: { name } });
+    if (!r.ok) { toast('Ошибка: ' + (r.error || ''), 'err'); tSel.value = ''; return; }
+  } catch(e) {
+    toast('Ошибка: ' + (e.message || e), 'err');
+    tSel.value = '';
+    return;
+  }
+  state.teachers.push({ name, rate: null, alfaId: null, contact: '', spec: '' });
+  tSel.innerHTML = '<option value="">— не выбран —</option>' +
+    state.teachers.map(t => `<option>${escapeHtml(t.name)}</option>`).join('') +
+    '<option value="__add__" style="font-style: italic; color: var(--accent);">+ Добавить педагога…</option>';
+  tSel.value = name;
+  toast('Педагог «' + name + '» добавлен', 'ok');
+}
+
+function onTeacherChange() {
+  const tSel = document.getElementById('evTeacher');
+  if (tSel.value === '__add__') {
+    _addNewTeacherInline();
+  }
 }
 
 async function _addNewFormatInline() {
@@ -4412,6 +4451,31 @@ async function importNewFromAlfa() {
   await autosaveDraft();
   renderCalendar();
   toast(`Добавлено: ${newEvents.length} событий. Теперь сделай «🔄 Обновить публикации» чтобы они появились в team/view.`, 'ok');
+}
+
+// ============================================================
+// СИНХРОНИЗАЦИЯ ПЕДАГОГОВ ИЗ АЛЬФЫ
+// ============================================================
+async function syncTeachersFromAlfa() {
+  toast('Тяну педагогов из Альфы…', 'ok');
+  let r;
+  try {
+    r = await apiPost('syncTeachersFromAlfa', {});
+  } catch(e) {
+    toast('Ошибка: ' + (e.message || e), 'err');
+    return;
+  }
+  if (!r.ok) { toast('Ошибка: ' + (r.error || ''), 'err'); return; }
+  if (!r.added || r.added.length === 0) {
+    toast(`Готово. Все ${r.total} педагогов уже есть в админке.`, 'ok');
+    return;
+  }
+  // Обновляем локальный state.teachers — перезапросим
+  try {
+    const all = await apiGet('all');
+    if (all.ok) state.teachers = all.teachers || [];
+  } catch(e) {}
+  alert(`Добавлено ${r.added.length} новых педагогов:\n\n• ${r.added.join('\n• ')}\n\nОткрой Sheets → лист «Педагоги_детали» чтобы заполнить ставки и специализации.`);
 }
 
 // ============================================================
